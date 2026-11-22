@@ -20,6 +20,11 @@ export const SHIP_THRUST = 140; // px/s², dans l'axe du nez
 export const SHIP_MAX_HP = 100;
 export const SHIP_SIZE = 8; // rayon du triangle dessiné, en px
 
+/** Gravité (ADR 0003) : chaque planète est réglée par sa gravité de surface g0 (px/s²), en 1/d² à portée finie. */
+export const PLANET_GRAVITY = 70; // g0 par défaut
+export const GRAVITY_RANGE_FACTOR = 5; // portée = 5 × rayon, coupure douce
+export const PLANET_MAX_GRAVITY = 0.6 * SHIP_THRUST; // le décollage reste toujours possible
+
 /** Mur de carte : rebond amorti, sans dégâts (SPEC §5.6). 0 = collé au mur, 1 = rebond parfait. */
 export const BOUNDS_RESTITUTION = 0.5;
 

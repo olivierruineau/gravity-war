@@ -32,6 +32,13 @@
 - Modules d'entité indépendants ; les interactions (gravité, collisions, capture) sont dans des modules de système ; `world.js` est le seul orchestrateur.
 - Vec2 à paramètre de sortie (`add(out, a, b)`), RNG mulberry32 dans `world.rng`, `Math.random` interdit dans `core/`. Intégrateur : Euler semi-implicite.
 
+## Gravité et atterrissage ([ADR 0003](adr/0003-gravite-et-atterrissage.md))
+
+- Planète = `{ pos, radius, owner, mu, range }`, créée depuis la carte `{ x, y, radius, gravity? }` ; `gravity` = gravité de surface `g0` (px/s²), plafonnée à `0,6 × SHIP_THRUST` pour garantir le décollage.
+- Gravité 1/d² à portée finie `R = 5·r`, force décalée qui s'annule continûment en `R`, bornée à `g0` sous la surface ; espace inertiel hors des champs (`core/gravity.js`).
+- Contact vaisseau/planète dans `core/landing.js` : `evaluateLanding` (vitesse d'approche, tangentielle, erreur d'angle) est la seule source des seuils (collision, aide visuelle, IA). Atterrissage → `landedOn`, vitesse nulle, `EVT.LANDED` ; sinon dégâts proportionnels à l'excès de vitesse, rebond garanti, `EVT.IMPACT`.
+- Ordre d'un pas, par vaisseau vivant : intentions → maintien/décollage si posé (un vaisseau posé saute la suite) → gravité + intégration → bornes → contact planètes.
+
 ## Boucle de jeu
 
 `GameScene.update(time, delta)` :
@@ -50,7 +57,8 @@ Résolution interne 480×270, `pixelArt` + `roundPixels`, mise à l'échelle `FI
 
 ## Décisions
 
-| ADR                                   | Sujet                                 | Statut  |
-| ------------------------------------- | ------------------------------------- | ------- |
-| [0001](adr/0001-stack-technique.md)   | Stack technique                       | Accepté |
-| [0002](adr/0002-architecture-core.md) | Architecture de `core/` et pont rendu | Accepté |
+| ADR                                         | Sujet                                 | Statut  |
+| ------------------------------------------- | ------------------------------------- | ------- |
+| [0001](adr/0001-stack-technique.md)         | Stack technique                       | Accepté |
+| [0002](adr/0002-architecture-core.md)       | Architecture de `core/` et pont rendu | Accepté |
+| [0003](adr/0003-gravite-et-atterrissage.md) | Gravité, collision et atterrissage    | Accepté |
