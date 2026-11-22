@@ -13,6 +13,7 @@ import { createWorld, step } from '../core/world.js';
 import { arena } from '../data/maps/arena.js';
 import { drawShip } from '../entities/shipView.js';
 import { createKeyboardInput } from '../systems/keyboardInput.js';
+import { createStarfield } from '../systems/starfield.js';
 
 /**
  * Scène de jeu. Rester MINCE : elle orchestre la boucle à pas fixe, l'entrée et le rendu ;
@@ -33,6 +34,8 @@ export class GameScene extends Phaser.Scene {
       maxSteps: MAX_STEPS_PER_FRAME,
     });
     this.pilot = createKeyboardInput(this);
+    createStarfield(this, this.world.width, this.world.height);
+    this.cameras.main.setBounds(0, 0, this.world.width, this.world.height);
     this.gfx = this.add.graphics();
   }
 
@@ -43,9 +46,10 @@ export class GameScene extends Phaser.Scene {
     for (let i = 0; i < steps; i++) step(this.world, FIXED_DT);
 
     // Rendu immédiat : on efface et on redessine tout depuis l'état du core.
-    // (Caméra provisoire : centrage simple, remplacée par la vraie caméra à l'item 1.7.)
-    this.cameras.main.centerOn(player.pos.x, player.pos.y);
+    this.cameras.main.centerOn(player.pos.x, player.pos.y); // bornée à la carte (setBounds)
     this.gfx.clear();
+    this.gfx.lineStyle(1, PALETTE.border, 1);
+    this.gfx.strokeRect(0, 0, this.world.width, this.world.height);
     drawShip(this.gfx, player, PALETTE.ok);
 
     // Les événements (sons, effets) seront lus ici à partir de la phase 3, puis la file est vidée.
