@@ -65,7 +65,7 @@ core/
   clock.js      accumulateur à pas fixe            (feuille)
   events.js     file d'événements + EVT
   intent.js     createIntent, resetIntent
-  world.js      createWorld(map, seed), step(world, dt) : seul orchestrateur
+  world.js      createWorld(map, seed, options), step(world, dt) : seul orchestrateur
   ship.js       rotation, poussée, tir                       (phase 1/3)
   bounds.js     mur de carte, rebond amorti                  (phase 1)
   planet.js, gravity.js, collision.js                        (phase 2, ADR 0003)
@@ -112,7 +112,7 @@ Règles :
 
 ## Conséquences
 
-- Un seul point d'entrée (`createWorld` / `step`), facile à tester et à rejouer ; les bots (phase 5) se branchent en écrivant des intentions, sans chemin de code parallèle.
+- Un seul point d'entrée (`createWorld` / `step` ; les capacités sont injectées en options, `core/` ne lit pas `config.js` pour elles), facile à tester et à rejouer ; les bots (phase 5) se branchent en écrivant des intentions, sans chemin de code parallèle.
 - Les capacités (`PROJECTILE_CAPACITY`, `EVENT_CAPACITY`) doivent être dimensionnées dans `config.js` ; un dépassement est silencieux (compteur `dropped` à surveiller dans l'overlay de debug).
 - Le rendu immédiat redessine tout à chaque frame : à surveiller en 7.4, mais quelques centaines de traits restent négligeables.
 - Discipline requise : ne jamais écrire dans `world` depuis Phaser hors `ships[0].intent`, ni garder de référence à un slot de pool d'une frame à l'autre. À contrôler en revue.
@@ -121,7 +121,7 @@ Règles :
 ## Plan d'implémentation (items 1.2 à 1.8)
 
 1. **1.2** — coder **Sonnet** (tests **Haiku**) : `core/vec2.js` (API §6), `core/rng.js` (mulberry32), `wrapAngle` dans `math.js` ; règle ESLint interdisant `Math.random` dans `src/core/`. Tests : aliasing `out === a`, séquence reproductible d'un seed, bornes de `range`/`int`.
-2. **1.3** — coder **Sonnet** (tests **Sonnet**) : `core/clock.js` (`consumeSteps`, plafonds), `core/events.js`, `core/intent.js`, `core/world.js` (`createWorld(map, seed)`, `step` vide sauf `tick++`), constantes `MAX_FRAME_DT`, `MAX_STEPS_PER_FRAME`, `EVENT_CAPACITY` dans `config.js` ; branchement dans `GameScene.update`. Tests : `consumeSteps` (cas limites, jet de l'arriéré), file d'événements (débordement, `clearEvents`), déterminisme par `JSON.stringify`.
+2. **1.3** — coder **Sonnet** (tests **Sonnet**) : `core/clock.js` (`consumeSteps`, plafonds), `core/events.js`, `core/intent.js`, `core/world.js` (`createWorld(map, seed, { eventCapacity })`, `step` vide sauf `tick++`), constantes `MAX_FRAME_DT`, `MAX_STEPS_PER_FRAME`, `EVENT_CAPACITY` dans `config.js` ; branchement dans `GameScene.update`. Tests : `consumeSteps` (cas limites, jet de l'arriéré), file d'événements (débordement, `clearEvents`), déterminisme par `JSON.stringify`.
 3. **1.4** — coder **Sonnet** (tests **Sonnet**) : `core/ship.js` (rotation à vitesse angulaire constante, poussée dans l'axe du nez, Euler semi-implicite) appelé par `world.step` ; constantes du vaisseau dans `config.js`. Scénarios : inertie sans poussée, pas de frein, 180° + poussée ramène la vitesse à ~0.
 4. **1.5** — coder **Sonnet** : `systems/keyboardInput.js` (← → ↑ vers `ships[0].intent`, `Espace`/`Ctrl` câblés mais sans effet avant phase 3), `entities/shipView.js` (`drawShip` triangle filaire), rendu immédiat dans `GameScene`.
 5. **1.6** — coder **Sonnet** (tests **Haiku**) : `core/bounds.js`, dimensions de carte dans `world` (défaut `config.js`, puis carte en 2.2), rebond amorti par coefficient de restitution. Tests : position ramenée dans la carte, composante normale inversée et amortie, composante tangentielle conservée.

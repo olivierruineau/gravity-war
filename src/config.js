@@ -7,6 +7,13 @@ export const GAME_HEIGHT = 270;
 /** Pas de temps fixe de la simulation (en secondes) : physique déterministe. */
 export const FIXED_DT = 1 / 60;
 
+/** Garde-fous de la boucle à pas fixe : l'arriéré au-delà est jeté (le jeu ralentit, il ne spirale pas). */
+export const MAX_FRAME_DT = 0.25;
+export const MAX_STEPS_PER_FRAME = 5;
+
+/** Capacité de la file d'événements core → rendu/audio (au-delà : événements perdus). */
+export const EVENT_CAPACITY = 256;
+
 /** Palette restreinte façon années 90 (à ajuster avec la direction artistique). */
 export const PALETTE = {
   bg: 0x0b0b14,

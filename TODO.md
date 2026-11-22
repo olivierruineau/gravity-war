@@ -24,7 +24,7 @@ Spécification : [docs/SPEC.md](docs/SPEC.md). Architecture : [docs/ARCHITECTURE
 
 - [x] **1.1** ADR 0002 : architecture de `core/` — état du monde, modèle d'entités, intentions de pilotage (`{rotate, thrust, fire, missile}` partagées joueur/bots), pas fixe + accumulateur, pont `core` → rendu Phaser (arch)
 - [x] **1.2** `core/vec2` (opérations sans allocation) + RNG seedé, avec tests (code, test-s)
-- [ ] **1.3** Boucle à pas fixe : accumulateur dans `GameScene`, `core/world` avec `step(dt)` vide, test de déterminisme (code, test-c)
+- [x] **1.3** Boucle à pas fixe : accumulateur dans `GameScene`, `core/world` avec `step(dt)` vide, test de déterminisme (code, test-c)
 - [ ] **1.4** Physique du vaisseau : rotation, poussée dans l'axe du nez, inertie ; tests (pas de frein, 180° + poussée annule la vitesse) (code, test-c)
 - [ ] **1.5** Rendu filaire du vaisseau (triangle) + entrées clavier (`←` `→` `↑`) → intentions (code)
 - [ ] **1.6** Carte bornée : mur invisible avec rebond amorti ; tests des bornes (code, test-s)
