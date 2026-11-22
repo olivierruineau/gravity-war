@@ -11,6 +11,7 @@ import { clearEvents } from '../core/events.js';
 import { consumeSteps, createClock } from '../core/clock.js';
 import { createWorld, step } from '../core/world.js';
 import { arena } from '../data/maps/arena.js';
+import { drawPlanet } from '../entities/planetView.js';
 import { drawShip } from '../entities/shipView.js';
 import { createDebugOverlay } from '../systems/debugOverlay.js';
 import { createKeyboardInput } from '../systems/keyboardInput.js';
@@ -52,6 +53,7 @@ export class GameScene extends Phaser.Scene {
     this.gfx.clear();
     this.gfx.lineStyle(1, PALETTE.border, 1);
     this.gfx.strokeRect(0, 0, this.world.width, this.world.height);
+    for (const planet of this.world.planets) drawPlanet(this.gfx, planet);
     drawShip(this.gfx, player, PALETTE.ok);
 
     this.debug.update(this.world, player);

@@ -39,6 +39,10 @@ export const PALETTE = {
   ok: 0x4ae88a,
 };
 
+/** Couleur du contour d'une planète selon son propriétaire : blanc = neutre, puis une couleur par faction (0 = joueur). */
+export const NEUTRAL_COLOR = 0xffffff;
+export const FACTION_COLORS = [0x4ae88a, 0xe84a5f, 0x4ab4ff];
+
 export const SCENES = {
   BOOT: 'BootScene',
   MENU: 'MenuScene',
