@@ -12,6 +12,7 @@ import { consumeSteps, createClock } from '../core/clock.js';
 import { createWorld, step } from '../core/world.js';
 import { arena } from '../data/maps/arena.js';
 import { drawShip } from '../entities/shipView.js';
+import { createDebugOverlay } from '../systems/debugOverlay.js';
 import { createKeyboardInput } from '../systems/keyboardInput.js';
 import { createStarfield } from '../systems/starfield.js';
 
@@ -37,6 +38,7 @@ export class GameScene extends Phaser.Scene {
     createStarfield(this, this.world.width, this.world.height);
     this.cameras.main.setBounds(0, 0, this.world.width, this.world.height);
     this.gfx = this.add.graphics();
+    this.debug = createDebugOverlay(this);
   }
 
   update(_time, delta) {
@@ -51,6 +53,8 @@ export class GameScene extends Phaser.Scene {
     this.gfx.lineStyle(1, PALETTE.border, 1);
     this.gfx.strokeRect(0, 0, this.world.width, this.world.height);
     drawShip(this.gfx, player, PALETTE.ok);
+
+    this.debug.update(this.world, player);
 
     // Les événements (sons, effets) seront lus ici à partir de la phase 3, puis la file est vidée.
     clearEvents(this.world.events);

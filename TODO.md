@@ -29,7 +29,7 @@ Spécification : [docs/SPEC.md](docs/SPEC.md). Architecture : [docs/ARCHITECTURE
 - [x] **1.5** Rendu filaire du vaisseau (triangle) + entrées clavier (`←` `→` `↑`) → intentions (code)
 - [x] **1.6** Carte bornée : mur invisible avec rebond amorti ; tests des bornes (code, test-s)
 - [x] **1.7** Caméra qui suit le vaisseau + fond d'étoiles/grille discret (repère de vitesse) (code)
-- [ ] **1.8** Overlay de debug (touche F3) : FPS, vitesse, position (code)
+- [x] **1.8** Overlay de debug (touche F3) : FPS, vitesse, position (code)
 
 ## Phase 2 — Planètes, gravité, atterrissage
 
