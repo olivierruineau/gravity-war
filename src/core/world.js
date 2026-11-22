@@ -1,5 +1,7 @@
 // Orchestrateur de la simulation : seul module qui connaît tous les autres (ADR 0002).
 // `world` est un objet de données pur (JSON-sérialisable), sans fonctions ni références croisées.
+import { BOUNDS_RESTITUTION, SHIP_SIZE } from '../config.js';
+import { applyBounds } from './bounds.js';
 import { createEvents } from './events.js';
 import { createRng } from './rng.js';
 import { applyIntent, createShip, integrate } from './ship.js';
@@ -25,11 +27,12 @@ export function createWorld(map, seed, { eventCapacity }) {
 
 /** Avance la simulation d'un pas. Ordre des étapes détaillé dans l'ADR 0002 §5. */
 export function step(world, dt) {
-  // (2) intentions → rotation/poussée, (3) intégration. Gravité, bornes, collisions : phases suivantes.
+  // (2) intentions → rotation/poussée, (3) intégration, (4) bornes de carte. Gravité, collisions : phases suivantes.
   for (const ship of world.ships) {
     if (!ship.alive) continue;
     applyIntent(ship, dt);
     integrate(ship, dt);
+    applyBounds(ship, world.width, world.height, SHIP_SIZE, BOUNDS_RESTITUTION);
   }
   world.tick++;
 }

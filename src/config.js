@@ -20,6 +20,9 @@ export const SHIP_THRUST = 140; // px/s², dans l'axe du nez
 export const SHIP_MAX_HP = 100;
 export const SHIP_SIZE = 8; // rayon du triangle dessiné, en px
 
+/** Mur de carte : rebond amorti, sans dégâts (SPEC §5.6). 0 = collé au mur, 1 = rebond parfait. */
+export const BOUNDS_RESTITUTION = 0.5;
+
 /** Palette restreinte façon années 90 (à ajuster avec la direction artistique). */
 export const PALETTE = {
   bg: 0x0b0b14,
