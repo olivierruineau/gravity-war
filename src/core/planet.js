@@ -18,3 +18,18 @@ export function createPlanet({ x, y, radius, gravity = PLANET_GRAVITY }) {
     range: k * radius,
   };
 }
+
+/** Index de la planète dont la SURFACE est la plus proche de `pos` (−1 s'il n'y en a aucune). */
+export function nearestPlanet(planets, pos) {
+  let best = -1;
+  let bestGap = Infinity;
+  for (let i = 0; i < planets.length; i++) {
+    const p = planets[i];
+    const gap = Math.hypot(pos.x - p.pos.x, pos.y - p.pos.y) - p.radius;
+    if (gap < bestGap) {
+      bestGap = gap;
+      best = i;
+    }
+  }
+  return best;
+}
