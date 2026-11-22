@@ -1,7 +1,7 @@
 // Orchestrateur de la simulation : seul module qui connaît tous les autres (ADR 0002).
 // `world` est un objet de données pur (JSON-sérialisable), sans fonctions ni références croisées.
 import { BOUNDS_RESTITUTION, PROJECTILE_CAPACITY, SHIP_SIZE } from '../config.js';
-import { collideProjectilesPlanets } from './collision.js';
+import { collideProjectilesPlanets, collideProjectilesShips } from './collision.js';
 import { applyBounds } from './bounds.js';
 import { createEvents } from './events.js';
 import { applyGravity } from './gravity.js';
@@ -11,25 +11,34 @@ import { createPlanet } from './planet.js';
 import { createProjectiles, updateProjectiles } from './projectile.js';
 import { createRng } from './rng.js';
 import { updateWeapons } from './weapons.js';
-import { applyIntent, createShip, integrate } from './ship.js';
+import { applyIntent, createShip, integrate, respawnShip } from './ship.js';
 
 /**
- * @param {{ width: number, height: number, planets?: { x: number, y: number, radius: number, gravity?: number, owner?: number }[], spawns?: { x: number, y: number, angle?: number }[] }} map
+ * @param {{ width: number, height: number, planets?: { x: number, y: number, radius: number, gravity?: number, owner?: number }[], spawns?: { x?: number, y?: number, angle?: number, planet?: number }[] }} map
  *   carte injectée (permet des mini-cartes en test) ; `spawns[i]` = point de départ du vaisseau de la faction i
  * @param {number} seed                            graine de l'aléa de simulation
  * @param {{ eventCapacity: number }} options
  */
 export function createWorld(map, seed, { eventCapacity }) {
-  return {
+  const planets = (map.planets ?? []).map(createPlanet);
+  const world = {
     tick: 0,
     width: map.width,
     height: map.height,
     rng: createRng(seed),
-    ships: (map.spawns ?? []).map((s, i) => createShip(i, s.x, s.y, s.angle)),
-    planets: (map.planets ?? []).map(createPlanet),
+    ships: [],
+    planets,
     projectiles: createProjectiles(PROJECTILE_CAPACITY),
     events: createEvents(eventCapacity),
   };
+  // spawns[i] = point de départ de la faction i : soit une position libre { x, y, angle? }, soit
+  // { planet: index } pour démarrer posé sur sa planète de base (comme après un respawn).
+  (map.spawns ?? []).forEach((spawn, i) => {
+    const ship = createShip(i, spawn.x ?? 0, spawn.y ?? 0, spawn.angle);
+    if (spawn.planet !== undefined) respawnShip(ship, spawn.planet, planets[spawn.planet]);
+    world.ships.push(ship);
+  });
+  return world;
 }
 
 /** Avance la simulation d'un pas. Ordre des étapes : ADR 0002 §5, précisé par l'ADR 0003 §4. */
@@ -52,5 +61,6 @@ export function step(world, dt) {
   }
   updateProjectiles(world, dt);
   collideProjectilesPlanets(world);
+  collideProjectilesShips(world);
   world.tick++;
 }

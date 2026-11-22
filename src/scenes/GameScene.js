@@ -63,7 +63,9 @@ export class GameScene extends Phaser.Scene {
     const { planets } = this.world;
     for (let i = 0; i < planets.length; i++) drawPlanet(this.gfx, planets[i]);
     drawProjectiles(this.gfx, this.world.projectiles);
-    drawShip(this.gfx, player, PALETTE.factions[0]);
+    const { ships } = this.world;
+    for (let i = 0; i < ships.length; i++)
+      drawShip(this.gfx, ships[i], PALETTE.factions[ships[i].faction]);
 
     this.gravityArrow.update(this.world, player);
     this.landingAid.update(this.world, player);

@@ -93,6 +93,17 @@ describe('carte arena : planètes disjointes', () => {
 
 describe('carte arena : spawns', () => {
   arena.spawns.forEach((s, i) => {
+    if (s.planet !== undefined) {
+      it(`spawn ${i} (planète ${s.planet}) référence une planète existante`, () => {
+        expect(Number.isInteger(s.planet) && defs[s.planet] !== undefined).toBe(true);
+      });
+
+      it(`spawn ${i} (planète ${s.planet}) : la planète appartient à la faction ${i}`, () => {
+        expect(planets[s.planet].owner).toBe(i);
+      });
+      return;
+    }
+
     it(`spawn ${i} (${s.x}, ${s.y}) est dans la carte`, () => {
       expect(s.x >= 0 && s.x <= arena.width && s.y >= 0 && s.y <= arena.height).toBe(true);
     });

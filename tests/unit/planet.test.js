@@ -235,7 +235,8 @@ describe('nearestPlanet : filtre par propriétaire', () => {
 describe('nearestPlanet : carte arena', () => {
   const world = createWorld(arena, 1, { eventCapacity: 8 });
 
-  it('au spawn joueur, la planète la plus proche est la base du joueur (planète 0)', () => {
-    expect(nearestPlanet(world.planets, arena.spawns[0])).toBe(0);
+  it('au vaisseau 0 posé sur sa base, la planète la plus proche est la planète 0', () => {
+    const { pos } = world.ships[0];
+    expect(nearestPlanet(world.planets, pos)).toBe(0);
   });
 });
