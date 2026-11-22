@@ -14,6 +14,7 @@ import { arena } from '../data/maps/arena.js';
 import { drawPlanet } from '../entities/planetView.js';
 import { drawShip } from '../entities/shipView.js';
 import { createDebugOverlay } from '../systems/debugOverlay.js';
+import { createHealthBar } from '../systems/healthBar.js';
 import { createKeyboardInput } from '../systems/keyboardInput.js';
 import { createStarfield } from '../systems/starfield.js';
 
@@ -40,6 +41,7 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, this.world.width, this.world.height);
     this.gfx = this.add.graphics();
     this.debug = createDebugOverlay(this);
+    this.healthBar = createHealthBar(this);
   }
 
   update(_time, delta) {
@@ -56,6 +58,7 @@ export class GameScene extends Phaser.Scene {
     for (const planet of this.world.planets) drawPlanet(this.gfx, planet);
     drawShip(this.gfx, player, PALETTE.ok);
 
+    this.healthBar.update(player);
     this.debug.update(this.world, player);
 
     // Les événements (sons, effets) seront lus ici à partir de la phase 3, puis la file est vidée.

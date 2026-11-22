@@ -46,7 +46,7 @@ const scratch = { approachSpeed: 0, tangentialSpeed: 0, angleError: 0, ok: false
 
 /**
  * Détecte le contact du vaisseau `shipIndex` avec les planètes et applique l'atterrissage ou l'impact.
- * Les dégâts sont portés par l'événement IMPACT (leur application aux PV vient à l'item 2.4).
+ * Un impact retire des PV (mort à 0 : alive = false + EXPLOSION) et est annoncé par IMPACT (b = dégâts).
  */
 export function collideShipPlanets(world, shipIndex) {
   const ship = world.ships[shipIndex];
@@ -76,14 +76,16 @@ export function collideShipPlanets(world, shipIndex) {
       ship.vel.y = 0; // l'angle du nez est conservé
       pushEvent(world.events, EVT.LANDED, surfaceX, surfaceY, shipIndex, i);
     } else {
-      pushEvent(
-        world.events,
-        EVT.IMPACT,
-        surfaceX,
-        surfaceY,
-        shipIndex,
-        impactDamage(scratch.approachSpeed, scratch.tangentialSpeed),
-      );
+      const damage = impactDamage(scratch.approachSpeed, scratch.tangentialSpeed);
+      pushEvent(world.events, EVT.IMPACT, surfaceX, surfaceY, shipIndex, damage);
+      ship.hp -= damage;
+      if (ship.hp <= 0) {
+        ship.hp = 0;
+        ship.alive = false;
+        ship.landedOn = -1;
+        pushEvent(world.events, EVT.EXPLOSION, surfaceX, surfaceY, shipIndex);
+        return;
+      }
       // Rebond garanti (jamais d'arrêt) : sortie radiale minimale + frottement tangentiel.
       const bounce = Math.max(IMPACT_RESTITUTION * scratch.approachSpeed, IMPACT_MIN_BOUNCE_SPEED);
       const tangential = scratch.tangentialSpeed * IMPACT_TANGENTIAL_DAMPING;

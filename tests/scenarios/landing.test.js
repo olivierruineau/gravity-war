@@ -14,7 +14,8 @@ import { createWorld, step } from '../../src/core/world.js';
 // r = 60, g0 = 70, au centre d'une carte 4000×4000 (murs hors de toute trajectoire).
 // Le vaisseau est posé à la main (pos/vel/angle) juste au-dessus du seuil de contact r + 6 ; un pas
 // ajoute g·dt ≈ 0,9–1,2 px/s à la vitesse d'approche, d'où les marges choisies sur les vitesses.
-// Les dégâts sont lus dans la charge utile `b` de IMPACT (leur application aux PV est l'item 2.4).
+// Les dégâts sont lus dans la charge utile `b` de IMPACT ; leur effet sur les PV et la mort sont
+// couverts dans damage.test.js.
 const SIZE = 4000;
 const CX = 2000;
 const CY = 2000;
@@ -312,7 +313,7 @@ describe('vaisseau posé', () => {
 });
 
 describe('collision : le vaisseau ne traverse jamais la planète', () => {
-  it('pleine poussée vers la planète depuis le repos à 3·r : d ≥ r + rayon de collision à chaque pas', () => {
+  it('pleine poussée vers la planète depuis le repos à 3·r : d ≥ r + rayon de collision à chaque pas, puis mort figée', () => {
     const world = makeWorld();
     const ship = launch(world, { altitude: 0 });
     // Départ au repos à 3·r du centre, nez dirigé vers le centre (angle = normale + π).
@@ -323,8 +324,11 @@ describe('collision : le vaisseau ne traverse jamais la planète', () => {
     ship.angle = Math.PI;
     ship.intent.thrust = true;
     let impacts = 0;
+    let explosions = 0;
     let dMin = Infinity;
-    for (let i = 0; i < 1200; i++) {
+    // Poussée + gravité : le vaisseau arrive à plus de 100 px/s (excès > 100 PV) et meurt à l'impact
+    // (observé : dès le premier). Le nez est à 180° de la normale : un atterrissage est impossible.
+    for (let i = 0; i < 1200 && ship.alive; i++) {
       clearEvents(world.events);
       step(world, FIXED_DT);
       const d = distance(ship);
@@ -333,12 +337,29 @@ describe('collision : le vaisseau ne traverse jamais la planète', () => {
       expect(d).toBeGreaterThanOrEqual(CONTACT - 1e-9);
       expect(Number.isFinite(d)).toBe(true);
       impacts += eventsOf(world, EVT.IMPACT).length;
+      explosions += eventsOf(world, EVT.EXPLOSION).length;
     }
-    // Le scénario a vraiment frappé la planète (le test n'est pas trivial), plusieurs fois (le nez est
-    // à 180° de la normale : jamais d'atterrissage possible).
-    expect(impacts).toBeGreaterThan(3);
+    // Le scénario a vraiment frappé la planète (le test n'est pas trivial) et le vaisseau y est mort.
+    expect(impacts).toBeGreaterThanOrEqual(1);
     expect(dMin).toBeLessThan(CONTACT + 1);
+    expect(ship.alive).toBe(false);
+    expect(ship.hp).toBe(0);
     expect(ship.landedOn).toBe(-1);
+    expect(explosions).toBe(1);
+
+    // Après la mort, `step` ignore le vaisseau : pos/vel/angle figés à l'identique (valeurs jamais
+    // recalculées → égalité exacte), même si l'intention de poussée reste active, et aucun événement.
+    ship.intent.rotate = 1;
+    const frozen = JSON.stringify({ pos: ship.pos, vel: ship.vel, angle: ship.angle });
+    for (let i = 0; i < 300; i++) {
+      clearEvents(world.events);
+      step(world, FIXED_DT);
+      expect(world.events.count).toBe(0);
+    }
+    expect(JSON.stringify({ pos: ship.pos, vel: ship.vel, angle: ship.angle })).toBe(frozen);
+    expect(ship.alive).toBe(false);
+    expect(ship.hp).toBe(0);
+    expect(distance(ship)).toBeGreaterThanOrEqual(CONTACT - 1e-9);
   });
 });
 

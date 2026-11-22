@@ -14,7 +14,7 @@ import { EVT } from '../../src/core/events.js';
 import { collideShipPlanets, evaluateLanding, impactDamage } from '../../src/core/landing.js';
 import { createPlanet } from '../../src/core/planet.js';
 import { createShip } from '../../src/core/ship.js';
-import { createWorld } from '../../src/core/world.js';
+import { createWorld, step } from '../../src/core/world.js';
 
 const DEG = Math.PI / 180;
 const PRECISION = 9;
@@ -274,9 +274,26 @@ function oneBodyWorld() {
 }
 
 /**
- * Place le vaisseau `shipIndex` à `dist` du centre de la planète `planetIndex`, dans la direction
+ * Replace un vaisseau existant à `dist` du centre de la planète `planetIndex`, dans la direction
  * `theta` (normale sortante), avec une vitesse décomposée en approche (vers le centre) et tangentielle.
  */
+function setContact(
+  ship,
+  world,
+  { planetIndex = 0, dist = CONTACT - 1, theta = 0, approach = 0, tangential = 0 } = {},
+) {
+  const c = world.planets[planetIndex].pos;
+  const nx = Math.cos(theta);
+  const ny = Math.sin(theta);
+  ship.pos.x = c.x + nx * dist;
+  ship.pos.y = c.y + ny * dist;
+  // v = −approach·n + tangential·t, avec t = (−ny, nx).
+  ship.vel.x = -approach * nx - tangential * ny;
+  ship.vel.y = -approach * ny + tangential * nx;
+  return ship;
+}
+
+/** Crée un vaisseau (PV `hp`, par défaut pleins) placé en contact via `setContact`, rangé dans `shipIndex`. */
 function placeShip(
   world,
   {
@@ -287,17 +304,13 @@ function placeShip(
     approach = 0,
     tangential = 0,
     noseOffset = 0,
+    hp = SHIP_MAX_HP,
   } = {},
 ) {
-  const c = world.planets[planetIndex].pos;
-  const nx = Math.cos(theta);
-  const ny = Math.sin(theta);
-  const ship = createShip(0, c.x + nx * dist, c.y + ny * dist, theta + noseOffset);
-  // v = −approach·n + tangential·t, avec t = (−ny, nx).
-  ship.vel.x = -approach * nx - tangential * ny;
-  ship.vel.y = -approach * ny + tangential * nx;
+  const ship = createShip(0, 0, 0, theta + noseOffset);
+  ship.hp = hp;
   world.ships[shipIndex] = ship;
-  return ship;
+  return setContact(ship, world, { planetIndex, dist, theta, approach, tangential });
 }
 
 /** Composantes de la vitesse dans le repère (n = normale sortante à `theta`, t = (−ny, nx)). */
@@ -447,9 +460,13 @@ describe('collideShipPlanets : impact', () => {
     expect(world.events.items[0].b).toBeCloseTo(IMPACT_DAMAGE_PER_SPEED * 5, PRECISION);
   });
 
-  it('PV non modifiés par collideShipPlanets', () => {
+  it('PV inchangés pour un impact à 0 dégât (angle seul)', () => {
     const world = oneBodyWorld();
-    const ship = placeShip(world, { dist: CONTACT - 1, approach: 200 });
+    const ship = placeShip(world, {
+      dist: CONTACT - 1,
+      approach: 10,
+      noseOffset: LANDING_MAX_ANGLE + 5 * DEG,
+    });
     collideShipPlanets(world, 0);
     expect(ship.hp).toBe(SHIP_MAX_HP);
   });
@@ -472,14 +489,20 @@ describe('collideShipPlanets : impact', () => {
   it('rebond proportionnel : vitesse radiale sortante = IMPACT_RESTITUTION × vIn quand il dépasse le plancher', () => {
     // 0,3 × 200 = 60 > 30 : c’est le facteur qui s’applique.
     const world = oneBodyWorld();
-    const ship = placeShip(world, { dist: CONTACT - 1, theta: 0.4, approach: 200 });
+    const ship = placeShip(world, { dist: CONTACT - 1, theta: 0.4, approach: 200, hp: 1e6 });
     collideShipPlanets(world, 0);
     expect(radialOut(ship, 0.4)).toBeCloseTo(IMPACT_RESTITUTION * 200, PRECISION);
   });
 
   it('vitesse tangentielle amortie par IMPACT_TANGENTIAL_DAMPING, signe conservé (positif)', () => {
     const world = oneBodyWorld();
-    const ship = placeShip(world, { dist: CONTACT - 1, theta: 0.4, approach: 200, tangential: 50 });
+    const ship = placeShip(world, {
+      dist: CONTACT - 1,
+      theta: 0.4,
+      approach: 200,
+      tangential: 50,
+      hp: 1e6,
+    });
     collideShipPlanets(world, 0);
     expect(tangentOf(ship, 0.4)).toBeCloseTo(50 * IMPACT_TANGENTIAL_DAMPING, PRECISION);
   });
@@ -491,6 +514,7 @@ describe('collideShipPlanets : impact', () => {
       theta: 0.4,
       approach: 200,
       tangential: -50,
+      hp: 1e6,
     });
     collideShipPlanets(world, 0);
     expect(tangentOf(ship, 0.4)).toBeCloseTo(-50 * IMPACT_TANGENTIAL_DAMPING, PRECISION);
@@ -554,5 +578,181 @@ describe('collideShipPlanets : vaisseau déjà en train de s’éloigner', () =>
     const ship = placeShip(world, { dist: CONTACT - 3, approach: -20 });
     collideShipPlanets(world, 0);
     expect(ship.landedOn).toBe(-1);
+  });
+
+  it('vaisseau qui s’éloigne : PV inchangés', () => {
+    const world = oneBodyWorld();
+    const ship = placeShip(world, { dist: CONTACT - 3, approach: -20, tangential: 5 });
+    collideShipPlanets(world, 0);
+    expect(ship.hp).toBe(SHIP_MAX_HP);
+  });
+});
+
+// Vitesses choisies sur l’axe x (theta = 0) : les mesures sont exactes en virgule flottante,
+// les égalités de PV ci-dessous peuvent donc être strictes.
+describe('collideShipPlanets : impact non mortel', () => {
+  const RADIAL_EXCESS = 5;
+  const NON_LETHAL_APPROACH = LANDING_MAX_RADIAL_SPEED + RADIAL_EXCESS; // dégâts = 5
+
+  function nonLethalImpact() {
+    const world = oneBodyWorld();
+    const ship = placeShip(world, { dist: CONTACT - 1, approach: NON_LETHAL_APPROACH });
+    collideShipPlanets(world, 0);
+    return { world, ship };
+  }
+
+  it('PV = SHIP_MAX_HP − dégâts', () => {
+    expect(nonLethalImpact().ship.hp).toBe(SHIP_MAX_HP - IMPACT_DAMAGE_PER_SPEED * RADIAL_EXCESS);
+  });
+
+  it('alive reste true', () => {
+    expect(nonLethalImpact().ship.alive).toBe(true);
+  });
+
+  it('aucun événement EXPLOSION', () => {
+    const { world } = nonLethalImpact();
+    const types = world.events.items.slice(0, world.events.count).map((e) => e.type);
+    expect(types).not.toContain(EVT.EXPLOSION);
+  });
+
+  it('IMPACT.b = dégâts appliqués', () => {
+    const { world } = nonLethalImpact();
+    expect(world.events.items[0].b).toBeCloseTo(IMPACT_DAMAGE_PER_SPEED * RADIAL_EXCESS, PRECISION);
+  });
+
+  it('un seul impact : pas de LANDED', () => {
+    const { world } = nonLethalImpact();
+    const types = world.events.items.slice(0, world.events.count).map((e) => e.type);
+    expect(types).not.toContain(EVT.LANDED);
+  });
+
+  it('dégâts cumulés sur deux impacts successifs', () => {
+    const world = oneBodyWorld();
+    const ship = placeShip(world, { dist: CONTACT - 1, approach: NON_LETHAL_APPROACH });
+    collideShipPlanets(world, 0); // dégâts 5
+    setContact(ship, world, { dist: CONTACT - 1, approach: LANDING_MAX_RADIAL_SPEED + 25 }); // dégâts 25
+    collideShipPlanets(world, 0);
+    expect(ship.hp).toBe(SHIP_MAX_HP - 5 - 25);
+  });
+});
+
+describe('collideShipPlanets : impact mortel', () => {
+  const LETHAL_APPROACH = 200; // dégâts = 155 > SHIP_MAX_HP
+
+  function lethalImpact({ shipIndex = 0, tangential = 0 } = {}) {
+    const world = oneBodyWorld();
+    const ship = placeShip(world, { shipIndex, approach: LETHAL_APPROACH, tangential });
+    collideShipPlanets(world, shipIndex);
+    return { world, ship };
+  }
+
+  it('PV = 0, jamais négatif', () => {
+    expect(lethalImpact().ship.hp).toBe(0);
+  });
+
+  it('alive = false', () => {
+    expect(lethalImpact().ship.alive).toBe(false);
+  });
+
+  it('landedOn = -1', () => {
+    expect(lethalImpact().ship.landedOn).toBe(-1);
+  });
+
+  it('file : exactement IMPACT puis EXPLOSION, dans cet ordre', () => {
+    const { world } = lethalImpact();
+    const types = world.events.items.slice(0, world.events.count).map((e) => e.type);
+    expect(types).toEqual([EVT.IMPACT, EVT.EXPLOSION]);
+  });
+
+  it('EXPLOSION positionnée au point de surface', () => {
+    const { world } = lethalImpact();
+    expect(world.events.items[1]).toMatchObject({ x: PX + PLANET_RADIUS, y: PY });
+  });
+
+  it('EXPLOSION.a = index du vaisseau (deuxième vaisseau)', () => {
+    const world = oneBodyWorld();
+    world.ships[0] = createShip(0, 0, 0);
+    placeShip(world, { shipIndex: 1, approach: LETHAL_APPROACH });
+    collideShipPlanets(world, 1);
+    expect(world.events.items[1]).toMatchObject({ type: EVT.EXPLOSION, a: 1 });
+  });
+
+  it('vitesse non modifiée par un rebond', () => {
+    const world = oneBodyWorld();
+    const ship = placeShip(world, { approach: LETHAL_APPROACH, tangential: 20 });
+    const vel = { ...ship.vel };
+    collideShipPlanets(world, 0);
+    expect(ship.vel).toEqual(vel);
+  });
+
+  it('hp exactement égal aux dégâts → mort', () => {
+    const world = oneBodyWorld();
+    const ship = placeShip(world, {
+      approach: LANDING_MAX_RADIAL_SPEED + 10,
+      hp: IMPACT_DAMAGE_PER_SPEED * 10,
+    });
+    collideShipPlanets(world, 0);
+    expect(ship.alive).toBe(false);
+  });
+
+  it('hp = dégâts + 1 → survit avec 1 PV', () => {
+    const world = oneBodyWorld();
+    const ship = placeShip(world, {
+      approach: LANDING_MAX_RADIAL_SPEED + 10,
+      hp: IMPACT_DAMAGE_PER_SPEED * 10 + 1,
+    });
+    collideShipPlanets(world, 0);
+    expect(ship.hp).toBe(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Vaisseau mort traité par step : aucun effet (ni déplacement, ni accélération, ni événement).
+// ---------------------------------------------------------------------------
+
+const DT = 1 / 60;
+
+/** Vaisseau en contact (vitesse d’impact 50, tangentielle 10) avec poussée et rotation demandées. */
+function shipInContact(alive) {
+  const world = oneBodyWorld();
+  const ship = placeShip(world, { dist: CONTACT - 1, approach: 50, tangential: 10 });
+  ship.alive = alive;
+  ship.intent.thrust = true;
+  ship.intent.rotate = 1;
+  return { world, ship };
+}
+
+describe('step : vaisseau mort ignoré', () => {
+  it('position inchangée', () => {
+    const { world, ship } = shipInContact(false);
+    const before = structuredClone(ship);
+    step(world, DT);
+    expect(ship.pos).toEqual(before.pos);
+  });
+
+  it('vitesse inchangée (ni gravité, ni poussée)', () => {
+    const { world, ship } = shipInContact(false);
+    const before = structuredClone(ship);
+    step(world, DT);
+    expect(ship.vel).toEqual(before.vel);
+  });
+
+  it('angle inchangé (pas de rotation)', () => {
+    const { world, ship } = shipInContact(false);
+    const before = structuredClone(ship);
+    step(world, DT);
+    expect(ship.angle).toBe(before.angle);
+  });
+
+  it('aucun événement, même en contact avec la planète', () => {
+    const { world } = shipInContact(false);
+    step(world, DT);
+    expect(world.events.count).toBe(0);
+  });
+
+  it('témoin : le même vaisseau vivant change d’état et génère un événement', () => {
+    const { world } = shipInContact(true);
+    step(world, DT);
+    expect(world.events.count).toBeGreaterThan(0);
   });
 });
