@@ -42,12 +42,13 @@ Spécification : [docs/SPEC.md](docs/SPEC.md). Architecture : [docs/ARCHITECTURE
 - [x] **2.4** Vie du vaisseau + dégâts d'impact proportionnels + barre de vie minimale à l'écran (code, test-s)
 - [x] **2.5** État « posé » : le vaisseau reste sur la surface, décollage possible (code, test-c)
 - [x] **2.6** Aide à l'atterrissage : indicateur vitesse radiale/angle vert/rouge près des planètes (code)
-- [ ] **2.7** Revue de la physique et du code de la phase (rev)
+- [x] **2.7** Revue de la physique et du code de la phase (rev)
 
 ## Phase 3 — Tir et mort
 
 **Fin de phase :** on tire, on peut détruire une cible d'entraînement, on meurt et on respawn.
 
+- [ ] **3.0** Refactor préparatoire (issu de la revue 2.7) : `damageShip(world, i, amount, x, y)` (bouclier → PV → mort : `alive`, `landedOn = -1`, `EXPLOSION` en un seul endroit, appelé par `landing.js`) ; `respawnShip(ship, planet…)` (remet vel/PV/intent, pose le vaisseau sur la planète de respawn sans `LANDED`) ; `step` doit pouvoir décompter un `respawnTimer` pour un vaisseau mort ; filtre `owner` optionnel pour `nearestPlanet` ; tests (arch si l'API est discutée, code, test-c)
 - [ ] **3.1** Projectiles : pool, tir principal (`Espace`), cadence, durée de vie, collision avec planètes ; tests (code, test-c)
 - [ ] **3.2** Dégâts projectiles → vaisseau ; cible d'entraînement statique/dérivante pour tester (code, test-s)
 - [ ] **3.3** Mort + respawn à la planète de départ après délai (~3 s) (code, test-c)

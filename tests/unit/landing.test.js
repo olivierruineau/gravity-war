@@ -203,14 +203,85 @@ describe('evaluateLanding : drapeau ok et bornes exactes', () => {
   });
 });
 
-describe('evaluateLanding : cas dégénérés', () => {
-  it('vaisseau exactement au centre de la planète : mesures finies, pas de NaN', () => {
-    const ship = shipAt(50, 50, { vx: 10, vy: -10, angle: 1 });
-    const planet = createPlanet({ x: 50, y: 50, radius: PLANET_RADIUS });
-    const m = evaluateLanding(ship, planet, scratch());
-    expect(Number.isFinite(m.approachSpeed)).toBe(true);
-    expect(Number.isFinite(m.tangentialSpeed)).toBe(true);
-    expect(Number.isFinite(m.angleError)).toBe(true);
+// Centre exact (d = 0) : la normale est (0, −1), la même que dans collideShipPlanets. Sans cette
+// convention, les mesures seraient dégénérées (approche 0, erreur d'angle = |angle|, ok trivial).
+describe('evaluateLanding : centre exact (d = 0), normale (0, −1)', () => {
+  const CENTRE = 50;
+  const planetAtCentre = () => createPlanet({ x: CENTRE, y: CENTRE, radius: PLANET_RADIUS });
+
+  it('approche = −vel·(0, −1), soit vy', () => {
+    const ship = shipAt(CENTRE, CENTRE, { vx: 10, vy: 30 });
+    expect(evaluateLanding(ship, planetAtCentre(), scratch()).approachSpeed).toBeCloseTo(
+      30,
+      PRECISION,
+    );
+  });
+
+  it('tangentielle = vx (t = (−ny, nx) = (1, 0))', () => {
+    const ship = shipAt(CENTRE, CENTRE, { vx: 10, vy: 30 });
+    expect(evaluateLanding(ship, planetAtCentre(), scratch()).tangentialSpeed).toBeCloseTo(
+      10,
+      PRECISION,
+    );
+  });
+
+  it('nez à 0 : erreur d’angle = π/2 (normale à −π/2)', () => {
+    const ship = shipAt(CENTRE, CENTRE, { angle: 0 });
+    expect(evaluateLanding(ship, planetAtCentre(), scratch()).angleError).toBeCloseTo(
+      Math.PI / 2,
+      PRECISION,
+    );
+  });
+
+  it('mesures identiques à celles de la normale (0, −1) à d = 1', () => {
+    const vel = { vx: 10, vy: 30, angle: -Math.PI / 2 };
+    const centre = evaluateLanding(shipAt(CENTRE, CENTRE, vel), planetAtCentre(), scratch());
+    const normal = evaluateLanding(shipAt(CENTRE, CENTRE - 1, vel), planetAtCentre(), scratch());
+    expect(centre).toEqual(normal);
+  });
+
+  it('nez à 0 au centre : refusé (pas de ok trivial)', () => {
+    const ship = shipAt(CENTRE, CENTRE, { angle: 0 });
+    expect(evaluateLanding(ship, planetAtCentre(), scratch()).ok).toBe(false);
+  });
+
+  it('nez à −π/2, vitesse nulle au centre : ok', () => {
+    const ship = shipAt(CENTRE, CENTRE, { angle: -Math.PI / 2 });
+    expect(evaluateLanding(ship, planetAtCentre(), scratch()).ok).toBe(true);
+  });
+
+  it('nez à −π/2, approche hors seuil au centre : refusé', () => {
+    const ship = shipAt(CENTRE, CENTRE, { vy: LANDING_MAX_RADIAL_SPEED + 5, angle: -Math.PI / 2 });
+    expect(evaluateLanding(ship, planetAtCentre(), scratch()).ok).toBe(false);
+  });
+});
+
+describe('collideShipPlanets et evaluateLanding : même mesure au centre exact', () => {
+  it('impact au centre : IMPACT.b = impactDamage(approche mesurée par evaluateLanding)', () => {
+    const world = oneBodyWorld();
+    world.ships[0] = shipAt(PX, PY, { vy: LANDING_MAX_RADIAL_SPEED + 5 });
+    const measured = evaluateLanding(
+      shipAt(PX, PY, { vy: LANDING_MAX_RADIAL_SPEED + 5 }),
+      world.planets[0],
+      scratch(),
+    );
+    collideShipPlanets(world, 0);
+    expect(world.events.items[0].b).toBeCloseTo(
+      impactDamage(measured.approachSpeed, measured.tangentialSpeed),
+      PRECISION,
+    );
+  });
+
+  it('atterrissage au centre : ok de evaluateLanding et LANDED de collideShipPlanets concordent', () => {
+    const world = oneBodyWorld();
+    world.ships[0] = shipAt(PX, PY, { vy: 20, angle: -Math.PI / 2 });
+    const measured = evaluateLanding(
+      shipAt(PX, PY, { vy: 20, angle: -Math.PI / 2 }),
+      world.planets[0],
+      scratch(),
+    );
+    collideShipPlanets(world, 0);
+    expect([measured.ok, world.events.items[0].type]).toEqual([true, EVT.LANDED]);
   });
 });
 
@@ -383,7 +454,7 @@ describe('collideShipPlanets : atterrissage réussi', () => {
     expect(distanceTo(ship, world.planets[0])).toBeCloseTo(CONTACT, 9);
   });
 
-  it('PV inchangés (les dégâts ne sont pas appliqués ici)', () => {
+  it('PV inchangés : un atterrissage réussi n’inflige aucun dégât', () => {
     expect(landingScene().ship.hp).toBe(SHIP_MAX_HP);
   });
 

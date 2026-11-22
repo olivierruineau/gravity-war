@@ -1,14 +1,16 @@
 // Barre de vie minimale, fixée à l'écran (bas gauche). Sera intégrée au HUD complet à l'item 6.1.
 import { GAME_HEIGHT, PALETTE, SHIP_MAX_HP } from '../config.js';
 
-const X = 6;
+const MARGIN = 6; // distance au bord de l'écran
+const X = MARGIN;
 const WIDTH = 60;
 const HEIGHT = 5;
+const DEPTH = 900;
 const LOW_RATIO = 0.3; // sous ce seuil, la barre passe au rouge
 
 export function createHealthBar(scene) {
-  const g = scene.add.graphics().setScrollFactor(0).setDepth(900);
-  const y = GAME_HEIGHT - HEIGHT - 6;
+  const g = scene.add.graphics().setScrollFactor(0).setDepth(DEPTH);
+  const y = GAME_HEIGHT - HEIGHT - MARGIN;
   return {
     update(ship) {
       const ratio = Math.max(0, Math.min(1, ship.hp / SHIP_MAX_HP));

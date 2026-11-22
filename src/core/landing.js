@@ -12,6 +12,7 @@ import {
   TAKEOFF_MIN_NORMAL_SPEED,
 } from '../config.js';
 import { EVT, pushEvent } from './events.js';
+import { gravityAt } from './gravity.js';
 import { wrapAngle } from './math.js';
 
 /**
@@ -21,9 +22,9 @@ import { wrapAngle } from './math.js';
 export function evaluateLanding(ship, planet, out) {
   const dx = ship.pos.x - planet.pos.x;
   const dy = ship.pos.y - planet.pos.y;
-  const d = Math.hypot(dx, dy) || 1; // centre exact : normale arbitraire plutôt que NaN
-  const nx = dx / d;
-  const ny = dy / d;
+  const d = Math.hypot(dx, dy);
+  const nx = d === 0 ? 0 : dx / d; // centre exact : même normale arbitraire (0, −1) que dans collideShipPlanets
+  const ny = d === 0 ? -1 : dy / d;
   out.approachSpeed = -(ship.vel.x * nx + ship.vel.y * ny);
   out.tangentialSpeed = -ship.vel.x * ny + ship.vel.y * nx; // t = (−ny, nx)
   out.angleError = Math.abs(wrapAngle(ship.angle - Math.atan2(ny, nx)));
@@ -43,18 +44,26 @@ export function impactDamage(approachSpeed, tangentialSpeed) {
   );
 }
 
+const gravityScratch = { x: 0, y: 0 };
+
 /**
- * Vaisseau posé : après l'application de l'intention (rotation, poussée), il décolle si la poussée a
- * une composante sortante (`landedOn = -1`, la vitesse acquise est conservée) ; sinon il reste figé.
- * Retourne true s'il reste posé (il saute alors gravité, intégration, bornes et collision).
+ * Vaisseau posé : après l'application de l'intention (rotation, poussée), il décolle seulement si sa
+ * vitesse sortante NETTE (poussée moins gravité sur ce pas) est positive : sinon il retomberait dans le
+ * même pas et subirait un faux impact. Il conserve alors la vitesse acquise (`landedOn = -1`) ; sinon il
+ * reste figé. Retourne true s'il reste posé (il saute gravité, intégration, bornes et collision).
  */
-export function updateLanded(ship, planets) {
+export function updateLanded(ship, planets, dt) {
   const planet = planets[ship.landedOn];
   const dx = ship.pos.x - planet.pos.x;
   const dy = ship.pos.y - planet.pos.y;
-  const d = Math.hypot(dx, dy) || 1;
-  // Tolérance : une poussée exactement tangentielle laisse un résidu d'arrondi (~1e-15) qui ne doit pas faire décoller.
-  if ((ship.vel.x * dx + ship.vel.y * dy) / d > TAKEOFF_MIN_NORMAL_SPEED) {
+  const d = Math.hypot(dx, dy);
+  const nx = d === 0 ? 0 : dx / d;
+  const ny = d === 0 ? -1 : dy / d;
+  gravityAt(gravityScratch, ship.pos, planets);
+  const outward =
+    ship.vel.x * nx + ship.vel.y * ny + (gravityScratch.x * nx + gravityScratch.y * ny) * dt;
+  // Seuil > 0 strict + tolérance : un résidu d'arrondi sur une poussée tangentielle ne fait pas décoller.
+  if (outward > TAKEOFF_MIN_NORMAL_SPEED) {
     ship.landedOn = -1;
     return false;
   }

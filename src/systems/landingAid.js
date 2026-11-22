@@ -1,19 +1,49 @@
-// Aide à l'atterrissage : près d'une planète, indique si la vitesse d'approche et l'orientation du nez
-// permettent de se poser (vert) ou non (rouge). S'appuie sur `evaluateLanding`, la source unique des seuils.
-import { LANDING_AID_ALTITUDE, LANDING_MAX_RADIAL_SPEED, PALETTE } from '../config.js';
+// Aide à l'atterrissage : près d'une planète, montre pour CHAQUE critère de `evaluateLanding` (la source
+// unique des seuils) s'il est respecté — vitesse d'approche, vitesse le long de la surface, orientation du nez.
+import {
+  LANDING_AID_ALTITUDE,
+  LANDING_MAX_ANGLE,
+  LANDING_MAX_RADIAL_SPEED,
+  LANDING_MAX_TANGENTIAL_SPEED,
+  PALETTE,
+} from '../config.js';
 import { evaluateLanding } from '../core/landing.js';
 import { nearestPlanet } from '../core/planet.js';
 
+const DEPTH = 50;
+const ALPHA = 0.8;
 const GAUGE_WIDTH = 24;
 const GAUGE_HEIGHT = 3;
-const GAUGE_OFFSET = 16; // sous le vaisseau
+const GAUGE_OFFSET = 16; // première jauge sous le vaisseau
+const GAUGE_GAP = 6; // écart entre les deux jauges
+const GAUGE_RANGE = 2; // pleine échelle = 2 × seuil, le repère central marque le seuil
 const NOSE_LENGTH = 14;
 const NORMAL_LENGTH = 10;
+const TICK_OVERSHOOT = 2;
 
 const scratch = { approachSpeed: 0, tangentialSpeed: 0, angleError: 0, ok: false };
 
+const tone = (ok) => (ok ? PALETTE.aidGood : PALETTE.aidBad);
+
 export function createLandingAid(scene) {
-  const g = scene.add.graphics().setDepth(50);
+  const g = scene.add.graphics().setDepth(DEPTH);
+
+  /** Jauge de `ratio` ∈ [-1, 1] (signée si `signed`), repère central = seuil. */
+  function gauge(x, y, ratio, signed, ok) {
+    g.lineStyle(1, tone(ok), ALPHA);
+    g.strokeRect(x, y, GAUGE_WIDTH, GAUGE_HEIGHT);
+    g.fillStyle(tone(ok), ALPHA);
+    const half = GAUGE_WIDTH / 2;
+    if (signed) {
+      const w = Math.round(half * Math.min(1, Math.abs(ratio)));
+      g.fillRect(ratio >= 0 ? x + half : x + half - w, y, w, GAUGE_HEIGHT);
+    } else {
+      g.fillRect(x, y, Math.round(GAUGE_WIDTH * Math.max(0, Math.min(1, ratio))), GAUGE_HEIGHT);
+    }
+    g.lineStyle(1, PALETTE.text, ALPHA);
+    g.lineBetween(x + half, y - TICK_OVERSHOOT, x + half, y + GAUGE_HEIGHT + TICK_OVERSHOOT);
+  }
+
   return {
     /** Lecture seule de `world` ; dessine dans l'espace du monde, au-dessus du vaisseau. */
     update(world, ship) {
@@ -28,17 +58,18 @@ export function createLandingAid(scene) {
       if (d - planet.radius > LANDING_AID_ALTITUDE) return;
 
       evaluateLanding(ship, planet, scratch);
-      const color = scratch.ok ? PALETTE.ok : PALETTE.danger;
+      const radialOk = scratch.approachSpeed <= LANDING_MAX_RADIAL_SPEED;
+      const tangentialOk = Math.abs(scratch.tangentialSpeed) <= LANDING_MAX_TANGENTIAL_SPEED;
+      const angleOk = scratch.angleError <= LANDING_MAX_ANGLE;
       const nx = dx / d;
       const ny = dy / d;
 
-      // Repère de la normale sur la surface : l'axe sur lequel le nez doit s'aligner.
+      // Repère de la normale sur la surface (l'axe sur lequel le nez doit s'aligner) et trait du nez :
+      // colorés selon l'orientation seule.
       const sx = planet.pos.x + nx * planet.radius;
       const sy = planet.pos.y + ny * planet.radius;
-      g.lineStyle(1, color, 0.8);
+      g.lineStyle(1, tone(angleOk), ALPHA);
       g.lineBetween(sx, sy, sx + nx * NORMAL_LENGTH, sy + ny * NORMAL_LENGTH);
-
-      // Trait d'orientation du nez.
       g.lineBetween(
         ship.pos.x,
         ship.pos.y,
@@ -46,18 +77,23 @@ export function createLandingAid(scene) {
         ship.pos.y + Math.sin(ship.angle) * NOSE_LENGTH,
       );
 
-      // Jauge de vitesse d'approche : le repère central = seuil d'atterrissage.
-      const ratio = Math.max(
-        0,
-        Math.min(1, scratch.approachSpeed / (2 * LANDING_MAX_RADIAL_SPEED)),
-      );
+      // Jauge 1 : vitesse d'approche. Jauge 2 : vitesse le long de la surface (signée).
       const gx = ship.pos.x - GAUGE_WIDTH / 2;
       const gy = ship.pos.y + GAUGE_OFFSET;
-      g.strokeRect(gx, gy, GAUGE_WIDTH, GAUGE_HEIGHT);
-      g.fillStyle(color, 0.8);
-      g.fillRect(gx, gy, Math.round(GAUGE_WIDTH * ratio), GAUGE_HEIGHT);
-      g.lineStyle(1, PALETTE.text, 0.8);
-      g.lineBetween(gx + GAUGE_WIDTH / 2, gy - 2, gx + GAUGE_WIDTH / 2, gy + GAUGE_HEIGHT + 2);
+      gauge(
+        gx,
+        gy,
+        scratch.approachSpeed / (GAUGE_RANGE * LANDING_MAX_RADIAL_SPEED),
+        false,
+        radialOk,
+      );
+      gauge(
+        gx,
+        gy + GAUGE_HEIGHT + GAUGE_GAP,
+        scratch.tangentialSpeed / (GAUGE_RANGE * LANDING_MAX_TANGENTIAL_SPEED),
+        true,
+        tangentialOk,
+      );
     },
   };
 }

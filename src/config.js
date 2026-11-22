@@ -46,14 +46,16 @@ export const PALETTE = {
   text: 0xe8e8f0,
   accent: 0xffcc33,
   star: 0x7a80a8,
+  neutral: 0xffffff, // planète non capturée
+  // Couleur du contour d'une planète / d'un vaisseau par faction (0 = joueur, 1 et 2 = bots).
+  factions: [0x4ae88a, 0xe84a5f, 0x4ab4ff],
+  // L'aide à l'atterrissage a ses propres teintes, distinctes de celles des factions.
+  aidGood: 0xc8ff4a,
+  aidBad: 0xff8a2a,
   border: 0x30365a,
   danger: 0xe84a5f,
   ok: 0x4ae88a,
 };
-
-/** Couleur du contour d'une planète selon son propriétaire : blanc = neutre, puis une couleur par faction (0 = joueur). */
-export const NEUTRAL_COLOR = 0xffffff;
-export const FACTION_COLORS = [0x4ae88a, 0xe84a5f, 0x4ab4ff];
 
 export const SCENES = {
   BOOT: 'BootScene',

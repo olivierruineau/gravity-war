@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { PLANET_MAX_GRAVITY } from '../../src/config.js';
+import { PLANET_MAX_GRAVITY, SHIP_COLLISION_RADIUS, SHIP_SIZE } from '../../src/config.js';
 import { gravityAt } from '../../src/core/gravity.js';
 import { createWorld } from '../../src/core/world.js';
 import { arena } from '../../src/data/maps/arena.js';
 
 // Validité de la carte `arena` (ADR 0003 §1), vérifiée sur ses données.
 
-// Rayon de collision du vaisseau (ADR 0003 §4). Constante locale : SHIP_COLLISION_RADIUS n'existe pas encore.
-const SHIP_COLLISION_RADIUS = 6;
 // Écart minimal entre surfaces de deux planètes : de quoi faire passer un vaisseau entre elles.
 const PAIR_MARGIN = 2 * SHIP_COLLISION_RADIUS;
-// Distance minimale centre-spawn / centre-planète au-delà de `radius + 6 + 20`, soit 26 px entre surfaces.
+// Marge minimale entre une planète et le mur : de quoi loger un vaisseau (triangle + disque de collision).
+const WALL_MARGIN = SHIP_SIZE + SHIP_COLLISION_RADIUS;
+// Distance minimale entre la surface d'une planète et un spawn : SHIP_COLLISION_RADIUS + 20 px.
 const SPAWN_SURFACE_CLEARANCE = SHIP_COLLISION_RADIUS + 20;
 const MIN_RADIUS = 30;
 const MAX_RADIUS = 90;
@@ -66,9 +66,12 @@ function worstSurfaceGravity(i) {
 
 describe('carte arena : planètes dans la carte', () => {
   planets.forEach((p, i) => {
-    it(`${label(i)} est entièrement dans la carte`, () => {
+    it(`${label(i)} : marge ≥ ${WALL_MARGIN} px à chaque mur`, () => {
       const { side, margin } = worstEdgeMargin(p);
-      expect(margin, `dépasse le bord ${side} de ${-margin} px`).toBeGreaterThanOrEqual(0);
+      expect(
+        margin,
+        `marge ${side} de ${margin} px, manque ${WALL_MARGIN - margin} px`,
+      ).toBeGreaterThanOrEqual(WALL_MARGIN);
     });
   });
 });

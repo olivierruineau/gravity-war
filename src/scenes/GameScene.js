@@ -57,8 +57,9 @@ export class GameScene extends Phaser.Scene {
     this.gfx.clear();
     this.gfx.lineStyle(1, PALETTE.border, 1);
     this.gfx.strokeRect(0, 0, this.world.width, this.world.height);
-    for (const planet of this.world.planets) drawPlanet(this.gfx, planet);
-    drawShip(this.gfx, player, PALETTE.ok);
+    const { planets } = this.world;
+    for (let i = 0; i < planets.length; i++) drawPlanet(this.gfx, planets[i]);
+    drawShip(this.gfx, player, PALETTE.factions[0]);
 
     this.landingAid.update(this.world, player);
     this.healthBar.update(player);

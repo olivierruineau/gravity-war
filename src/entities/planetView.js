@@ -1,10 +1,10 @@
 // Rendu filaire d'une planète : un cercle dont la couleur indique le propriétaire,
 // plus un cercle de portée très discret pour lire la zone de gravité.
-import { FACTION_COLORS, NEUTRAL_COLOR, PALETTE } from '../config.js';
+import { PALETTE } from '../config.js';
 import { NEUTRAL } from '../core/planet.js';
 
 export function planetColor(owner) {
-  return owner === NEUTRAL ? NEUTRAL_COLOR : (FACTION_COLORS[owner] ?? NEUTRAL_COLOR);
+  return owner === NEUTRAL ? PALETTE.neutral : (PALETTE.factions[owner] ?? PALETTE.neutral);
 }
 
 /** @param {Phaser.GameObjects.Graphics} g  @param {object} planet  état core (lecture seule) */

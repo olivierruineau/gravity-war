@@ -184,80 +184,220 @@ describe('posé : nez tangentiel', () => {
   );
 });
 
-describe('décollage en biais (nez à 70° de la normale)', () => {
-  /**
-   * Pousse pendant `thrustSteps` pas puis laisse le vol libre pendant `total` pas ; le nez reste à 70° de
-   * la normale du départ. Renvoie les pas de contact (IMPACT/LANDED) et les dégâts maximaux d'un impact.
-   */
-  function biasedFlight(sign, thrustSteps, total) {
-    const { world, ship } = landedWorld();
-    ship.angle = wrapAngle(UP + sign * 70 * DEG);
-    const contactSteps = [];
-    let maxDamage = 0;
-    let liftedOff = false;
-    for (let i = 0; i < total; i++) {
-      ship.intent.thrust = i < thrustSteps;
-      clearEvents(world.events);
-      step(world, FIXED_DT);
-      if (ship.landedOn < 0) liftedOff = true;
-      if (contactCount(world) > 0) contactSteps.push(i);
-      for (const impact of eventsOf(world, EVT.IMPACT)) maxDamage = Math.max(maxDamage, impact.b);
-    }
-    return { world, ship, contactSteps, maxDamage, liftedOff };
-  }
-
-  function expectFiniteState(ship) {
-    for (const v of [ship.pos.x, ship.pos.y, ship.vel.x, ship.vel.y, ship.angle, ship.hp]) {
-      expect(Number.isFinite(v)).toBe(true);
-    }
-  }
-
-  it.each([1, -1])(
-    'poussée 2 s à 70° (côté %i) : décolle, sans dégât mortel, état fini, contacts non groupés',
-    (sign) => {
-      const { ship, contactSteps, maxDamage, liftedOff } = biasedFlight(
-        sign,
-        2 * ONE_SECOND,
-        10 * ONE_SECOND,
-      );
-      expect(liftedOff).toBe(true);
-      // Observé : 140·cos70° = 48 px/s² sortants < g0 = 70 au premier pas : le vaisseau décolle, retombe
-      // aussitôt (un IMPACT à 0 dégât, rebond minimal de 30 px/s), puis la poussée l'emporte et il quitte la
-      // planète (d ≫ R en fin de poussée, vitesse > vitesse de libération de 75 px/s).
-      expect(ship.hp).toBeGreaterThan(0);
-      expect(ship.alive).toBe(true);
-      expect(maxDamage).toBe(0); // vitesses d'approche ≪ 45 px/s : seul l'angle faillit
-      expectFiniteState(ship);
-      // Pas de rafale : au plus un contact par ~20 pas (borne de l'ADR, ici très large).
-      expect(contactSteps.length).toBeLessThanOrEqual(Math.ceil((10 * ONE_SECOND) / 20));
-      for (let i = 1; i < contactSteps.length; i++) {
-        expect(contactSteps[i] - contactSteps[i - 1]).toBeGreaterThan(20);
+describe('posé : poussée trop faible pour vaincre la gravité', () => {
+  // Depuis la revue : `updateLanded` ne décolle que si la vitesse sortante NETTE du pas,
+  // (T·cosθ − g)·dt, dépasse TAKEOFF_MIN_NORMAL_SPEED. Pour r = 60, g0 = 70 : g(66) ≈ 57,3 px/s², donc
+  // la limite est θ ≈ 65,8° (cf. le test de frontière). Au-delà, le vaisseau reste posé, sans événement
+  // (plus de « pop » suivi d'un faux IMPACT).
+  it.each([
+    [70, 1],
+    [70, -1],
+    [75, 1],
+    [75, -1],
+    [80, 1],
+    [80, -1],
+    [89.9, 1],
+    [89.9, -1],
+  ])(
+    'nez à %s° (côté %i) + thrust 2 s : reste posé, immobile à l’octet, aucun événement',
+    (deg, sign) => {
+      const { world, ship } = landedWorld();
+      const { x, y } = ship.pos;
+      ship.angle = wrapAngle(UP + sign * deg * DEG);
+      const angle = ship.angle;
+      ship.intent.thrust = true;
+      for (let i = 0; i < 2 * ONE_SECOND; i++) {
+        step(world, FIXED_DT);
+        // Ni LANDED, ni IMPACT, ni autre événement, à aucun pas.
+        expect(world.events.count).toBe(0);
+        expect(ship.landedOn).toBe(0);
       }
+      // `vel` est remise à 0 à chaque pas et pos n'est jamais écrite : égalité exacte, pas de tolérance.
+      expect(ship.pos.x).toBe(x);
+      expect(ship.pos.y).toBe(y);
+      expect(ship.vel.x).toBe(0);
+      expect(ship.vel.y).toBe(0);
+      expect(ship.angle).toBe(angle); // sans rotation demandée, le nez ne bouge pas
+      expect(ship.hp).toBe(SHIP_MAX_HP);
+      expect(ship.alive).toBe(true);
     },
   );
 
-  it('poussée brève (10 pas) à 70° : saute plusieurs fois sans dégât puis se pose quand la dérive tangentielle redresse le nez', () => {
-    const { world, ship, contactSteps, maxDamage, liftedOff } = biasedFlight(
-      1,
-      10,
-      30 * ONE_SECOND,
-    );
-    expect(liftedOff).toBe(true);
-    expect(maxDamage).toBe(0);
-    expect(ship.hp).toBe(SHIP_MAX_HP);
-    expectFiniteState(ship);
-    // Observé : 8 contacts (7 IMPACT puis 1 LANDED) espacés d'environ 75 pas (saut minimal ≈ 1,05 s,
-    // soit 63 pas, plus la dérive). Le nez reste à 70° du départ, mais la vitesse tangentielle (divisée par
-    // 2 à chaque rebond) fait glisser le vaisseau le long de la surface : la normale tourne, l'écart
-    // d'angle passe sous 25° et l'atterrissage réussit. On borne sans figer la valeur exacte.
-    expect(contactSteps.length).toBeGreaterThanOrEqual(2);
-    expect(contactSteps.length).toBeLessThanOrEqual(20);
-    for (let i = 1; i < contactSteps.length; i++) {
-      expect(contactSteps[i] - contactSteps[i - 1]).toBeGreaterThan(40);
+  it('poussée brève (10 pas) à 70° : reste posé, aucun événement (avant : 7 sauts puis un atterrissage)', () => {
+    const { world, ship } = landedWorld();
+    const { x, y } = ship.pos;
+    ship.angle = wrapAngle(UP + 70 * DEG);
+    for (let i = 0; i < 30 * ONE_SECOND; i++) {
+      ship.intent.thrust = i < 10;
+      step(world, FIXED_DT);
+      expect(world.events.count).toBe(0);
     }
     expect(ship.landedOn).toBe(0);
-    expect(distanceTo(ship, SOLO[0])).toBeCloseTo(CONTACT, 9); // reprojection au seuil, arrondi flottant
-    expect(world.events.dropped).toBe(0);
+    expect(ship.pos.x).toBe(x);
+    expect(ship.pos.y).toBe(y);
+    expect(ship.vel.x).toBe(0);
+    expect(ship.vel.y).toBe(0);
+    expect(ship.hp).toBe(SHIP_MAX_HP);
+  });
+});
+
+describe('décollage : frontière poussée/gravité', () => {
+  it.each([1, -1])(
+    'angle limite acos(g/T) calculé avec gravityAt : décolle à θ−3°, reste posé à θ+3° (côté %i)',
+    (sign) => {
+      const probe = landedWorld();
+      const g = gravityAt({ x: 0, y: 0 }, probe.ship.pos, probe.world.planets);
+      // Gravité de surface réelle à la position posée (pas la formule de l'ADR recopiée), dirigée vers le centre.
+      expect(g.y).toBeGreaterThan(0);
+      const gSurface = Math.hypot(g.x, g.y);
+      expect(gSurface).toBeGreaterThan(50);
+      expect(gSurface).toBeLessThan(SHIP_THRUST);
+      const limit = Math.acos(gSurface / SHIP_THRUST) / DEG; // ≈ 65,8°
+
+      // Un pas de poussée à θ ± 3° : l'écart de 3° change l'accélération sortante d'environ
+      // 140·sin(66°)·3° ≈ 6,7 px/s² de part et d'autre de g, très au-dessus du seuil d'arrondi
+      // TAKEOFF_MIN_NORMAL_SPEED/dt = 6e-5 px/s².
+      for (const [offset, lifts] of [
+        [-3, true],
+        [3, false],
+      ]) {
+        const { world, ship } = landedWorld();
+        ship.angle = wrapAngle(UP + sign * (limit + offset) * DEG);
+        ship.intent.thrust = true;
+        step(world, FIXED_DT);
+        expect(ship.landedOn).toBe(lifts ? -1 : 0);
+        expect(world.events.count).toBe(0);
+        if (lifts) {
+          // Vitesse sortante après un pas : (T·cosθ − g)·dt, au pas près de g (même position, même formule) ;
+          // 1e-6 absorbe l'arrondi flottant sur des valeurs ~0,1 px/s.
+          const outward = -ship.vel.y;
+          expect(outward).toBeCloseTo(
+            (SHIP_THRUST * Math.cos((limit - 3) * DEG) - gSurface) * FIXED_DT,
+            6,
+          );
+          expect(outward).toBeGreaterThan(0);
+        } else {
+          expect(ship.vel.x).toBe(0);
+          expect(ship.vel.y).toBe(0);
+        }
+      }
+    },
+  );
+});
+
+describe('décollage lent : poussée juste supérieure à la gravité', () => {
+  it('nez à 55° (poussée sortante ≈ 80 > g ≈ 57) : décolle franchement, d croît, aucun événement', () => {
+    const { world, ship } = landedWorld();
+    ship.angle = wrapAngle(UP + 55 * DEG);
+    ship.intent.thrust = true;
+
+    step(world, FIXED_DT);
+    expect(ship.landedOn).toBe(-1); // décollage dès le premier pas
+    expect(world.events.count).toBe(0); // pas d'IMPACT parasite au décollage
+
+    let previous = distanceTo(ship, SOLO[0]);
+    for (let i = 1; i < 2 * ONE_SECOND; i++) {
+      step(world, FIXED_DT);
+      expect(world.events.count).toBe(0);
+      const d = distanceTo(ship, SOLO[0]);
+      expect(d).toBeGreaterThan(previous); // montée strictement croissante (poussée nette sortante ≥ 23 px/s²)
+      previous = d;
+    }
+    // Accélération sortante nette ≥ 80 − 57 = 23 px/s² : après 2 s, ≥ ½·23·4 = 46 px gagnés en altitude
+    // (la poussée tangentielle et la décroissance de g en ajoutent) ; borne basse volontairement prudente.
+    expect(previous).toBeGreaterThan(CONTACT + 40);
+    expect(ship.hp).toBe(SHIP_MAX_HP);
+    expect(ship.alive).toBe(true);
+  });
+
+  it('nez à 75° (poussée sortante ≈ 36 < g) : reste posé', () => {
+    const { world, ship } = landedWorld();
+    ship.angle = wrapAngle(UP + 75 * DEG);
+    ship.intent.thrust = true;
+    for (let i = 0; i < 2 * ONE_SECOND; i++) step(world, FIXED_DT);
+    expect(ship.landedOn).toBe(0);
+    expect(world.events.count).toBe(0);
+  });
+
+  it.each([1, -1])(
+    'nez à 63° (côté %i, net ≈ +6 px/s²), poussée 2 s : décollage très lent, d croît, aucun événement',
+    (sign) => {
+      const { world, ship } = landedWorld();
+      ship.angle = wrapAngle(UP + sign * 63 * DEG);
+      ship.intent.thrust = true;
+      step(world, FIXED_DT);
+      expect(ship.landedOn).toBe(-1);
+      // Vitesse sortante du 1er pas : (140·cos63° − g(66))·dt = (63,56 − 57,35)/60 ≈ 0,104 px/s ;
+      // toBeCloseTo(0.1, 1) = tolérance 0,05, large devant l'arrondi, serrée devant 0 (vaisseau posé).
+      expect(-ship.vel.y).toBeCloseTo(0.1, 1);
+      let previous = distanceTo(ship, SOLO[0]);
+      for (let i = 1; i < 2 * ONE_SECOND; i++) {
+        step(world, FIXED_DT);
+        expect(world.events.count).toBe(0);
+        const d = distanceTo(ship, SOLO[0]);
+        expect(d).toBeGreaterThan(previous);
+        previous = d;
+      }
+      // ½·6·4 = 12 px de gain sortant au minimum (g diminue avec l'altitude : plus en pratique).
+      expect(previous).toBeGreaterThan(CONTACT + 10);
+    },
+  );
+
+  describe('poussée brève à 63° (sauts périodiques)', () => {
+    /** 10 pas de poussée à 63° de la normale, puis vol libre ; `pilot` peut agir à chaque pas. */
+    function hops(total, pilot) {
+      const { world, ship } = landedWorld();
+      ship.angle = wrapAngle(UP + 63 * DEG);
+      const impacts = [];
+      const landings = [];
+      let maxDamage = 0;
+      for (let i = 0; i < total && !(landings.length > 0); i++) {
+        ship.intent.thrust = i < 10;
+        if (pilot && impacts.length > 0) ship.angle = normalAngle(ship, SOLO[0]);
+        clearEvents(world.events);
+        step(world, FIXED_DT);
+        for (const e of eventsOf(world, EVT.IMPACT)) {
+          impacts.push(i);
+          maxDamage = Math.max(maxDamage, e.b);
+        }
+        if (eventsOf(world, EVT.LANDED).length > 0) landings.push(i);
+      }
+      return { world, ship, impacts, landings, maxDamage };
+    }
+
+    it('nez laissé à 63° : rebonds sans dégât à période constante, jamais d’atterrissage', () => {
+      const { world, ship, impacts, landings, maxDamage } = hops(30 * ONE_SECOND);
+      // Observé : un IMPACT (angle > 25°, 0 dégât) tous les ~75 pas (saut minimal de 30 px/s : 2·30/g
+      // ≈ 1,05 s), soit ~24 en 30 s, sans jamais se poser. La vitesse tangentielle est divisée par 2 à chaque
+      // rebond et tend vers 0 : la normale ne tourne plus et l'écart d'angle reste ≈ 63°. Les sauts ne
+      // « convergent » donc pas : seul le pilote qui redresse le nez y met fin (test suivant).
+      expect(landings).toEqual([]);
+      expect(impacts.length).toBeGreaterThanOrEqual(20);
+      expect(impacts.length).toBeLessThanOrEqual(30);
+      for (let i = 1; i < impacts.length; i++) {
+        expect(impacts[i] - impacts[i - 1]).toBeGreaterThan(60);
+        expect(impacts[i] - impacts[i - 1]).toBeLessThan(90);
+      }
+      expect(maxDamage).toBe(0);
+      expect(ship.hp).toBe(SHIP_MAX_HP);
+      expect(ship.alive).toBe(true);
+      expect(world.events.dropped).toBe(0);
+      for (const v of [ship.pos.x, ship.pos.y, ship.vel.x, ship.vel.y]) {
+        expect(Number.isFinite(v)).toBe(true);
+      }
+      // Les sauts restent bas : d ne dépasse jamais ≈ 75 px (observé 74,9).
+      expect(distanceTo(ship, SOLO[0])).toBeLessThan(80);
+    });
+
+    it('nez ramené sur la normale après le premier saut : un seul IMPACT, puis atterrissage réussi', () => {
+      const { ship, impacts, landings, maxDamage } = hops(30 * ONE_SECOND, true);
+      expect(impacts).toHaveLength(1);
+      expect(landings).toHaveLength(1);
+      expect(landings[0]).toBeGreaterThan(impacts[0]);
+      expect(maxDamage).toBe(0);
+      expect(ship.landedOn).toBe(0);
+      expect(ship.hp).toBe(SHIP_MAX_HP);
+    });
   });
 });
 
