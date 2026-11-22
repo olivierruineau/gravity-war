@@ -8,6 +8,7 @@ export const EVT = {
   IMPACT: 3,
   LANDED: 4,
   CAPTURED: 5,
+  BULLET_HIT: 7, // projectile absorbé par une planète : a = planète
   RESPAWN: 6, // a = vaisseau, b = planète de réapparition
 };
 

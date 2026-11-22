@@ -20,6 +20,13 @@ export const SHIP_THRUST = 140; // px/s², dans l'axe du nez
 export const SHIP_MAX_HP = 100;
 export const SHIP_SIZE = 8; // rayon du triangle dessiné, en px
 
+/** Tir principal : munitions illimitées, balles soumises à la gravité (trajectoires courbées près des planètes). */
+export const BULLET_SPEED = 320; // px/s, ajoutée à la vitesse du vaisseau
+export const BULLET_LIFETIME = 1.6; // secondes
+export const BULLET_DAMAGE = 12;
+export const FIRE_COOLDOWN = 0.18; // secondes entre deux tirs
+export const PROJECTILE_CAPACITY = 256; // taille du pool ; pool plein = tir ignoré
+
 /** Mort et respawn : délai avant de réapparaître sur la planète possédée la plus proche. */
 export const RESPAWN_DELAY = 3; // secondes
 

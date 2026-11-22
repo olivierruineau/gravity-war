@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { EVENT_CAPACITY, FIXED_DT } from '../../src/config.js';
+import { EVENT_CAPACITY, FIXED_DT, PROJECTILE_CAPACITY } from '../../src/config.js';
 import { EVT, pushEvent } from '../../src/core/events.js';
+import { KIND, spawnProjectile } from '../../src/core/projectile.js';
 import { nextFloat } from '../../src/core/rng.js';
 import { createWorld, step } from '../../src/core/world.js';
 
@@ -12,15 +13,34 @@ function makeWorld(seed = 1) {
 }
 
 describe('createWorld', () => {
-  it('construit la structure initiale : tick 0, tableaux vides, dimensions de la carte', () => {
+  it('construit la structure initiale : tick 0, dimensions de la carte, pas de vaisseau ni de planète', () => {
     const world = makeWorld(5);
     expect(world.tick).toBe(0);
     expect(world.width).toBe(100);
     expect(world.height).toBe(100);
     expect(world.ships).toEqual([]);
     expect(world.planets).toEqual([]);
-    expect(world.projectiles).toEqual([]);
     expect(world.rng).toEqual({ state: 5 });
+  });
+
+  it('préalloue un pool de PROJECTILE_CAPACITY projectiles tous inactifs, aux objets distincts', () => {
+    const { projectiles } = makeWorld();
+    expect(projectiles).toHaveLength(PROJECTILE_CAPACITY);
+    for (const p of projectiles) {
+      expect(p).toEqual({
+        active: false,
+        kind: KIND.BULLET,
+        owner: 0,
+        pos: { x: 0, y: 0 },
+        vel: { x: 0, y: 0 },
+        life: 0,
+        damage: 0,
+      });
+    }
+    // Aucun objet partagé entre slots : écrire dans un slot ne doit pas en toucher un autre.
+    expect(projectiles[0]).not.toBe(projectiles[1]);
+    expect(projectiles[0].pos).not.toBe(projectiles[1].pos);
+    expect(projectiles[0].vel).not.toBe(projectiles[1].vel);
   });
 
   it('prépare la file d’événements à la capacité demandée', () => {
@@ -34,6 +54,9 @@ describe('createWorld', () => {
     const a = makeWorld();
     const b = makeWorld();
     expect(a.ships).not.toBe(b.ships);
+    expect(a.projectiles).not.toBe(b.projectiles);
+    expect(a.projectiles[0]).not.toBe(b.projectiles[0]);
+    expect(a.projectiles[0].pos).not.toBe(b.projectiles[0].pos);
     expect(a.rng).not.toBe(b.rng);
     expect(a.events).not.toBe(b.events);
     expect(a.events.items[0]).not.toBe(b.events.items[0]);
@@ -53,6 +76,7 @@ describe('step', () => {
   it('ne modifie ni les dimensions ni la file d’événements d’un monde vide', () => {
     const world = makeWorld();
     for (let i = 0; i < 100; i++) step(world, FIXED_DT);
+    expect(world.projectiles.some((p) => p.active)).toBe(false);
     expect(world.width).toBe(100);
     expect(world.height).toBe(100);
     expect(world.events.count).toBe(0);
@@ -101,6 +125,18 @@ describe('world est un objet de données pur', () => {
     for (let i = 0; i < 50; i++) step(world, FIXED_DT);
     pushEvent(world.events, EVT.IMPACT, 12.5, 40, 1, 2);
     expect(JSON.parse(JSON.stringify(world))).toEqual(world);
+  });
+
+  it('reste JSON pur avec des projectiles actifs dans le pool (aller-retour deep-égal)', () => {
+    const world = makeWorld(9);
+    spawnProjectile(world.projectiles, KIND.BULLET, 1, 10.5, 20.25, 30, -40, 1.6, 12);
+    spawnProjectile(world.projectiles, KIND.MISSILE, 2, 50, 60, -5, 5, 3, 40);
+    for (let i = 0; i < 5; i++) step(world, FIXED_DT);
+    expect(world.projectiles.filter((p) => p.active)).toHaveLength(2);
+    expect(world.projectiles).toHaveLength(PROJECTILE_CAPACITY);
+    const clone = JSON.parse(JSON.stringify(world));
+    expect(clone).toEqual(world);
+    expect(JSON.stringify(clone)).toBe(JSON.stringify(world));
   });
 
   it('ne contient aucune fonction ni valeur non sérialisable (undefined, NaN, Infinity)', () => {

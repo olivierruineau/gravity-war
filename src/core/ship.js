@@ -13,6 +13,7 @@ export function createShip(faction, x, y, angle = -Math.PI / 2) {
     vel: { x: 0, y: 0 },
     angle,
     hp: SHIP_MAX_HP,
+    fireCooldown: 0, // secondes avant le prochain tir possible
     respawnTimer: 0, // secondes restantes avant de réapparaître (vaisseau mort)
     landedOn: -1, // index de la planète sur laquelle le vaisseau est posé, -1 en vol
     intent: createIntent(),
@@ -49,5 +50,6 @@ export function respawnShip(ship, planetIndex, planet) {
   ship.angle = -Math.PI / 2;
   ship.landedOn = planetIndex;
   ship.respawnTimer = 0;
+  ship.fireCooldown = 0;
   resetIntent(ship.intent);
 }

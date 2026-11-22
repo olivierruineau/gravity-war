@@ -1,13 +1,16 @@
 // Orchestrateur de la simulation : seul module qui connaît tous les autres (ADR 0002).
 // `world` est un objet de données pur (JSON-sérialisable), sans fonctions ni références croisées.
-import { BOUNDS_RESTITUTION, SHIP_SIZE } from '../config.js';
+import { BOUNDS_RESTITUTION, PROJECTILE_CAPACITY, SHIP_SIZE } from '../config.js';
+import { collideProjectilesPlanets } from './collision.js';
 import { applyBounds } from './bounds.js';
 import { createEvents } from './events.js';
 import { applyGravity } from './gravity.js';
 import { collideShipPlanets, updateLanded } from './landing.js';
 import { updateRespawn } from './lifecycle.js';
 import { createPlanet } from './planet.js';
+import { createProjectiles, updateProjectiles } from './projectile.js';
 import { createRng } from './rng.js';
+import { updateWeapons } from './weapons.js';
 import { applyIntent, createShip, integrate } from './ship.js';
 
 /**
@@ -24,7 +27,7 @@ export function createWorld(map, seed, { eventCapacity }) {
     rng: createRng(seed),
     ships: (map.spawns ?? []).map((s, i) => createShip(i, s.x, s.y, s.angle)),
     planets: (map.planets ?? []).map(createPlanet),
-    projectiles: [],
+    projectiles: createProjectiles(PROJECTILE_CAPACITY),
     events: createEvents(eventCapacity),
   };
 }
@@ -39,6 +42,7 @@ export function step(world, dt) {
       continue;
     }
     applyIntent(ship, dt);
+    updateWeapons(world, i, dt);
     // (2b) Posé : reste figé hors gravité/intégration/collisions, ou décolle si la poussée pointe vers l'extérieur.
     if (ship.landedOn >= 0 && updateLanded(ship, world.planets, dt)) continue;
     applyGravity(ship, world.planets, dt);
@@ -46,5 +50,7 @@ export function step(world, dt) {
     applyBounds(ship, world.width, world.height, SHIP_SIZE, BOUNDS_RESTITUTION);
     collideShipPlanets(world, i);
   }
+  updateProjectiles(world, dt);
+  collideProjectilesPlanets(world);
   world.tick++;
 }
