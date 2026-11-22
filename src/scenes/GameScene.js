@@ -15,6 +15,7 @@ import { drawPlanet } from '../entities/planetView.js';
 import { drawProjectiles } from '../entities/projectileView.js';
 import { drawShip } from '../entities/shipView.js';
 import { createDebugOverlay } from '../systems/debugOverlay.js';
+import { createEffects } from '../systems/effects.js';
 import { createGravityArrow } from '../systems/gravityArrow.js';
 import { createHealthBar } from '../systems/healthBar.js';
 import { createLandingAid } from '../systems/landingAid.js';
@@ -46,6 +47,7 @@ export class GameScene extends Phaser.Scene {
     this.debug = createDebugOverlay(this);
     this.healthBar = createHealthBar(this);
     this.landingAid = createLandingAid(this);
+    this.effects = createEffects(this);
     this.gravityArrow = createGravityArrow(this);
   }
 
@@ -71,6 +73,9 @@ export class GameScene extends Phaser.Scene {
     this.landingAid.update(this.world, player);
     this.healthBar.update(player);
     this.debug.update(this.world, player);
+
+    this.effects.handle(this.world.events);
+    this.effects.update(delta / 1000);
 
     // Les événements (sons, effets) seront lus ici à partir de la phase 3, puis la file est vidée.
     clearEvents(this.world.events);

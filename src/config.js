@@ -51,6 +51,9 @@ export const LANDING_AID_ALTITUDE = 120; // altitude sous laquelle l'aide à l'a
 /** Mur de carte : rebond amorti, sans dégâts (SPEC §5.6). 0 = collé au mur, 1 = rebond parfait. */
 export const BOUNDS_RESTITUTION = 0.5;
 
+/** Effets visuels (cosmétiques, hors simulation) : taille du pool d'effets simultanés. */
+export const EFFECT_CAPACITY = 64;
+
 /** Palette restreinte façon années 90 (à ajuster avec la direction artistique). */
 export const PALETTE = {
   bg: 0x0b0b14,
