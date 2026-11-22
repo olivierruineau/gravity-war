@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { EVENT_CAPACITY, FIXED_DT, GRAVITY_RANGE_FACTOR } from '../../src/config.js';
+import {
+  EVENT_CAPACITY,
+  FIXED_DT,
+  GRAVITY_RANGE_FACTOR,
+  SHIP_COLLISION_RADIUS,
+} from '../../src/config.js';
 import { gravityAt, potential } from '../../src/core/gravity.js';
 import { int } from '../../src/core/rng.js';
 import { createWorld, step } from '../../src/core/world.js';
@@ -8,7 +13,7 @@ import { createWorld, step } from '../../src/core/world.js';
 // La collision planète n'existe pas encore (item 2.3) : aucune simulation ne doit entrer en contact,
 // c'est-à-dire atteindre d = r + SHIP_COLLISION_RADIUS. Les scénarios s'arrêtent avant, et les
 // invariants « jamais de contact » sont vérifiés pas à pas.
-const SHIP_COLLISION_RADIUS = 6; // pas encore dans config.js (ADR 0003 §4)
+
 const OPTIONS = { eventCapacity: EVENT_CAPACITY };
 const TWO_PI = 2 * Math.PI;
 

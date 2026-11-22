@@ -38,7 +38,7 @@ Spécification : [docs/SPEC.md](docs/SPEC.md). Architecture : [docs/ARCHITECTURE
 
 - [x] **2.1** Modèle planète (rayon, masse, position) + attraction gravitationnelle dans `core/` ; ADR 0003 sur la formule (adoucissement près de la surface, intégrateur) ; tests d'invariants (orbite stable, chute vers la planète) (arch, code, test-c)
 - [x] **2.2** Carte fixe v0 en données (`src/data/maps/`) + rendu filaire des planètes (cercles, contour blanc = neutre) (code)
-- [ ] **2.3** Collision vaisseau/planète : critères d'atterrissage (vitesse radiale, angle du nez) vs impact ; tests aux limites des seuils (code, test-c)
+- [x] **2.3** Collision vaisseau/planète : critères d'atterrissage (vitesse radiale, angle du nez) vs impact ; tests aux limites des seuils (code, test-c)
 - [ ] **2.4** Vie du vaisseau + dégâts d'impact proportionnels + barre de vie minimale à l'écran (code, test-s)
 - [ ] **2.5** État « posé » : le vaisseau reste sur la surface, décollage possible (code, test-c)
 - [ ] **2.6** Aide à l'atterrissage : indicateur vitesse radiale/angle vert/rouge près des planètes (code)

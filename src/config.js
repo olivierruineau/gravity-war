@@ -25,6 +25,17 @@ export const PLANET_GRAVITY = 70; // g0 par défaut
 export const GRAVITY_RANGE_FACTOR = 5; // portée = 5 × rayon, coupure douce
 export const PLANET_MAX_GRAVITY = 0.6 * SHIP_THRUST; // le décollage reste toujours possible
 
+/** Atterrissage et impact (ADR 0003 §4) : vitesses en px/s, angle en radians. */
+export const SHIP_COLLISION_RADIUS = 6; // le vaisseau est un disque pour les collisions
+export const LANDING_MAX_RADIAL_SPEED = 45; // vitesse d'approche max pour se poser
+export const LANDING_MAX_TANGENTIAL_SPEED = 35; // vitesse le long de la surface max
+export const LANDING_MAX_ANGLE = (25 * Math.PI) / 180; // écart max entre le nez et la normale
+export const IMPACT_DAMAGE_PER_SPEED = 1; // PV par px/s d'excès au-delà des seuils
+export const IMPACT_RESTITUTION = 0.3; // rebond radial = 30 % de la vitesse d'approche...
+export const IMPACT_MIN_BOUNCE_SPEED = 30; // ...mais jamais moins de 30 px/s (pas de contact au repos)
+export const IMPACT_TANGENTIAL_DAMPING = 0.5; // frottement sur la composante tangentielle
+export const LANDING_AID_ALTITUDE = 120; // altitude sous laquelle l'aide à l'atterrissage s'affiche
+
 /** Mur de carte : rebond amorti, sans dégâts (SPEC §5.6). 0 = collé au mur, 1 = rebond parfait. */
 export const BOUNDS_RESTITUTION = 0.5;
 

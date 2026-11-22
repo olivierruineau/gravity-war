@@ -13,6 +13,7 @@ export function createShip(faction, x, y, angle = -Math.PI / 2) {
     vel: { x: 0, y: 0 },
     angle,
     hp: SHIP_MAX_HP,
+    landedOn: -1, // index de la planète sur laquelle le vaisseau est posé, -1 en vol
     intent: createIntent(),
   };
 }
