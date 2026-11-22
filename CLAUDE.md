@@ -1,7 +1,8 @@
 # Gravity War
 
 Petit jeu indé rétro (esprit années 90), 100 % JavaScript dans le navigateur.
-Les fonctionnalités détaillées arrivent via `TODO.md` ; l'architecture vivante est dans `docs/ARCHITECTURE.md`.
+Spécification fonctionnelle : `docs/SPEC.md` · plan de travail par phases : `TODO.md` · architecture vivante : `docs/ARCHITECTURE.md`.
+Rendu 100 % filaire (wireframe) sur fond noir, sans sprites : tout est dessiné en traits.
 
 ## Stack
 
