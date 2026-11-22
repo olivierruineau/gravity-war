@@ -4,7 +4,7 @@ import { BOUNDS_RESTITUTION, SHIP_SIZE } from '../config.js';
 import { applyBounds } from './bounds.js';
 import { createEvents } from './events.js';
 import { applyGravity } from './gravity.js';
-import { collideShipPlanets } from './landing.js';
+import { collideShipPlanets, updateLanded } from './landing.js';
 import { createPlanet } from './planet.js';
 import { createRng } from './rng.js';
 import { applyIntent, createShip, integrate } from './ship.js';
@@ -35,12 +35,8 @@ export function step(world, dt) {
     const ship = world.ships[i];
     if (!ship.alive) continue;
     applyIntent(ship, dt);
-    if (ship.landedOn >= 0) {
-      // Posé : figé hors gravité, intégration et collisions (le décollage viendra à l'item 2.5).
-      ship.vel.x = 0;
-      ship.vel.y = 0;
-      continue;
-    }
+    // (2b) Posé : reste figé hors gravité/intégration/collisions, ou décolle si la poussée pointe vers l'extérieur.
+    if (ship.landedOn >= 0 && updateLanded(ship, world.planets)) continue;
     applyGravity(ship, world.planets, dt);
     integrate(ship, dt);
     applyBounds(ship, world.width, world.height, SHIP_SIZE, BOUNDS_RESTITUTION);

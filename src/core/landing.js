@@ -9,6 +9,7 @@ import {
   LANDING_MAX_RADIAL_SPEED,
   LANDING_MAX_TANGENTIAL_SPEED,
   SHIP_COLLISION_RADIUS,
+  TAKEOFF_MIN_NORMAL_SPEED,
 } from '../config.js';
 import { EVT, pushEvent } from './events.js';
 import { wrapAngle } from './math.js';
@@ -40,6 +41,26 @@ export function impactDamage(approachSpeed, tangentialSpeed) {
     (Math.max(0, approachSpeed - LANDING_MAX_RADIAL_SPEED) +
       Math.max(0, Math.abs(tangentialSpeed) - LANDING_MAX_TANGENTIAL_SPEED))
   );
+}
+
+/**
+ * Vaisseau posé : après l'application de l'intention (rotation, poussée), il décolle si la poussée a
+ * une composante sortante (`landedOn = -1`, la vitesse acquise est conservée) ; sinon il reste figé.
+ * Retourne true s'il reste posé (il saute alors gravité, intégration, bornes et collision).
+ */
+export function updateLanded(ship, planets) {
+  const planet = planets[ship.landedOn];
+  const dx = ship.pos.x - planet.pos.x;
+  const dy = ship.pos.y - planet.pos.y;
+  const d = Math.hypot(dx, dy) || 1;
+  // Tolérance : une poussée exactement tangentielle laisse un résidu d'arrondi (~1e-15) qui ne doit pas faire décoller.
+  if ((ship.vel.x * dx + ship.vel.y * dy) / d > TAKEOFF_MIN_NORMAL_SPEED) {
+    ship.landedOn = -1;
+    return false;
+  }
+  ship.vel.x = 0;
+  ship.vel.y = 0;
+  return true;
 }
 
 const scratch = { approachSpeed: 0, tangentialSpeed: 0, angleError: 0, ok: false };
