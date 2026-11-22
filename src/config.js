@@ -14,6 +14,11 @@ export const MAX_STEPS_PER_FRAME = 5;
 /** Capacité de la file d'événements core → rendu/audio (au-delà : événements perdus). */
 export const EVENT_CAPACITY = 256;
 
+/** Vaisseau : rotation à vitesse angulaire constante, poussée illimitée (pas de carburant), aucun frein. */
+export const SHIP_ROTATION_SPEED = 3.2; // rad/s
+export const SHIP_THRUST = 140; // px/s², dans l'axe du nez
+export const SHIP_MAX_HP = 100;
+
 /** Palette restreinte façon années 90 (à ajuster avec la direction artistique). */
 export const PALETTE = {
   bg: 0x0b0b14,
