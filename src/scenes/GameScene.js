@@ -1,9 +1,18 @@
 import Phaser from 'phaser';
-import { EVENT_CAPACITY, FIXED_DT, MAX_FRAME_DT, MAX_STEPS_PER_FRAME, SCENES } from '../config.js';
+import {
+  EVENT_CAPACITY,
+  FIXED_DT,
+  MAX_FRAME_DT,
+  MAX_STEPS_PER_FRAME,
+  PALETTE,
+  SCENES,
+} from '../config.js';
 import { clearEvents } from '../core/events.js';
 import { consumeSteps, createClock } from '../core/clock.js';
 import { createWorld, step } from '../core/world.js';
 import { arena } from '../data/maps/arena.js';
+import { drawShip } from '../entities/shipView.js';
+import { createKeyboardInput } from '../systems/keyboardInput.js';
 
 /**
  * Scène de jeu. Rester MINCE : elle orchestre la boucle à pas fixe, l'entrée et le rendu ;
@@ -23,12 +32,23 @@ export class GameScene extends Phaser.Scene {
       maxFrameDt: MAX_FRAME_DT,
       maxSteps: MAX_STEPS_PER_FRAME,
     });
+    this.pilot = createKeyboardInput(this);
+    this.gfx = this.add.graphics();
   }
 
   update(_time, delta) {
+    const player = this.world.ships[0];
+    this.pilot.update(player.intent);
     const steps = consumeSteps(this.clock, delta / 1000);
     for (let i = 0; i < steps; i++) step(this.world, FIXED_DT);
-    // Rendu et lecture des événements viendront ici (items 1.5+), puis on vide la file.
+
+    // Rendu immédiat : on efface et on redessine tout depuis l'état du core.
+    // (Caméra provisoire : centrage simple, remplacée par la vraie caméra à l'item 1.7.)
+    this.cameras.main.centerOn(player.pos.x, player.pos.y);
+    this.gfx.clear();
+    drawShip(this.gfx, player, PALETTE.ok);
+
+    // Les événements (sons, effets) seront lus ici à partir de la phase 3, puis la file est vidée.
     clearEvents(this.world.events);
   }
 }

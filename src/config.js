@@ -18,6 +18,7 @@ export const EVENT_CAPACITY = 256;
 export const SHIP_ROTATION_SPEED = 3.2; // rad/s
 export const SHIP_THRUST = 140; // px/s², dans l'axe du nez
 export const SHIP_MAX_HP = 100;
+export const SHIP_SIZE = 8; // rayon du triangle dessiné, en px
 
 /** Palette restreinte façon années 90 (à ajuster avec la direction artistique). */
 export const PALETTE = {

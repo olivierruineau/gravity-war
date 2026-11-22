@@ -26,7 +26,7 @@ Spécification : [docs/SPEC.md](docs/SPEC.md). Architecture : [docs/ARCHITECTURE
 - [x] **1.2** `core/vec2` (opérations sans allocation) + RNG seedé, avec tests (code, test-s)
 - [x] **1.3** Boucle à pas fixe : accumulateur dans `GameScene`, `core/world` avec `step(dt)` vide, test de déterminisme (code, test-c)
 - [x] **1.4** Physique du vaisseau : rotation, poussée dans l'axe du nez, inertie ; tests (pas de frein, 180° + poussée annule la vitesse) (code, test-c)
-- [ ] **1.5** Rendu filaire du vaisseau (triangle) + entrées clavier (`←` `→` `↑`) → intentions (code)
+- [x] **1.5** Rendu filaire du vaisseau (triangle) + entrées clavier (`←` `→` `↑`) → intentions (code)
 - [ ] **1.6** Carte bornée : mur invisible avec rebond amorti ; tests des bornes (code, test-s)
 - [ ] **1.7** Caméra qui suit le vaisseau + fond d'étoiles/grille discret (repère de vitesse) (code)
 - [ ] **1.8** Overlay de debug (touche F3) : FPS, vitesse, position (code)
