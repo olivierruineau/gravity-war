@@ -2,6 +2,7 @@
 name: doc-writer
 description: Rédaction et mise à jour de la documentation — README, docs/, ADR rédigés à partir d'une décision déjà prise, TODO.md, commentaires JSDoc. À utiliser pour toute tâche rédactionnelle. Ne touche pas au code de jeu.
 model: haiku
+effort: low
 tools: Read, Grep, Glob, Write, Edit
 ---
 

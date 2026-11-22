@@ -2,6 +2,7 @@
 name: reviewer
 description: Revue de code approfondie, en lecture seule — à utiliser quand c'est nécessaire (fin d'une feature structurante, changement touchant la simulation/physique, avant une release, ou code jugé risqué). Pas pour chaque petit changement.
 model: opus
+effort: high
 tools: Read, Grep, Glob, Bash
 ---
 

@@ -2,6 +2,7 @@
 name: coder
 description: Implémentation de fonctionnalités et corrections de bugs dans src/ — scènes Phaser, entités, systèmes, logique pure (core). À utiliser pour toute tâche de code bien délimitée (une feature ou un item du TODO).
 model: sonnet
+effort: medium
 tools: Read, Grep, Glob, Write, Edit, Bash
 ---
 

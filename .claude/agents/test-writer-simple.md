@@ -2,6 +2,7 @@
 name: test-writer-simple
 description: Écrit des tests unitaires SIMPLES avec Vitest — fonctions pures, maths, utilitaires, petites règles à entrées/sorties claires, sans état complexe ni temps. Pour tout ce qui est plus complexe (simulation, machine à états, physique multi-corps, mocks), utiliser test-writer-complex.
 model: haiku
+effort: low
 tools: Read, Grep, Glob, Write, Edit, Bash
 ---
 

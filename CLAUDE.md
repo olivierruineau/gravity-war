@@ -80,22 +80,23 @@ docs/            # ARCHITECTURE.md + adr/ (décisions)
 
 ## Orchestration des agents
 
-La session principale tourne en **Sonnet** : elle orchestre et code. Elle délègue aux sous-agents de `.claude/agents/` selon ce tableau :
+La session principale tourne en **Sonnet**, effort **medium** par défaut (`.claude/settings.json`) : elle orchestre et code. Passer à `high` (`/effort`) pour coder soi-même dans la simulation/physique/boucle de jeu ou pour un bug difficile. Elle délègue aux sous-agents de `.claude/agents/` selon ce tableau :
 
-| Agent                 | Modèle     | Quand l'utiliser                                                             |
-| --------------------- | ---------- | ---------------------------------------------------------------------------- |
-| `researcher`          | **Haiku**  | Recherche, lecture de docs, comparaison de libs, exploration (lecture seule) |
-| `doc-writer`          | **Haiku**  | README, TODO.md, docs/, mise en forme d'ADR                                  |
-| `test-writer-simple`  | **Haiku**  | Tests de fonctions pures, maths, utilitaires                                 |
-| `test-writer-complex` | **Sonnet** | Simulations, physique multi-corps, machines à états, scénarios               |
-| `coder`               | **Sonnet** | Implémentation d'un item du TODO / correction de bug                         |
-| `architect`           | **Opus**   | Décisions de structure, nouvelle dépendance, nouveau système, ADR            |
-| `reviewer`            | **Opus**   | Revue approfondie, _seulement quand nécessaire_ (voir ci-dessous)            |
+| Agent                 | Modèle     | Effort   | Quand l'utiliser                                                             |
+| --------------------- | ---------- | -------- | ---------------------------------------------------------------------------- |
+| `researcher`          | **Haiku**  | `low`    | Recherche, lecture de docs, comparaison de libs, exploration (lecture seule) |
+| `doc-writer`          | **Haiku**  | `low`    | README, TODO.md, docs/, mise en forme d'ADR                                  |
+| `test-writer-simple`  | **Haiku**  | `low`    | Tests de fonctions pures, maths, utilitaires                                 |
+| `test-writer-complex` | **Sonnet** | `high`   | Simulations, physique multi-corps, machines à états, scénarios               |
+| `coder`               | **Sonnet** | `medium` | Implémentation d'un item du TODO / correction de bug                         |
+| `architect`           | **Opus**   | `high`   | Décisions de structure, nouvelle dépendance, nouveau système, ADR            |
+| `reviewer`            | **Opus**   | `high`   | Revue approfondie, _seulement quand nécessaire_ (voir ci-dessous)            |
 
 Principes :
 
 - **Pas de sur-délégation.** Un changement trivial (renommer, corriger une constante, une ligne) se fait directement ; un agent démarre à froid et coûte du contexte.
 - **Prompts autonomes.** Un sous-agent ne voit pas la conversation : donner l'objectif, les fichiers concernés, les contraintes et le format de rapport attendu.
+- **Effort** : chaque agent a son `effort` par défaut dans son frontmatter. Surcharger à l'appel (paramètre `effort`) uniquement pour : `coder` → `high` si simulation/physique/boucle de jeu ; `reviewer` → `xhigh` avant une release.
 - **Parallélisme** pour les tâches indépendantes (ex. `researcher` + `test-writer-simple` en même temps) ; séquentiel quand l'une dépend de l'autre.
 - **Flux type d'une feature** : `architect` (si structurant) → `coder` → `test-writer-*` → `npm run check` → `reviewer` (si critère ci-dessous) → `doc-writer` (mise à jour doc/TODO).
 - **Opus (reviewer) seulement si** : feature structurante, toucher la simulation/physique/boucle de jeu, gros diff (> ~300 lignes), ou avant une release. Sinon, `npm run check` suffit.

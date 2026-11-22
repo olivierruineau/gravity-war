@@ -2,6 +2,7 @@
 name: researcher
 description: Recherche et veille technique en lecture seule — docs de Phaser/Vite/ZzFX, comparaison de libs, exemples d'API, état de l'art d'une mécanique de jeu. À utiliser AVANT de coder quand une information externe ou une exploration du code est nécessaire. Ne modifie jamais de fichier.
 model: haiku
+effort: low
 tools: Read, Grep, Glob, WebSearch, WebFetch
 ---
 

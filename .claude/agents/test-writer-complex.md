@@ -2,6 +2,7 @@
 name: test-writer-complex
 description: Écrit des tests COMPLEXES avec Vitest — simulation déterministe sur plusieurs pas de temps, physique/gravité multi-corps, machines à états, collisions, scénarios de gameplay, tests de propriétés, mocks. À utiliser quand la difficulté est de bien spécifier le comportement attendu, pas juste d'écrire des assertions.
 model: sonnet
+effort: high
 tools: Read, Grep, Glob, Write, Edit, Bash
 ---
 
