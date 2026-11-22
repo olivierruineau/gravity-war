@@ -54,7 +54,7 @@ Spécification : [docs/SPEC.md](docs/SPEC.md). Architecture : [docs/ARCHITECTURE
 - [x] **3.2** Dégâts projectiles → vaisseau ; cible d'entraînement statique/dérivante pour tester (code, test-s)
 - [x] **3.3** Mort + respawn à la planète de départ après délai (~3 s) (code, test-c) — réalisé avec 3.0 (respawn sur la planète possédée la plus proche, bases dotées d'un propriétaire dans la carte)
 - [x] **3.4** Effets filaires : explosion (particules/lignes), flash d'impact (code)
-- [ ] **3.5** Sons ZzFX : poussée, tir, explosion, impact, atterrissage (code)
+- [x] **3.5** Sons ZzFX : poussée, tir, explosion, impact, atterrissage (code)
 
 ## Phase 4 — Factions, capture, bâtiments
 

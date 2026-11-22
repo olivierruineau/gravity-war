@@ -14,6 +14,7 @@ import { arena } from '../data/maps/arena.js';
 import { drawPlanet } from '../entities/planetView.js';
 import { drawProjectiles } from '../entities/projectileView.js';
 import { drawShip } from '../entities/shipView.js';
+import { createAudioEvents } from '../systems/audioEvents.js';
 import { createDebugOverlay } from '../systems/debugOverlay.js';
 import { createEffects } from '../systems/effects.js';
 import { createGravityArrow } from '../systems/gravityArrow.js';
@@ -48,6 +49,7 @@ export class GameScene extends Phaser.Scene {
     this.healthBar = createHealthBar(this);
     this.landingAid = createLandingAid(this);
     this.effects = createEffects(this);
+    this.audio = createAudioEvents();
     this.gravityArrow = createGravityArrow(this);
   }
 
@@ -74,10 +76,12 @@ export class GameScene extends Phaser.Scene {
     this.healthBar.update(player);
     this.debug.update(this.world, player);
 
+    this.audio.handle(this.world.events, player.pos);
+    this.audio.updateThrust(player, delta / 1000);
     this.effects.handle(this.world.events);
     this.effects.update(delta / 1000);
 
-    // Les événements (sons, effets) seront lus ici à partir de la phase 3, puis la file est vidée.
+    // Les événements ont été lus par l'audio et les effets : on vide la file pour la frame suivante.
     clearEvents(this.world.events);
   }
 }

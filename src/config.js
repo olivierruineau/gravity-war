@@ -54,6 +54,10 @@ export const BOUNDS_RESTITUTION = 0.5;
 /** Effets visuels (cosmétiques, hors simulation) : taille du pool d'effets simultanés. */
 export const EFFECT_CAPACITY = 64;
 
+/** Audio : distance (px) au-delà de laquelle un son d'événement n'est plus audible. */
+export const AUDIO_RANGE = 700;
+export const THRUST_SOUND_INTERVAL = 0.12; // secondes entre deux « pulsations » du moteur
+
 /** Palette restreinte façon années 90 (à ajuster avec la direction artistique). */
 export const PALETTE = {
   bg: 0x0b0b14,
