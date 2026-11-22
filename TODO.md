@@ -22,7 +22,7 @@ Spécification : [docs/SPEC.md](docs/SPEC.md). Architecture : [docs/ARCHITECTURE
 
 **Fin de phase :** on pilote un triangle avec inertie dans une carte bornée, la caméra le suit, on perçoit la vitesse.
 
-- [ ] **1.1** ADR 0002 : architecture de `core/` — état du monde, modèle d'entités, intentions de pilotage (`{rotate, thrust, fire, missile}` partagées joueur/bots), pas fixe + accumulateur, pont `core` → rendu Phaser (arch)
+- [x] **1.1** ADR 0002 : architecture de `core/` — état du monde, modèle d'entités, intentions de pilotage (`{rotate, thrust, fire, missile}` partagées joueur/bots), pas fixe + accumulateur, pont `core` → rendu Phaser (arch)
 - [ ] **1.2** `core/vec2` (opérations sans allocation) + RNG seedé, avec tests (code, test-s)
 - [ ] **1.3** Boucle à pas fixe : accumulateur dans `GameScene`, `core/world` avec `step(dt)` vide, test de déterminisme (code, test-c)
 - [ ] **1.4** Physique du vaisseau : rotation, poussée dans l'axe du nez, inertie ; tests (pas de frein, 180° + poussée annule la vitesse) (code, test-c)
