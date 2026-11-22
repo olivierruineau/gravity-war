@@ -14,6 +14,7 @@ import { arena } from '../data/maps/arena.js';
 import { drawPlanet } from '../entities/planetView.js';
 import { drawShip } from '../entities/shipView.js';
 import { createDebugOverlay } from '../systems/debugOverlay.js';
+import { createGravityArrow } from '../systems/gravityArrow.js';
 import { createHealthBar } from '../systems/healthBar.js';
 import { createLandingAid } from '../systems/landingAid.js';
 import { createKeyboardInput } from '../systems/keyboardInput.js';
@@ -44,6 +45,7 @@ export class GameScene extends Phaser.Scene {
     this.debug = createDebugOverlay(this);
     this.healthBar = createHealthBar(this);
     this.landingAid = createLandingAid(this);
+    this.gravityArrow = createGravityArrow(this);
   }
 
   update(_time, delta) {
@@ -61,6 +63,7 @@ export class GameScene extends Phaser.Scene {
     for (let i = 0; i < planets.length; i++) drawPlanet(this.gfx, planets[i]);
     drawShip(this.gfx, player, PALETTE.factions[0]);
 
+    this.gravityArrow.update(this.world, player);
     this.landingAid.update(this.world, player);
     this.healthBar.update(player);
     this.debug.update(this.world, player);

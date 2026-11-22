@@ -373,18 +373,31 @@ describe('gravité : superposition', () => {
     expect(ship.vel.y).toBe(0);
   });
 
-  it('planètes inégales : l’accélération est la somme des accélérations individuelles', () => {
+  it('planètes inégales : un pas donne une vitesse sur le segment [v_A, v_B] (ADR 0004)', () => {
     const a = { dx: 150, dy: 40, radius: 60, gravity: 70 };
     const b = { dx: -70, dy: 90, radius: 30, gravity: 84 };
-    // Un seul pas : l'accélération vaut v/dt, comparée entre le monde à deux planètes et les mondes à une.
+    // Un seul pas depuis le repos : v = a·dt, comparée entre le monde à deux planètes et les mondes à une.
     const both = restAt([a, b], 1).vel;
     const onlyA = restAt([a], 1).vel;
     const onlyB = restAt([b], 1).vel;
-    // Somme de flottants : erreur ≤ quelques ulp de ~0,06 px/s, donc 12 décimales sont sûres.
-    expect(both.x).toBeCloseTo(onlyA.x + onlyB.x, 12);
-    expect(both.y).toBeCloseTo(onlyA.y + onlyB.y, 12);
+    const ab = { x: onlyB.x - onlyA.x, y: onlyB.y - onlyA.y };
+    const ap = { x: both.x - onlyA.x, y: both.y - onlyA.y };
+    const abNorm2 = ab.x * ab.x + ab.y * ab.y;
+    // Les deux tirages sont franchement différents (sinon le test est trivial), et non nuls.
     expect(Math.hypot(onlyA.x, onlyA.y)).toBeGreaterThan(0.01);
     expect(Math.hypot(onlyB.x, onlyB.y)).toBeGreaterThan(0.01);
+    expect(Math.sqrt(abNorm2)).toBeGreaterThan(0.01);
+    // Combinaison convexe : both = v_A + t·(v_B − v_A) avec t ∈ [0, 1]. Colinéarité (produit vectoriel)
+    // à 1e-12 : v ~ 0,06 px/s, erreur d'arrondi ~1e-17, 12 décimales sont sûres.
+    expect(ab.x * ap.y - ab.y * ap.x).toBeCloseTo(0, 12);
+    const t = (ap.x * ab.x + ap.y * ab.y) / abNorm2;
+    // t strictement dans ]0, 1[ : les deux planètes contribuent (une somme donnerait une vitesse hors du segment).
+    expect(t).toBeGreaterThan(0.05);
+    expect(t).toBeLessThan(0.95);
+    // Plafond de l'ADR 0004 §3 : |a| ≤ max des |a_i| (une somme le dépasserait ici).
+    expect(Math.hypot(both.x, both.y)).toBeLessThanOrEqual(
+      Math.max(Math.hypot(onlyA.x, onlyA.y), Math.hypot(onlyB.x, onlyB.y)) + 1e-12,
+    );
   });
 });
 

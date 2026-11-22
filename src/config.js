@@ -23,6 +23,7 @@ export const SHIP_SIZE = 8; // rayon du triangle dessiné, en px
 /** Gravité (ADR 0003) : chaque planète est réglée par sa gravité de surface g0 (px/s²), en 1/d² à portée finie. */
 export const PLANET_GRAVITY = 70; // g0 par défaut
 export const GRAVITY_RANGE_FACTOR = 5; // portée = 5 × rayon, coupure douce
+export const GRAVITY_DOMINANCE_POWER = 2; // zones qui se chevauchent : poids = profondeur / altitude^p (ADR 0004)
 export const PLANET_MAX_GRAVITY = 0.6 * SHIP_THRUST; // le décollage reste toujours possible
 
 /** Atterrissage et impact (ADR 0003 §4) : vitesses en px/s, angle en radians. */

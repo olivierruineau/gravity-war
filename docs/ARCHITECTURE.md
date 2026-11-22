@@ -36,6 +36,7 @@
 
 - Planète = `{ pos, radius, owner, mu, range }`, créée depuis la carte `{ x, y, radius, gravity? }` ; `gravity` = gravité de surface `g0` (px/s²), plafonnée à `0,6 × SHIP_THRUST` pour garantir le décollage.
 - Gravité 1/d² à portée finie `R = 5·r`, force décalée qui s'annule continûment en `R`, bornée à `g0` sous la surface ; espace inertiel hors des champs (`core/gravity.js`).
+- Champs qui se chevauchent ([ADR 0004](adr/0004-zone-gravite-dominante.md)) : pas de somme, mais une moyenne des accélérations pondérée par `(1 − d/R) / (d − r)^p` (p = `GRAVITY_DOMINANCE_POWER` = 2). La surface la plus proche domine, g0 exact sur toute surface, |a| ≤ max g0, résultat identique à l'ADR 0003 dans une zone seule. Le rendu (flèche de gravité) relit `gravityAt`, sans recopier la loi.
 - Contact vaisseau/planète dans `core/landing.js` : `evaluateLanding` (vitesse d'approche, tangentielle, erreur d'angle) est la seule source des seuils (collision, aide visuelle, IA). Atterrissage → `landedOn`, vitesse nulle, `EVT.LANDED` ; sinon dégâts proportionnels à l'excès de vitesse, rebond garanti, `EVT.IMPACT`.
 - Ordre d'un pas, par vaisseau vivant : intentions → maintien/décollage si posé (un vaisseau posé saute la suite) → gravité + intégration → bornes → contact planètes.
 
@@ -57,8 +58,9 @@ Résolution interne 480×270, `pixelArt` + `roundPixels`, mise à l'échelle `FI
 
 ## Décisions
 
-| ADR                                         | Sujet                                 | Statut  |
-| ------------------------------------------- | ------------------------------------- | ------- |
-| [0001](adr/0001-stack-technique.md)         | Stack technique                       | Accepté |
-| [0002](adr/0002-architecture-core.md)       | Architecture de `core/` et pont rendu | Accepté |
-| [0003](adr/0003-gravite-et-atterrissage.md) | Gravité, collision et atterrissage    | Accepté |
+| ADR                                         | Sujet                                      | Statut                                     |
+| ------------------------------------------- | ------------------------------------------ | ------------------------------------------ |
+| [0001](adr/0001-stack-technique.md)         | Stack technique                            | Accepté                                    |
+| [0002](adr/0002-architecture-core.md)       | Architecture de `core/` et pont rendu      | Accepté                                    |
+| [0003](adr/0003-gravite-et-atterrissage.md) | Gravité, collision et atterrissage         | Accepté (§2 « sommation » amendé par 0004) |
+| [0004](adr/0004-zone-gravite-dominante.md)  | Zone de gravité dominante (chevauchements) | Accepté                                    |

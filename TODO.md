@@ -43,6 +43,7 @@ Spécification : [docs/SPEC.md](docs/SPEC.md). Architecture : [docs/ARCHITECTURE
 - [x] **2.5** État « posé » : le vaisseau reste sur la surface, décollage possible (code, test-c)
 - [x] **2.6** Aide à l'atterrissage : indicateur vitesse radiale/angle vert/rouge près des planètes (code)
 - [x] **2.7** Revue de la physique et du code de la phase (rev)
+- [x] **2.8** Zone de gravité dominante lissée (ADR 0004) + flèche de gravité sur le vaisseau, suite au retour de playtest (arch, code, test-s, test-c)
 
 ## Phase 3 — Tir et mort
 
