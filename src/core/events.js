@@ -8,6 +8,7 @@ export const EVT = {
   IMPACT: 3,
   LANDED: 4,
   CAPTURED: 5,
+  RESPAWN: 6, // a = vaisseau, b = planète de réapparition
 };
 
 export function createEvents(capacity) {

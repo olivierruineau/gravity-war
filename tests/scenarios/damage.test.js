@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FIXED_DT, SHIP_COLLISION_RADIUS, SHIP_MAX_HP } from '../../src/config.js';
+import { FIXED_DT, RESPAWN_DELAY, SHIP_COLLISION_RADIUS, SHIP_MAX_HP } from '../../src/config.js';
 import { clearEvents, EVT } from '../../src/core/events.js';
 import { wrapAngle } from '../../src/core/math.js';
 import { int } from '../../src/core/rng.js';
@@ -11,6 +11,10 @@ import { createWorld, step } from '../../src/core/world.js';
 // franchit le seuil en un seul pas (1,5 à 2,5 px par pas). La vitesse d'approche au contact vaut alors
 // la vitesse de lancer + g·dt ≈ +1 px/s (g ≈ 57 px/s² à la surface, dt = 1/60). Les dégâts valent
 // (approche − 45) pour un lancer radial, d'où des marges de ~1,2 px/s sur les seuils ci-dessous.
+// IMPORTANT : la planète de cette mini-carte n'a pas d'`owner` (neutre). Aucune planète n'appartient à la
+// faction du vaisseau 0, donc un vaisseau mort ici ne réapparaît JAMAIS (mort définitive) : c'est ce qui
+// garde valides les tests « vaisseau mort figé » ci-dessous. Les scénarios de réapparition (planète
+// possédée) sont dans respawn.test.js.
 const SIZE = 4000;
 const CX = 2000;
 const CY = 2000;
@@ -202,8 +206,12 @@ describe('dégâts : seuil de mort (100 PV ↔ ≈ 145 px/s d’approche)', () =
     expect(explosion.x).toBe(impact.x);
     expect(explosion.y).toBe(impact.y);
     expect(Math.hypot(explosion.x - CX, explosion.y - CY)).toBeCloseTo(RADIUS, 9); // arrondi flottant
-    // Mort sans rebond : la vitesse d'approche n'est pas inversée (toujours dirigée vers le centre).
-    expect(outward(ship)).toBeLessThan(0);
+    // Mort sans rebond, et figé : vitesse remise à (0, 0), intention remise à zéro, décompte de respawn lancé.
+    // Égalités exactes : ce sont des affectations directes de constantes, sans calcul flottant.
+    expect(ship.vel.x).toBe(0);
+    expect(ship.vel.y).toBe(0);
+    expect(ship.intent).toEqual({ rotate: 0, thrust: false, fire: false, missile: false });
+    expect(ship.respawnTimer).toBe(RESPAWN_DELAY);
     // Le vaisseau est resté reprojeté hors de la planète.
     expect(distance(ship)).toBeCloseTo(CONTACT, 9); // arrondi flottant
   });
@@ -286,6 +294,8 @@ describe('mort : vaisseau figé et muet', () => {
   }
 
   it('600 pas, rotation et poussée actives : pos, vel, angle, hp, landedOn inchangés, aucun événement', () => {
+    // Carte sans planète possédée : la mort est définitive, donc rien ne bouge ni n'est émis, même
+    // au-delà de RESPAWN_DELAY (3 s = 180 pas, ici 600 pas).
     const { world, ship } = deadWorld();
     const snapshot = JSON.stringify({
       pos: ship.pos,

@@ -45,6 +45,20 @@ describe('createPlanet : champs', () => {
   });
 });
 
+describe('createPlanet : propriétaire', () => {
+  it('owner explicite : la planète démarre à ce propriétaire', () => {
+    expect(createPlanet({ x: 0, y: 0, radius: 10, owner: 2 }).owner).toBe(2);
+  });
+
+  it('owner: 0 explicite (faction joueur) n’est pas remplacé par la neutralité', () => {
+    expect(createPlanet({ x: 0, y: 0, radius: 10, owner: 0 }).owner).toBe(0);
+  });
+
+  it('sans owner : neutre (NEUTRAL)', () => {
+    expect(createPlanet({ x: 0, y: 0, radius: 10 }).owner).toBe(NEUTRAL);
+  });
+});
+
 describe('createPlanet : gravité par défaut', () => {
   it('sans gravity, la gravité de surface vaut PLANET_GRAVITY', () => {
     const planet = createPlanet({ x: CX, y: CY, radius: 60 });
@@ -178,6 +192,43 @@ describe('nearestPlanet : invariants', () => {
     const snapshot = structuredClone(planets);
     nearestPlanet(planets, { x: 150, y: 50 });
     expect(planets).toEqual(snapshot);
+  });
+});
+
+describe('nearestPlanet : filtre par propriétaire', () => {
+  const origin = { x: 0, y: 0 };
+  const enemyNear = createPlanet({ x: 50, y: 0, radius: 10, owner: 1 }); // surface à 40
+  const ownFar = createPlanet({ x: 300, y: 0, radius: 10, owner: 0 }); // surface à 290
+  const ownFarther = createPlanet({ x: 0, y: 900, radius: 10, owner: 0 }); // surface à 890
+  const neutral = createPlanet({ x: 20, y: 0, radius: 5 }); // surface à 15
+  const planets = [enemyNear, ownFar, ownFarther, neutral];
+
+  it('ignore les planètes des autres propriétaires, même plus proches', () => {
+    expect(nearestPlanet(planets, origin, 0)).toBe(1);
+  });
+
+  it('ne retient que la planète la plus proche parmi celles du propriétaire', () => {
+    expect(nearestPlanet(planets, origin, 0)).not.toBe(2);
+  });
+
+  it('propriétaire sans aucune planète : −1', () => {
+    expect(nearestPlanet(planets, origin, 3)).toBe(-1);
+  });
+
+  it('filtre NEUTRAL : ne retient que les planètes neutres', () => {
+    expect(nearestPlanet(planets, origin, NEUTRAL)).toBe(3);
+  });
+
+  it('liste vide avec un filtre : −1', () => {
+    expect(nearestPlanet([], origin, 0)).toBe(-1);
+  });
+
+  it('sans filtre (owner omis) : comportement inchangé, planète la plus proche tous propriétaires confondus', () => {
+    expect(nearestPlanet(planets, origin)).toBe(3);
+  });
+
+  it('owner: undefined explicite équivaut à l’absence de filtre', () => {
+    expect(nearestPlanet(planets, origin, undefined)).toBe(3);
   });
 });
 

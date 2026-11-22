@@ -49,10 +49,10 @@ Spécification : [docs/SPEC.md](docs/SPEC.md). Architecture : [docs/ARCHITECTURE
 
 **Fin de phase :** on tire, on peut détruire une cible d'entraînement, on meurt et on respawn.
 
-- [ ] **3.0** Refactor préparatoire (issu de la revue 2.7) : `damageShip(world, i, amount, x, y)` (bouclier → PV → mort : `alive`, `landedOn = -1`, `EXPLOSION` en un seul endroit, appelé par `landing.js`) ; `respawnShip(ship, planet…)` (remet vel/PV/intent, pose le vaisseau sur la planète de respawn sans `LANDED`) ; `step` doit pouvoir décompter un `respawnTimer` pour un vaisseau mort ; filtre `owner` optionnel pour `nearestPlanet` ; tests (arch si l'API est discutée, code, test-c)
+- [x] **3.0** Refactor préparatoire (issu de la revue 2.7) : `damageShip(world, i, amount, x, y)` (bouclier → PV → mort : `alive`, `landedOn = -1`, `EXPLOSION` en un seul endroit, appelé par `landing.js`) ; `respawnShip(ship, planet…)` (remet vel/PV/intent, pose le vaisseau sur la planète de respawn sans `LANDED`) ; `step` doit pouvoir décompter un `respawnTimer` pour un vaisseau mort ; filtre `owner` optionnel pour `nearestPlanet` ; tests (arch si l'API est discutée, code, test-c)
 - [ ] **3.1** Projectiles : pool, tir principal (`Espace`), cadence, durée de vie, collision avec planètes ; tests (code, test-c)
 - [ ] **3.2** Dégâts projectiles → vaisseau ; cible d'entraînement statique/dérivante pour tester (code, test-s)
-- [ ] **3.3** Mort + respawn à la planète de départ après délai (~3 s) (code, test-c)
+- [x] **3.3** Mort + respawn à la planète de départ après délai (~3 s) (code, test-c) — réalisé avec 3.0 (respawn sur la planète possédée la plus proche, bases dotées d'un propriétaire dans la carte)
 - [ ] **3.4** Effets filaires : explosion (particules/lignes), flash d'impact (code)
 - [ ] **3.5** Sons ZzFX : poussée, tir, explosion, impact, atterrissage (code)
 

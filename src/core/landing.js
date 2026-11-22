@@ -13,6 +13,7 @@ import {
 } from '../config.js';
 import { EVT, pushEvent } from './events.js';
 import { gravityAt } from './gravity.js';
+import { damageShip } from './lifecycle.js';
 import { wrapAngle } from './math.js';
 
 /**
@@ -108,14 +109,7 @@ export function collideShipPlanets(world, shipIndex) {
     } else {
       const damage = impactDamage(scratch.approachSpeed, scratch.tangentialSpeed);
       pushEvent(world.events, EVT.IMPACT, surfaceX, surfaceY, shipIndex, damage);
-      ship.hp -= damage;
-      if (ship.hp <= 0) {
-        ship.hp = 0;
-        ship.alive = false;
-        ship.landedOn = -1;
-        pushEvent(world.events, EVT.EXPLOSION, surfaceX, surfaceY, shipIndex);
-        return;
-      }
+      if (damageShip(world, shipIndex, damage, surfaceX, surfaceY)) return;
       // Rebond garanti (jamais d'arrêt) : sortie radiale minimale + frottement tangentiel.
       const bounce = Math.max(IMPACT_RESTITUTION * scratch.approachSpeed, IMPACT_MIN_BOUNCE_SPEED);
       const tangential = scratch.tangentialSpeed * IMPACT_TANGENTIAL_DAMPING;

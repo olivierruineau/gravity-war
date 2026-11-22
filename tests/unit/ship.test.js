@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { FIXED_DT, SHIP_MAX_HP, SHIP_ROTATION_SPEED, SHIP_THRUST } from '../../src/config.js';
+import {
+  FIXED_DT,
+  SHIP_COLLISION_RADIUS,
+  SHIP_MAX_HP,
+  SHIP_ROTATION_SPEED,
+  SHIP_THRUST,
+} from '../../src/config.js';
 import { createIntent } from '../../src/core/intent.js';
-import { applyIntent, createShip, integrate } from '../../src/core/ship.js';
+import { createPlanet } from '../../src/core/planet.js';
+import { applyIntent, createShip, integrate, respawnShip } from '../../src/core/ship.js';
 
 const DT = FIXED_DT;
 const TWO_PI = Math.PI * 2;
@@ -29,6 +36,12 @@ describe('createShip', () => {
     expect(createShip(0, 0, 0, 1.25).angle).toBe(1.25);
   });
 
+  it('démarre sans délai de respawn (respawnTimer = 0) et posé sur rien (landedOn = -1)', () => {
+    const ship = createShip(0, 0, 0);
+    expect(ship.respawnTimer).toBe(0);
+    expect(ship.landedOn).toBe(-1);
+  });
+
   it('a une intention par défaut inerte (aucune action)', () => {
     expect(createShip(0, 0, 0).intent).toEqual(createIntent());
   });
@@ -39,6 +52,80 @@ describe('createShip', () => {
     expect(a.pos).not.toBe(b.pos);
     expect(a.vel).not.toBe(b.vel);
     expect(a.intent).not.toBe(b.intent);
+  });
+});
+
+describe('respawnShip', () => {
+  const PLANET_X = 200;
+  const PLANET_Y = 150;
+  const RADIUS = 60;
+  const planet = createPlanet({ x: PLANET_X, y: PLANET_Y, radius: RADIUS, owner: 0 });
+
+  /** Vaisseau mort, avec un état résiduel de vol à effacer. */
+  function deadShip() {
+    const ship = createShip(0, 900, 900, 0.3);
+    ship.alive = false;
+    ship.hp = 0;
+    ship.vel.x = 42;
+    ship.vel.y = -7;
+    ship.landedOn = -1;
+    ship.respawnTimer = 1.2;
+    ship.intent.rotate = 1;
+    ship.intent.thrust = true;
+    ship.intent.fire = true;
+    ship.intent.missile = true;
+    return ship;
+  }
+
+  it('le vaisseau redevient vivant avec tous ses PV', () => {
+    const ship = deadShip();
+    respawnShip(ship, 3, planet);
+    expect(ship.alive).toBe(true);
+    expect(ship.hp).toBe(SHIP_MAX_HP);
+  });
+
+  it('posé sur la planète donnée : landedOn = index passé', () => {
+    const ship = deadShip();
+    respawnShip(ship, 3, planet);
+    expect(ship.landedOn).toBe(3);
+  });
+
+  it('position au-dessus de la planète, à rayon + SHIP_COLLISION_RADIUS du centre', () => {
+    const ship = deadShip();
+    respawnShip(ship, 0, planet);
+    expect(ship.pos.x).toBeCloseTo(PLANET_X, PRECISION);
+    expect(ship.pos.y).toBeCloseTo(PLANET_Y - (RADIUS + SHIP_COLLISION_RADIUS), PRECISION);
+  });
+
+  it('vitesse remise à zéro', () => {
+    const ship = deadShip();
+    respawnShip(ship, 0, planet);
+    expect(ship.vel).toEqual({ x: 0, y: 0 });
+  });
+
+  it('nez vers le haut (−π/2), quel que soit l’angle précédent', () => {
+    const ship = deadShip();
+    respawnShip(ship, 0, planet);
+    expect(ship.angle).toBe(-Math.PI / 2);
+  });
+
+  it('respawnTimer remis à zéro', () => {
+    const ship = deadShip();
+    respawnShip(ship, 0, planet);
+    expect(ship.respawnTimer).toBe(0);
+  });
+
+  it('intention entièrement remise à zéro', () => {
+    const ship = deadShip();
+    respawnShip(ship, 0, planet);
+    expect(ship.intent).toEqual(createIntent());
+  });
+
+  it('ne modifie pas le rayon ni la position de la planète', () => {
+    const ship = deadShip();
+    respawnShip(ship, 0, planet);
+    expect(planet.pos).toEqual({ x: PLANET_X, y: PLANET_Y });
+    expect(planet.radius).toBe(RADIUS);
   });
 });
 

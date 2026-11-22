@@ -1,0 +1,45 @@
+// Vie et mort des vaisseaux : dégâts, mort, réapparition. Un seul endroit pour ces règles (revue 2.7) :
+// contact planète, tirs, tourelles et bouclier (phase 4) passent tous par `damageShip`.
+import { RESPAWN_DELAY } from '../config.js';
+import { EVT, pushEvent } from './events.js';
+import { resetIntent } from './intent.js';
+import { nearestPlanet } from './planet.js';
+import { respawnShip } from './ship.js';
+
+/**
+ * Retire `amount` PV au vaisseau `shipIndex`. À 0 : il meurt (immobile, sans intention, détaché du sol),
+ * un EXPLOSION est émis en (x, y) et le décompte de respawn démarre. Retourne true si le coup est mortel.
+ */
+export function damageShip(world, shipIndex, amount, x, y) {
+  const ship = world.ships[shipIndex];
+  if (!ship.alive) return false;
+  ship.hp -= amount;
+  if (ship.hp > 0) return false;
+  ship.hp = 0;
+  ship.alive = false;
+  ship.landedOn = -1;
+  ship.vel.x = 0;
+  ship.vel.y = 0;
+  ship.respawnTimer = RESPAWN_DELAY;
+  resetIntent(ship.intent);
+  pushEvent(world.events, EVT.EXPLOSION, x, y, shipIndex);
+  return true;
+}
+
+/**
+ * Décompte le délai de respawn d'un vaisseau mort ; à échéance il réapparaît sur la planète que sa faction
+ * possède la plus proche. Sans planète possédée il reste mort (élimination, item 4.10).
+ */
+export function updateRespawn(world, shipIndex, dt) {
+  const ship = world.ships[shipIndex];
+  ship.respawnTimer -= dt;
+  if (ship.respawnTimer > 0) return;
+  const planetIndex = nearestPlanet(world.planets, ship.pos, ship.faction);
+  if (planetIndex < 0) {
+    ship.respawnTimer = 0;
+    return;
+  }
+  const planet = world.planets[planetIndex];
+  respawnShip(ship, planetIndex, planet);
+  pushEvent(world.events, EVT.RESPAWN, ship.pos.x, ship.pos.y, shipIndex, planetIndex);
+}

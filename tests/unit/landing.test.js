@@ -748,12 +748,19 @@ describe('collideShipPlanets : impact mortel', () => {
     expect(world.events.items[1]).toMatchObject({ type: EVT.EXPLOSION, a: 1 });
   });
 
-  it('vitesse non modifiée par un rebond', () => {
+  it('vitesse nulle à la mort (pas de rebond)', () => {
     const world = oneBodyWorld();
     const ship = placeShip(world, { approach: LETHAL_APPROACH, tangential: 20 });
-    const vel = { ...ship.vel };
     collideShipPlanets(world, 0);
-    expect(ship.vel).toEqual(vel);
+    expect(ship.vel).toEqual({ x: 0, y: 0 });
+  });
+
+  it('EXPLOSION émise après IMPACT, même vitesse d’impact élevée', () => {
+    const world = oneBodyWorld();
+    placeShip(world, { approach: LETHAL_APPROACH, tangential: 20 });
+    collideShipPlanets(world, 0);
+    expect(world.events.items[0].type).toBe(EVT.IMPACT);
+    expect(world.events.items[1].type).toBe(EVT.EXPLOSION);
   });
 
   it('hp exactement égal aux dégâts → mort', () => {

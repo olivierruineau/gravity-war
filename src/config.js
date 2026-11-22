@@ -20,6 +20,9 @@ export const SHIP_THRUST = 140; // px/s², dans l'axe du nez
 export const SHIP_MAX_HP = 100;
 export const SHIP_SIZE = 8; // rayon du triangle dessiné, en px
 
+/** Mort et respawn : délai avant de réapparaître sur la planète possédée la plus proche. */
+export const RESPAWN_DELAY = 3; // secondes
+
 /** Gravité (ADR 0003) : chaque planète est réglée par sa gravité de surface g0 (px/s²), en 1/d² à portée finie. */
 export const PLANET_GRAVITY = 70; // g0 par défaut
 export const GRAVITY_RANGE_FACTOR = 5; // portée = 5 × rayon, coupure douce
