@@ -22,6 +22,11 @@ export default [
         { patterns: ['phaser', '../scenes/*', '../entities/*', '../systems/*'] },
       ],
       'no-restricted-globals': ['error', 'window', 'document', 'localStorage'],
+      // Aléa de simulation : uniquement via core/rng.js (déterminisme, ADR 0002).
+      'no-restricted-properties': [
+        'error',
+        { object: 'Math', property: 'random', message: 'Utiliser core/rng.js (aléa seedé).' },
+      ],
     },
   },
   {
