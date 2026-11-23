@@ -34,6 +34,16 @@ Revue faite par la session de développement (pas de relecteur indépendant), av
 7. **Pas de test automatisé du service worker lui-même** au-delà de la génération (`pwa-plugin.test.js`) et du scénario hors ligne manuel ci-dessus ; la mise à jour entre deux versions est à valider sur un déploiement réel.
 8. **La manette** n'est pas gérée ; elle réutilisera la table de navigation et la fusion d'intentions (backlog).
 
+## Phase 9 : retours de playtest sur appareil
+
+Auto-revue de la phase 9 (aide à la pose, difficulté, options, netteté), sans revue Opus indépendante.
+
+- **9.1 Aide à la pose** : toujours un filtre d'intention (`landingAssist.js`), déclenchement ramené de 120 à 70 px, nez contre la vitesse latérale au-delà de 80 % du seuil, retrait dès que le joueur pousse. Réglages `ASSIST_*` à valider en jeu.
+- **9.2 / 9.4 Difficulté** ([ADR 0010](adr/0010-niveaux-de-difficulte.md)) : surcharges de profil, rien dans les règles. Le test de duel (6 graines) ordonne facile < normal < difficile ; les valeurs restent à régler en recette. `auto` = facile au tactile.
+- **9.3 Options** : modèle pur testé, panneau commun au menu et à la pause. Défaut corrigé au passage : Phaser peut rejouer une même touche dans une image lente, d'où une action doublée (mesuré 2 fois sur 8) ; `createNavigation` ignore désormais un `timeStamp` déjà traité. Le test e2e ne le détectait que par hasard.
+- **9.5 Netteté** ([ADR 0011](adr/0011-nettete-rendu-haute-resolution.md)) : changement transversal de rendu. Risque principal : coût de remplissage (jusqu'à 4×). Mesuré en rendu logiciel : à `K` = 2 fixe, ×4 passe de 44 à 34 fps, d'où le repli automatique à `K` = 1 avec la lueur. Avec la qualité auto, les cadences retrouvent celles d'avant (×4 47,7 ; ×6 34,6 ; ×8 27,1 fps). À confirmer sur un vrai GPU, où le surcoût devrait être négligeable.
+- **Limites** : changer la taille de la fenêtre en cours de scène (plein écran) ne recalcule `K` qu'à la scène suivante ; les textes créés à `K` = 2 restent un peu flous après un repli à 1.
+
 ## Verdict
 
 La phase respecte sa définition de fin (jeu jouable au doigt du menu à la fin, installable, budget de cadence tenu en émulation) sans régression au clavier. La recette sur vrais appareils reste à faire (checklist).

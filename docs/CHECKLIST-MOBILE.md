@@ -12,9 +12,12 @@ Appareils à couvrir : **Android Chrome** et **iOS Safari** (un téléphone mili
 
 ## Menu
 
-- [ ] Boutons JOUER et COMMANDES visibles et touchables ; « COMMANDES » affiche les gestes (pas de « ESPACE » ni de « H »).
+- [ ] Boutons JOUER, COMMANDES et OPTIONS visibles et touchables ; « COMMANDES » affiche les gestes (pas de « ESPACE » ni de « H »).
 - [ ] Bouton PLEIN ECRAN présent sur Android (absent sur iPhone : normal), il passe bien en plein écran paysage.
-- [ ] Réglages `AIDE POSE` et `QUALITE` : un toucher change la valeur, elle est retenue après rechargement.
+- [ ] OPTIONS : un toucher sur une ligne change la valeur (DIFFICULTE, AIDE A LA POSE, QUALITE, SON), elle est retenue après rechargement ; RETOUR ferme. Aussi depuis la pause.
+- [ ] DIFFICULTE en AUTO : les bots sont nettement plus faciles qu'au clavier (comparer avec NORMAL).
+- [ ] **Netteté (9.5)** : les traits sont fins et non crénelés (vaisseau, planètes, minimap), le texte est net. Noter l'appareil et si la cadence tient ; sinon la qualité auto doit repasser en basse.
+- [ ] **Aide à la pose (9.1)** : elle ne se déclenche que près du sol (≈ 70 px), le nez se tourne contre une dérive latérale forte et il suffit alors de pousser pour l'annuler ; elle cède dès qu'on tourne, tire ou pousse.
 
 ## En jeu
 
