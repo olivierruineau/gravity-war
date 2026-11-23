@@ -150,3 +150,7 @@ L'item 4.1 pose **toutes** les formes, constantes, entrées `EVT` et le catalogu
 | **4.11** | Revue de la phase : règles, ordre du pas, absence d'allocation, écarts à l'ADR 0002.                                                                                                                                                                                                                  | —                                                                                                             | rev (Opus)                                                        | tout            |
 
 **Ordre recommandé** : 4.1, puis {4.2, 4.3, 4.7, 4.9} en parallèle, puis 4.4 et 4.5, puis 4.6 et 4.8, puis 4.10, puis 4.11. Chemin critique : 4.1 → 4.3 → 4.5 → 4.6 → 4.10.
+
+## Écart constaté en 6.4 (écran de fin)
+
+Le core continue de simuler après `GAME_OVER` (§ Issue), mais `GameScene` ffige les pas de simulation 1,5 s après l'issue (`END_SCREEN_DELAY`, pour laisser voir l'explosion finale) et affiche le bandeau VICTOIRE / DÉFAITE. `ESPACE` relance la partie (nouvelle graine, `scene.restart`), `ECHAP` revient au menu. Aucune règle du core n'a changé.

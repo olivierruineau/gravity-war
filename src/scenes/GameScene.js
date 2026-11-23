@@ -9,12 +9,14 @@ import {
 } from '../config.js';
 import { clearEvents } from '../core/events.js';
 import { consumeSteps, createClock } from '../core/clock.js';
+import { OUTCOME } from '../core/faction.js';
 import { createWorld, step } from '../core/world.js';
 import { arena } from '../data/maps/arena.js';
 import { drawPlanet } from '../entities/planetView.js';
 import { drawProjectiles } from '../entities/projectileView.js';
 import { drawShip } from '../entities/shipView.js';
 import { createAudioEvents } from '../systems/audioEvents.js';
+import { createEndScreen } from '../systems/endScreen.js';
 import { createDebugOverlay } from '../systems/debugOverlay.js';
 import { createEffects } from '../systems/effects.js';
 import { createGravityArrow } from '../systems/gravityArrow.js';
@@ -24,6 +26,9 @@ import { createOffscreenIndicators } from '../systems/offscreenIndicators.js';
 import { createLandingAid } from '../systems/landingAid.js';
 import { createKeyboardInput } from '../systems/keyboardInput.js';
 import { createStarfield } from '../systems/starfield.js';
+
+/** Délai (s) entre la fin de partie et l'écran de fin. */
+const END_SCREEN_DELAY = 1.5;
 
 /** Factions pilotées par l'IA (ADR 0006) ; la faction 0 est le joueur. */
 const BOT_FACTIONS = [1, 2];
@@ -54,6 +59,8 @@ export class GameScene extends Phaser.Scene {
     this.hud = createHud(this);
     this.minimap = createMinimap(this, this.world);
     this.offscreen = createOffscreenIndicators(this);
+    this.endScreen = createEndScreen(this);
+    this.endDelay = END_SCREEN_DELAY; // laisse voir l'explosion finale avant le bandeau
     this.landingAid = createLandingAid(this);
     this.effects = createEffects(this);
     this.audio = createAudioEvents();
@@ -64,7 +71,13 @@ export class GameScene extends Phaser.Scene {
     const player = this.world.ships[0];
     this.pilot.update(player.intent);
     const steps = consumeSteps(this.clock, delta / 1000);
-    for (let i = 0; i < steps; i++) step(this.world, FIXED_DT);
+    // Partie décidée : on fige la simulation (l'issue est écrite une seule fois par le core) après un court délai.
+    const over = this.world.outcome !== OUTCOME.PLAYING;
+    if (over) {
+      this.endDelay -= delta / 1000;
+      if (this.endDelay <= 0) this.endScreen.show(this.world.outcome);
+    }
+    if (!over || this.endDelay > 0) for (let i = 0; i < steps; i++) step(this.world, FIXED_DT);
 
     // Rendu immédiat : on efface et on redessine tout depuis l'état du core.
     this.cameras.main.centerOn(player.pos.x, player.pos.y); // bornée à la carte (setBounds)
