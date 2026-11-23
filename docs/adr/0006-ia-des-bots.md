@@ -203,3 +203,12 @@ Priorité à chaque pas, de la plus haute à la plus basse : **(1) éviter un cr
 - **RETREAT** : déclenché à santé < `lowHealth` si `underFire`, ennemi à moins de `retreatThreat`, ou déjà en route (pas de renoncement en vol). L'abri est une planète possédée sans ennemi à moins de `retreatSafe` et non touchée récemment. Posé, le bot reste tant que le bouclier se recharge (sévérité minimale `retreatHold`) ; sans bouclier débloqué, le repli ne dure que le temps de la menace.
 - **DEFEND** : avec un attaquant (`bot.attacker`, recalculé à chaque pas), même engagement que `HUNT` ; sans attaquant, atterrissage sur la planète. `giveUpTime` s'applique aussi à `DEFEND`.
 - `assaultMinHealth` vaut 30 dans le code (5.5), pas 60 comme dans le tableau ci-dessus ; à revoir en 5.8.
+
+## Revue 5.8 (IA et performance)
+
+- **Parité des règles : conforme.** `core/ai/*` n'écrit que `ships[f].intent` (via `resetIntent`), `world.ai[k]` et `world.aiRng`. Aucun appel à `damageShip`, `spawnProjectile`, `pushEvent`, `update*`, `world.events`, `world.rng` ni `Math.random`. Les seuls modules importés qui touchent au monde sont des requêtes pures (`gravityAt`, `predictPath`, `evaluateLanding`, `nearestPlanet`, `findMissileTarget`, `building`).
+- **Perception (§2) : conforme.** L'IA lit l'état (`lastHitTick`, `landedOn`, `captureBy`, PV), jamais la file d'événements.
+- **Allocations : aucune.** Les seuls objets sont des scratch au niveau du module (`path`, `best`, `aim`, `virtual`…) ; pas de `map`/`filter`/closure dans les chemins appelés par `step`.
+- **Budget (§8) : tenu.** Mesure jetable hors du dépôt, arène à 3 vaisseaux, 2 bots, 10 800 pas (180 s) sur 3 seeds : IA moyenne 0,04 à 0,056 ms par pas (budget 0,15 ms), p99 0,17 à 0,20 ms, max ≈ 1 ms (pics isolés, sans doute chauffe du JIT). Le `step` complet coûte 0,05 à 0,065 ms en moyenne.
+- **Ping-pong de captures : modéré.** Sur 8 seeds × 180 s, une planète change de propriétaire 1 à 2 fois en général ; 3 à 5 fois sur quelques petites planètes (seeds 3, 4, 7, 8). Pas de blocage. Dans une des seeds mesurées (1), le bot 2 perd sa base : la fin de partie relève de 6.4.
+- **Non traité, reporté à 7.2** (réglage) : `findDetour` ignore la vitesse et les tourelles hors cible ; esquive des balles peu efficace face à un tireur parfait (14 morts sur 20 en 5.5) ; constantes `slotValue`, `enemyCaptureFactor`, `occupiedFactor` à ajouter au tableau §6 ; `assaultMinHealth` (30 en code, 60 dans le tableau) et agressivité des bots à régler en playtest. Ces points n'ont pas été remesurés en 5.8.
