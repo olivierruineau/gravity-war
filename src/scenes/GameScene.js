@@ -18,7 +18,7 @@ import { createAudioEvents } from '../systems/audioEvents.js';
 import { createDebugOverlay } from '../systems/debugOverlay.js';
 import { createEffects } from '../systems/effects.js';
 import { createGravityArrow } from '../systems/gravityArrow.js';
-import { createHealthBar } from '../systems/healthBar.js';
+import { createHud } from '../systems/hud.js';
 import { createLandingAid } from '../systems/landingAid.js';
 import { createKeyboardInput } from '../systems/keyboardInput.js';
 import { createStarfield } from '../systems/starfield.js';
@@ -49,7 +49,7 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, this.world.width, this.world.height);
     this.gfx = this.add.graphics();
     this.debug = createDebugOverlay(this);
-    this.healthBar = createHealthBar(this);
+    this.hud = createHud(this);
     this.landingAid = createLandingAid(this);
     this.effects = createEffects(this);
     this.audio = createAudioEvents();
@@ -77,7 +77,7 @@ export class GameScene extends Phaser.Scene {
     this.gravityArrow.update(this.world, player);
     this.landingAid.update(this.world, player);
     const faction = this.world.factions[player.faction];
-    this.healthBar.update(player, faction.hasShield, faction.hasMissiles);
+    this.hud.update(player, faction);
     this.debug.update(this.world, player);
 
     this.audio.handle(this.world.events, player.pos);
