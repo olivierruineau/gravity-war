@@ -4,6 +4,8 @@ import { toCss } from '../systems/color.js';
 import { createMuteKey } from '../systems/muteKey.js';
 import { createNavigation, watchSource } from '../systems/navigation.js';
 import { createButton } from '../systems/uiButton.js';
+import { createSettingRow } from '../systems/settingRow.js';
+import { QUALITY_LABELS, cycleQualityMode, getQualityMode } from '../systems/quality.js';
 import { canFullscreen, enterFullscreen } from '../systems/platform.js';
 import { playSfx, resumeAudio } from '../audio/sfx.js';
 import { controlsLines } from '../data/controls.js';
@@ -36,14 +38,6 @@ export class MenuScene extends Phaser.Scene {
     this.tweens.add({ targets: prompt, alpha: 0, duration: 500, yoyo: true, repeat: -1 });
     const helpHint = this.add
       .text(cx, GAME_HEIGHT * 0.88, 'H : COMMANDES', {
-        fontFamily: 'monospace',
-        fontSize: '8px',
-        color: toCss(PALETTE.star),
-      })
-      .setOrigin(0.5);
-    const assistLine = () => `AIDE ATTERRISSAGE : ${ASSIST_LABELS[getAssistMode()]}`;
-    const assistHint = this.add
-      .text(cx, GAME_HEIGHT * 0.92, `A : ${assistLine()}`, {
         fontFamily: 'monospace',
         fontSize: '8px',
         color: toCss(PALETTE.star),
@@ -87,23 +81,25 @@ export class MenuScene extends Phaser.Scene {
       label: 'COMMANDES',
       onTap: toggleHelp,
     });
-    const assistButton = createButton(this, {
-      x: cx,
+    const assistRow = createSettingRow(this, {
+      x: cx - 110,
       y: GAME_HEIGHT * 0.92,
-      w: 200,
-      h: 28,
-      label: assistLine(),
-      fontSize: 8,
-      onTap: () => cycleAndShow(),
+      w: 210,
+      key: 'A',
+      label: () => `AIDE POSE ${ASSIST_LABELS[getAssistMode()]}`,
+      cycle: cycleAssistMode,
     });
-    const cycleAndShow = () => {
-      cycleAssistMode();
-      assistHint.setText(`A : ${assistLine()}`);
-      assistButton.setLabel(assistLine());
-    };
+    const qualityRow = createSettingRow(this, {
+      x: cx + 110,
+      y: GAME_HEIGHT * 0.92,
+      w: 210,
+      key: 'Q',
+      label: () => `QUALITE ${QUALITY_LABELS[getQualityMode()]}`,
+      cycle: cycleQualityMode,
+    });
     watchSource(this, (touch) => {
-      assistHint.setVisible(!touch);
-      assistButton.setVisible(touch);
+      assistRow.showTouch(touch);
+      qualityRow.showTouch(touch);
       prompt.setVisible(!touch);
       helpHint.setVisible(!touch);
       playButton.setVisible(touch);
@@ -127,6 +123,7 @@ export class MenuScene extends Phaser.Scene {
     const nav = createNavigation(this);
     nav.on('help', toggleHelp);
     nav.on('confirm', play);
-    nav.on('assist', cycleAndShow);
+    nav.on('assist', assistRow.cycle);
+    nav.on('quality', qualityRow.cycle);
   }
 }

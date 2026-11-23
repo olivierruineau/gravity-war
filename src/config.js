@@ -87,6 +87,10 @@ export const THRUST_SOUND_INTERVAL = 0.12; // secondes entre deux « pulsations 
 /** Lueur filaire (7.3) : un halo large et discret sous le trait net, pour les objets qui comptent. */
 export const GLOW_WIDTH = 3; // px
 export const GLOW_ALPHA = 0.18; // opacité du halo, multipliée par l'opacité du trait
+/** Qualité auto (8.9) : après `QUALITY_WARMUP` s de jeu, si la cadence moyenne d'une fenêtre de `QUALITY_WINDOW` s passe sous `QUALITY_LOW_FPS`, la lueur est coupée. */
+export const QUALITY_WARMUP = 2; // s : on ignore le chargement de la scène
+export const QUALITY_WINDOW = 3; // s
+export const QUALITY_LOW_FPS = 40;
 export const CAPTURE_ARC_WIDTH = 2; // px : la progression de capture ressort des contours à 1 px
 
 /** Palette restreinte façon années 90 (à ajuster avec la direction artistique). */

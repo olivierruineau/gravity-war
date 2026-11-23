@@ -93,6 +93,22 @@ Tout est dans `systems/`, en lecture seule de `world`. La logique de ce qui s'af
 
 Aucune allocation dans la boucle de simulation. `Math.hypot` alloue à chaque appel : utiliser `hypot` de `core/math.js` (ESLint l'impose dans tout `src/`). Mesure : ≈ 0,03 ms par pas pour 3 vaisseaux et 2 IA, soit 63 passages du ramasse-miettes pour 10 min de partie. Revue complète : [`REVIEW-v1.md`](REVIEW-v1.md).
 
+### Performance mobile (8.9)
+
+Le canevas reste à **480×270 pixels réels** quel que soit l'écran : Phaser (`Scale.FIT`) ne change que sa taille CSS, donc ni `devicePixelRatio` ni un redimensionnement ne coûtent de remplissage supplémentaire. Le coût vient des traits dessinés et de la simulation (rattrapage de pas quand la cadence baisse). Mesure : Chromium sans GPU, émulation Pixel 7 en paysage, CPU ralenti, trois doigts posés (poussée, tir, rotation), 10 s après 2 s de chauffe.
+
+| CPU ralenti | Lueur | Cadence moyenne |
+| ----------- | ----- | --------------- |
+| ×1          | oui   | 59,7 fps        |
+| ×4          | oui   | 44,3 fps        |
+| ×6          | oui   | 29,9 fps        |
+| ×6          | non   | 37,8 fps        |
+| ×6          | auto  | 37,2 fps        |
+| ×8          | non   | 27,6 fps        |
+| ×8          | oui   | 22,3 fps        |
+
+Le budget de 30 images par seconde tient donc jusqu'à ×6 grâce à la qualité basse. La **lueur** (halo sous chaque trait, `entities/glow.js`) est le seul degré de dégradation : en mode `auto`, `systems/quality.js` la coupe pour la session si la cadence moyenne d'une fenêtre de 3 s passe sous 40 fps (après 2 s de chauffe). Réglage manuel au menu (`Q` ou bouton) : AUTO, HAUTE, BASSE, mémorisé. À confirmer sur un vrai appareil (checklist de `docs/CHECKLIST-MOBILE.md`).
+
 ## Décisions
 
 | ADR                                            | Sujet                                                       | Statut                                      |

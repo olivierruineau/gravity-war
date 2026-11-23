@@ -27,6 +27,7 @@ import { createPauseScreen } from '../systems/pauseScreen.js';
 import { createOffscreenIndicators } from '../systems/offscreenIndicators.js';
 import { createLandingAid } from '../systems/landingAid.js';
 import { createPlayerInput } from '../systems/playerInput.js';
+import { createFrameMonitor, markAutoLow } from '../systems/quality.js';
 import { createStarfield } from '../systems/starfield.js';
 
 /** Délai (s) entre la fin de partie et l'écran de fin. */
@@ -65,6 +66,7 @@ export class GameScene extends Phaser.Scene {
     this.endScreen = createEndScreen(this);
     this.pause = createPauseScreen(this, () => this.world.outcome === OUTCOME.PLAYING);
     this.endDelay = END_SCREEN_DELAY; // laisse voir l'explosion finale avant le bandeau
+    this.frameMonitor = createFrameMonitor(markAutoLow);
     this.landingAid = createLandingAid(this);
     this.effects = createEffects(this);
     this.audio = createAudioEvents();
@@ -73,6 +75,7 @@ export class GameScene extends Phaser.Scene {
 
   update(_time, delta) {
     if (this.pause.paused) return; // tout est figé : ni simulation, ni entrées, ni effets
+    this.frameMonitor.sample(delta / 1000);
     const player = this.world.ships[0];
     this.pilot.update(player.intent, this.world, player);
     const steps = consumeSteps(this.clock, delta / 1000);
