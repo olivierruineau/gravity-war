@@ -10,10 +10,13 @@ import { createFactions, OUTCOME, updateFactions } from './faction.js';
 import { applyGravity } from './gravity.js';
 import { collideShipPlanets, updateLanded } from './landing.js';
 import { updateRespawn } from './lifecycle.js';
+import { steerMissiles } from './missile.js';
+import { updateRearm } from './rearm.js';
 import { updateShield } from './shield.js';
 import { createPlanet } from './planet.js';
 import { createProjectiles, updateProjectiles } from './projectile.js';
 import { createRng } from './rng.js';
+import { updateTurrets } from './turret.js';
 import { updateWeapons } from './weapons.js';
 import { applyIntent, createShip, integrate, respawnShip } from './ship.js';
 
@@ -36,6 +39,7 @@ export function createWorld(map, seed, { eventCapacity }) {
     events: createEvents(eventCapacity),
     factions: createFactions(planets),
     outcome: OUTCOME.PLAYING,
+    inGame: [], // factions en jeu au départ (celles sans planète sont « hors jeu » : hors victoire)
   };
   // spawns[i] = point de départ de la faction i : soit une position libre { x, y, angle? }, soit
   // { planet: index } pour démarrer posé sur sa planète de base (comme après un respawn).
@@ -44,6 +48,7 @@ export function createWorld(map, seed, { eventCapacity }) {
     if (spawn.planet !== undefined) respawnShip(ship, spawn.planet, planets[spawn.planet]);
     world.ships.push(ship);
   });
+  for (let f = 0; f < world.factions.length; f++) world.inGame.push(!world.factions[f].eliminated);
   updateFactions(world);
   return world;
 }
@@ -66,10 +71,16 @@ export function step(world, dt) {
     applyBounds(ship, world.width, world.height, SHIP_SIZE, BOUNDS_RESTITUTION);
     collideShipPlanets(world, i);
   }
+  updateTurrets(world, dt);
+  steerMissiles(world, dt);
   updateProjectiles(world, dt);
   collideProjectilesPlanets(world);
   collideProjectilesShips(world);
-  for (let i = 0; i < world.ships.length; i++) if (world.ships[i].alive) updateShield(world, i, dt);
+  for (let i = 0; i < world.ships.length; i++) {
+    if (!world.ships[i].alive) continue;
+    updateShield(world, i, dt);
+    updateRearm(world, i, dt);
+  }
   updateBuildings(world, dt);
   updateCapture(world, dt);
   updateFactions(world);

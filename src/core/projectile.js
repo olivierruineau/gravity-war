@@ -1,4 +1,4 @@
-// Projectiles (balles, plus tard missiles) : pool préalloué, aucune allocation en cours de partie.
+// Projectiles (balles, missiles) : pool préalloué, aucune allocation en cours de partie.
 // Spawn = premier slot inactif ; pool plein = tir ignoré (ADR 0002 §1).
 import { applyGravity } from './gravity.js';
 import { integrate } from './ship.js';
@@ -47,7 +47,7 @@ export function updateProjectiles(world, dt) {
   for (let i = 0; i < pool.length; i++) {
     const p = pool[i];
     if (!p.active) continue;
-    applyGravity(p, world.planets, dt);
+    if (p.kind !== KIND.MISSILE) applyGravity(p, world.planets, dt); // les missiles sont propulsés
     integrate(p, dt);
     p.life -= dt;
     if (

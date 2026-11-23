@@ -8,6 +8,8 @@ const RAYS = 8;
 const EXPLOSION = { duration: 0.7, radius: 36, rays: true };
 const FLASH = { duration: 0.15, radius: 5, rays: false };
 const RING = { duration: 0.4, radius: 20, rays: false };
+const MEDIUM_EXPLOSION = { duration: 0.5, radius: 24, rays: true };
+const BIG_RING = { duration: 0.6, radius: 48, rays: false }; // à l'échelle d'une planète
 
 export function createEffects(scene) {
   const g = scene.add.graphics().setDepth(60);
@@ -52,6 +54,19 @@ export function createEffects(scene) {
             break;
           case EVT.RESPAWN:
             spawn(RING, ev.x, ev.y, PALETTE.factions[ev.a] ?? PALETTE.neutral);
+            break;
+          case EVT.TURRET_SHOT:
+          case EVT.MISSILE_LAUNCH:
+            spawn(FLASH, ev.x, ev.y, PALETTE.accent);
+            break;
+          case EVT.TURRET_DESTROYED:
+            spawn(MEDIUM_EXPLOSION, ev.x, ev.y, PALETTE.accent);
+            break;
+          case EVT.CAPTURED:
+            spawn(BIG_RING, ev.x, ev.y, PALETTE.factions[ev.b] ?? PALETTE.neutral);
+            break;
+          case EVT.BUILT:
+            spawn(BIG_RING, ev.x, ev.y, PALETTE.accent);
             break;
         }
       }

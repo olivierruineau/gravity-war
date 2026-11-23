@@ -12,7 +12,18 @@ const SOUND_BY_EVENT = {
   [EVT.BULLET_HIT]: 'tick',
   [EVT.LANDED]: 'landed',
   [EVT.RESPAWN]: 'respawn',
+  [EVT.TURRET_SHOT]: 'turretShot',
+  [EVT.TURRET_DESTROYED]: 'turretDestroyed',
+  [EVT.BUILT]: 'built',
+  [EVT.CAPTURED]: 'captured',
+  [EVT.MISSILE_LAUNCH]: 'missileLaunch',
+  [EVT.REARM]: 'rearm',
+  [EVT.ELIMINATED]: 'eliminated',
+  [EVT.GAME_OVER]: 'gameOver',
 };
+
+// Événements sans position (état de partie) : audibles partout, sans atténuation.
+const GLOBAL_EVENTS = new Set([EVT.ELIMINATED, EVT.GAME_OVER]);
 
 const MIN_AUDIBLE = 0.05;
 
@@ -25,6 +36,10 @@ export function createAudioEvents() {
         const ev = events.items[i];
         const sound = SOUND_BY_EVENT[ev.type];
         if (!sound) continue;
+        if (GLOBAL_EVENTS.has(ev.type)) {
+          playSfx(sound);
+          continue;
+        }
         const closeness = 1 - Math.hypot(ev.x - listener.x, ev.y - listener.y) / AUDIO_RANGE;
         if (closeness <= MIN_AUDIBLE) continue;
         playSfx(sound, closeness * closeness);

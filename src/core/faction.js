@@ -1,6 +1,7 @@
 // Factions (ADR 0005 §1) : résumé par faction, recalculé à chaque pas depuis les planètes.
 import { FACTION_COUNT } from '../config.js';
 import { BUILDINGS } from '../data/buildings.js';
+import { EVT, pushEvent } from './events.js';
 
 export const OUTCOME = { PLAYING: 0, VICTORY: 1, DEFEAT: 2 };
 
@@ -41,4 +42,35 @@ export function updateFactions(world) {
       else if (grants === 'shield') fac.hasShield = true;
     }
   }
+  let changed = false;
+  for (let f = 0; f < factions.length; f++) {
+    const fac = factions[f];
+    if (fac.eliminated || fac.planetCount > 0 || hasLiveShip(world.ships, f)) continue;
+    fac.eliminated = true;
+    changed = true;
+    pushEvent(world.events, EVT.ELIMINATED, 0, 0, f);
+  }
+  if (changed) updateOutcome(world);
+}
+
+function hasLiveShip(ships, faction) {
+  for (let i = 0; i < ships.length; i++)
+    if (ships[i].faction === faction && ships[i].alive) return true;
+  return false;
+}
+
+/** Défaite si la faction 0 est éliminée, victoire si tous les adversaires de départ le sont. */
+function updateOutcome(world) {
+  const { factions } = world;
+  let outcome = OUTCOME.PLAYING;
+  if (factions[0].eliminated) outcome = OUTCOME.DEFEAT;
+  else {
+    let rivalLeft = false;
+    for (let f = 1; f < factions.length; f++)
+      if ((world.inGame?.[f] ?? true) && !factions[f].eliminated) rivalLeft = true;
+    if (!rivalLeft) outcome = OUTCOME.VICTORY;
+  }
+  if (world.outcome !== OUTCOME.PLAYING || outcome === OUTCOME.PLAYING) return;
+  world.outcome = outcome;
+  pushEvent(world.events, EVT.GAME_OVER, 0, 0, outcome);
 }
