@@ -8,7 +8,7 @@ import { evaluateLanding } from '../landing.js';
 import { clamp, wrapAngle } from '../math.js';
 import { nearestPlanet } from '../planet.js';
 import { predictPath } from '../predict.js';
-import { AI_MODE } from './mode.js';
+import { isLanding } from './mode.js';
 import { flyTo, steerToAngle, thrustToward } from './navigate.js';
 
 /** Phases d'un bot en LAND (0 = repos, aussi valable pour tout autre mode). TAKEOFF vaut pour tous les modes. */
@@ -51,7 +51,7 @@ function burn(intent, ship, angle, wantThrust) {
 export function takeoff(world, bot, ship, intent) {
   let planet;
   if (ship.landedOn >= 0) {
-    if (bot.mode === AI_MODE.LAND && bot.target === ship.landedOn) {
+    if (isLanding(bot) && bot.target === ship.landedOn) {
       bot.phase = APPROACH; // posé sur le but : rien à quitter
       return false;
     }

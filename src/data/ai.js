@@ -23,6 +23,9 @@ export const BOT_PROFILE = {
   scoreNoise: 0.05,
   giveUpTime: 45,
   banTime: 30,
+  slotValue: 0.2, // bonus de score par bâtiment construit sur la cible
+  enemyCaptureFactor: 0.8, // capturer une planète ennemie sans défense vaut plus qu'une neutre
+  occupiedFactor: 0.3, // un autre vaisseau est posé sur la cible : la capture est contestée
 
   // Seuils
   huntRange: 700,

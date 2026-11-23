@@ -5,7 +5,7 @@ import { SHIP_COLLISION_RADIUS, SHIP_THRUST } from '../../config.js';
 import { BOT_PROFILE as P } from '../../data/ai.js';
 import { resetIntent } from '../intent.js';
 import { predictPath } from '../predict.js';
-import { AI_MODE } from './mode.js';
+import { AI_MODE, isLanding } from './mode.js';
 import { flyTo, thrustToward } from './navigate.js';
 import { land, takeoff } from './touchdown.js';
 
@@ -41,10 +41,10 @@ export function pilot(world, bot, ship) {
   const intent = ship.intent;
   resetIntent(intent);
   if (bot.mode === AI_MODE.NONE) return;
-  const landing = bot.mode === AI_MODE.LAND;
+  const landing = isLanding(bot);
   // Le décollage passe avant le réflexe : c'est lui qui s'écarte de la planète que l'on quitte.
   if (takeoff(world, bot, ship, intent)) return;
   if (avoidCrash(world, ship, intent, landing ? bot.target : -1)) return;
-  if (bot.mode === AI_MODE.GOTO) flyTo(world, ship, intent, bot.goalX, bot.goalY, ship.landedOn);
-  else if (landing) land(world, bot, ship, intent);
+  if (landing) land(world, bot, ship, intent);
+  else flyTo(world, ship, intent, bot.goalX, bot.goalY, ship.landedOn); // GOTO, ou IDLE sans planète
 }

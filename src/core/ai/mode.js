@@ -13,3 +13,14 @@ export const AI_MODE = {
   GOTO: 8,
   LAND: 9,
 };
+
+/** Vrai si le but du bot est de se poser sur la planète `bot.target` (IDLE sans planète attend sur place). */
+export function isLanding(bot) {
+  const { mode } = bot;
+  return (
+    mode === AI_MODE.LAND ||
+    mode === AI_MODE.CAPTURE ||
+    mode === AI_MODE.REARM ||
+    (mode === AI_MODE.IDLE && bot.target >= 0)
+  );
+}

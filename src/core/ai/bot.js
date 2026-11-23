@@ -10,7 +10,7 @@ export { AI_MODE };
 
 /**
  * État d'un bot : nombres et booléens uniquement (JSON pur). `target` = index de planète (de vaisseau pour HUNT),
- * −1 si aucune ; `goalX`/`goalY` = point visé par le mode GOTO. Le premier minuteur de décision est décalé par rang
+ * −1 si aucune ; `goalX`/`goalY` = point d'attente (GOTO, IDLE sans planète). Le premier minuteur de décision est décalé par rang
  * pour que deux bots ne décident pas au même pas.
  */
 export function createBotState(faction, rank) {
@@ -52,8 +52,9 @@ export function updateAi(world, dt) {
     }
     bot.modeTime += dt;
     bot.decisionTimer -= dt;
+    if (bot.banTimer > 0) bot.banTimer -= dt;
     if (bot.decisionTimer <= 0) {
-      decide(bot, ship);
+      decide(world, bot, ship);
       bot.decisionTimer = BOT_PROFILE.decisionPeriod;
     }
     pilot(world, bot, ship);
