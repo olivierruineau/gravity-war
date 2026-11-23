@@ -266,3 +266,33 @@ describe('createBotState', () => {
     expect(b.goalX).toBe(0);
   });
 });
+
+describe('niveaux de difficulté (9.2)', () => {
+  it('normal = profil de base, easy et hard ne surchargent que des réglages existants', async () => {
+    const { BOT_PROFILE, DIFFICULTY_LEVELS, botProfile } = await import('../../src/data/ai.js');
+    expect(botProfile('normal')).toEqual(BOT_PROFILE);
+    for (const level of DIFFICULTY_LEVELS)
+      for (const key of Object.keys(botProfile(level))) expect(key in BOT_PROFILE).toBe(true);
+    expect(botProfile('easy').reactionTime).toBeGreaterThan(botProfile('hard').reactionTime);
+    expect(botProfile('easy').aimError).toBeGreaterThan(botProfile('hard').aimError);
+    expect(botProfile('inconnu')).toEqual(BOT_PROFILE);
+  });
+
+  it('createWorld propage le niveau aux bots (normal par défaut)', () => {
+    const spawns = [
+      { x: 0, y: 0 },
+      { x: 10, y: 0 },
+      { x: 20, y: 0 },
+    ];
+    const map = { width: 100, height: 100, planets: [], spawns };
+    expect(createWorld(map, 1, { eventCapacity: 8, bots: [1, 2] }).ai.map((b) => b.level)).toEqual([
+      'normal',
+      'normal',
+    ]);
+    expect(
+      createWorld(map, 1, { eventCapacity: 8, bots: [1, 2], difficulty: 'easy' }).ai.map(
+        (b) => b.level,
+      ),
+    ).toEqual(['easy', 'easy']);
+  });
+});

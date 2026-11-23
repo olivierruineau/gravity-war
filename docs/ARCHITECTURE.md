@@ -133,3 +133,4 @@ Le budget de 30 images par seconde tient donc jusqu'à ×6 grâce à la qualité
 | [0007](adr/0007-degats-aux-batiments.md)       | Dégâts aux bâtiments : défenses, puis bâtiments             | Accepté (amende 0005 §3, §4)                |
 | [0008](adr/0008-entree-multi-sources.md)       | Entrée multi-sources (clavier, tactile)                     | Accepté                                     |
 | [0009](adr/0009-pwa-hors-ligne.md)             | PWA : installation et hors ligne sans dépendance            | Accepté                                     |
+| [0010](adr/0010-niveaux-de-difficulte.md)      | Niveaux de difficulté des bots (surcharges de profil)       | Accepté                                     |

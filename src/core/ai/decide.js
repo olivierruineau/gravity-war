@@ -4,7 +4,7 @@
 // (GOTO, LAND : tests et debug) ne sont jamais remplacés. Aucune allocation : le meilleur candidat est gardé dans
 // `best`, un scratch de module.
 import { FIXED_DT, MISSILE_STOCK_MAX, SHIELD_MAX, SHIP_MAX_HP } from '../../config.js';
-import { BOT_PROFILE as P } from '../../data/ai.js';
+import { BOT_PROFILE as P, botProfile } from '../../data/ai.js';
 import { BUILDINGS } from '../../data/buildings.js';
 import { defenseRange, hasDefenses, hasMissileFactory } from '../building.js';
 import { clamp, hypot } from '../math.js';
@@ -187,11 +187,12 @@ export function decide(world, bot, ship) {
     bot.banTimer = P.banTime;
   }
 
-  bot.aimBias = range(world.aiRng, -P.aimError, P.aimError); // biais de visée : retiré à chaque décision
+  bot.aimBias = range(world.aiRng, -botProfile(bot.level).aimError, botProfile(bot.level).aimError); // biais de visée : retiré à chaque décision
   best.mode = NONE;
   best.target = -1;
   best.score = -Infinity;
   const leader = leaderOf(factions, faction);
+  const { aggression } = botProfile(bot.level);
   const healthFactor = clamp(health / SHIP_MAX_HP, P.healthFloor, 1);
   const canAssault = health >= P.assaultMinHealth;
   const wantRearm =
@@ -249,7 +250,7 @@ export function decide(world, bot, ship) {
       offer(world, bot, CAPTURE, i, score);
     } else if (canAssault) {
       // Planète ennemie défendue : tourelles d'abord (ADR 0007), la capture suivra.
-      let score = P.assault * P.aggression * P.assaultFactor * (1 + P.slotValue * builtSlots(p));
+      let score = P.assault * aggression * P.assaultFactor * (1 + P.slotValue * builtSlots(p));
       score *= (healthFactor * proximity(ship, p)) / (1 + turretHp(p) / P.turretHpScale);
       if (p.owner === leader) score *= P.leaderBonus;
       offer(world, bot, ASSAULT, i, score);
@@ -260,7 +261,7 @@ export function decide(world, bot, ship) {
     if (!other.alive || other.faction === faction) continue;
     const gap = hypot(other.pos.x - ship.pos.x, other.pos.y - ship.pos.y);
     if (gap >= P.huntRange) continue;
-    let score = P.hunt * P.aggression * healthFactor * closeness(gap);
+    let score = P.hunt * aggression * healthFactor * closeness(gap);
     if (underEnemyTurrets(planets, other.pos.x, other.pos.y, faction)) score *= P.shelterFactor;
     if (other.faction === leader) score *= P.leaderBonus;
     offer(world, bot, HUNT, k, score);
@@ -274,7 +275,7 @@ export function decide(world, bot, ship) {
   bot.target = best.target;
   if (!continued) {
     bot.modeTime = 0;
-    bot.fireDelay = P.reactionTime;
+    bot.fireDelay = botProfile(bot.level).reactionTime;
   }
   if (bot.phase !== TOUCHDOWN_PHASE.TAKEOFF) bot.phase = 0;
   // Sans planète où se poser, IDLE attend sur place : point d'attente = position au moment du choix.

@@ -1,7 +1,7 @@
 // IA des bots (ADR 0006) : appelée à l'étape 1 de `step`, avant les vaisseaux.
 // Écrit uniquement `ships[f].intent` des bots, `world.ai[k]` et `world.aiRng`.
 import { SHIP_MAX_HP } from '../../config.js';
-import { BOT_PROFILE } from '../../data/ai.js';
+import { DEFAULT_DIFFICULTY, botProfile } from '../../data/ai.js';
 import { decide } from './decide.js';
 import { AI_MODE } from './mode.js';
 import { pilot } from './pilot.js';
@@ -13,14 +13,16 @@ export { AI_MODE };
  * −1 si aucune ; `goalX`/`goalY` = point d'attente (GOTO, IDLE sans planète). Le premier minuteur de décision est décalé par rang
  * pour que deux bots ne décident pas au même pas.
  */
-export function createBotState(faction, rank) {
+export function createBotState(faction, rank, level = DEFAULT_DIFFICULTY) {
+  const profile = botProfile(level);
   return {
     faction,
+    level,
     mode: AI_MODE.NONE,
     target: -1,
     attacker: -1, // DEFEND : index du vaisseau ennemi chassé près de la planète cible, −1 = aucun
     phase: 0,
-    decisionTimer: BOT_PROFILE.startDelay + (rank * BOT_PROFILE.decisionPeriod) / 2,
+    decisionTimer: profile.startDelay + (rank * profile.decisionPeriod) / 2,
     modeTime: 0,
     fireDelay: 0,
     aimBias: 0,
@@ -60,7 +62,7 @@ export function updateAi(world, dt) {
     if (bot.evadeTimer > 0) bot.evadeTimer -= dt;
     if (bot.decisionTimer <= 0) {
       decide(world, bot, ship);
-      bot.decisionTimer = BOT_PROFILE.decisionPeriod;
+      bot.decisionTimer = botProfile(bot.level).decisionPeriod;
     }
     pilot(world, bot, ship);
   }

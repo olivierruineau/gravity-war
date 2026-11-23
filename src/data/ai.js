@@ -90,3 +90,47 @@ export const BOT_PROFILE = {
   bulletHorizon: 0.4, // s : une balle qui frôlerait le vaisseau plus tard n'est pas esquivée
   dodgeRadius: 16, // distance d'approche minimale prévue sous laquelle une balle est une menace
 };
+
+/**
+ * Niveaux de difficulté (9.2, ADR 0010). « normal » = `BOT_PROFILE` tel que validé en 7.2. Les autres niveaux ne
+ * surchargent que quelques réglages : cadence de décision, réflexe, précision de visée, portée de tir,
+ * agressivité, perception des menaces, esquive des balles.
+ */
+export const DIFFICULTY_LEVELS = ['easy', 'normal', 'hard'];
+export const DEFAULT_DIFFICULTY = 'normal';
+
+const OVERRIDES = {
+  // « normal » n'a aucune surcharge
+  easy: {
+    startDelay: 4,
+    decisionPeriod: 0.9,
+    reactionTime: 0.9,
+    aimError: 0.2,
+    fireCone: 0.1,
+    fireRange: 300,
+    aggression: 0.6,
+    missileNotice: 120,
+    bulletNotice: 60,
+    dodgeBullets: false,
+  },
+  hard: {
+    startDelay: 1,
+    decisionPeriod: 0.3,
+    reactionTime: 0.12,
+    aimError: 0.02,
+    fireCone: 0.04,
+    fireRange: 420,
+    aggression: 1.3,
+    missileNotice: 280,
+    bulletNotice: 160,
+  },
+};
+
+const PROFILES = {
+  normal: BOT_PROFILE, // l'objet lui-même : les tests de réglage le modifient à chaud
+  easy: Object.freeze({ ...BOT_PROFILE, ...OVERRIDES.easy }),
+  hard: Object.freeze({ ...BOT_PROFILE, ...OVERRIDES.hard }),
+};
+
+/** Profil complet d'un niveau (inconnu → normal). */
+export const botProfile = (level) => PROFILES[level] ?? BOT_PROFILE;

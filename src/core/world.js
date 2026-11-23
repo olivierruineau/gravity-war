@@ -31,14 +31,15 @@ import { applyIntent, createShip, integrate } from './ship.js';
  * @param {{ width: number, height: number, planets?: { x: number, y: number, radius: number, gravity?: number, owner?: number, built?: number }[], spawns?: { x?: number, y?: number, angle?: number, planet?: number }[] }} map
  *   carte injectée (permet des mini-cartes en test) ; `spawns[i]` = point de départ du vaisseau de la faction i
  * @param {number} seed                            graine de l'aléa de simulation
- * @param {{ eventCapacity: number, bots?: number[] }} options
- *   `bots` = factions pilotées par l'IA (ADR 0006), chacune avec un spawn ; aucune par défaut
+ * @param {{ eventCapacity: number, bots?: number[], difficulty?: string }} options
+ *   `bots` = factions pilotées par l'IA (ADR 0006), chacune avec un spawn ; aucune par défaut ;
+ *   `difficulty` = niveau des bots (`easy|normal|hard`, ADR 0010), normal par défaut
  * @returns le monde ; `world.inGame` (FACTION_COUNT booléens) = factions avec au moins une planète au départ
  *   (les autres sont « hors jeu » : jamais éliminées, ni victoire ni défaite ne dépend d'elles).
  * @throws {Error} si la carte a plus de spawns que de factions, un `owner` de planète >= FACTION_COUNT,
  *   ou une faction de `bots` sans spawn
  */
-export function createWorld(map, seed, { eventCapacity, bots = [] }) {
+export function createWorld(map, seed, { eventCapacity, bots = [], difficulty }) {
   const spawns = map.spawns ?? [];
   if (spawns.length > FACTION_COUNT)
     throw new Error(`Invalid map: ${spawns.length} spawns for ${FACTION_COUNT} factions`);
@@ -55,7 +56,7 @@ export function createWorld(map, seed, { eventCapacity, bots = [] }) {
     height: map.height,
     rng: createRng(seed),
     aiRng: createRng((seed ^ AI_RNG_SALT) >>> 0), // flux séparé : l'IA ne décale pas les tirages des tourelles
-    ai: bots.map(createBotState),
+    ai: bots.map((faction, rank) => createBotState(faction, rank, difficulty)),
     ships: [],
     planets,
     projectiles: createProjectiles(PROJECTILE_CAPACITY),

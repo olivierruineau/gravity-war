@@ -8,7 +8,7 @@ import {
   SHIP_SIZE,
   SHIP_THRUST,
 } from '../../config.js';
-import { BOT_PROFILE as P } from '../../data/ai.js';
+import { BOT_PROFILE as P, botProfile } from '../../data/ai.js';
 import { defenseRange, hasDefenses } from '../building.js';
 import { clamp, hypot, wrapAngle } from '../math.js';
 import { findMissileTarget } from '../missile.js';
@@ -91,8 +91,9 @@ function predictBullet(world, ship, horizon) {
 function shootShip(world, bot, ship, intent, index, missileFloor) {
   const target = world.ships[index];
   const dist = hypot(target.pos.x - ship.pos.x, target.pos.y - ship.pos.y);
-  if (dist < P.fireRange && leadAim(bot, ship, target)) {
-    if (Math.abs(wrapAngle(aim.angle - ship.angle)) <= P.fireCone) {
+  const skill = botProfile(bot.level);
+  if (dist < skill.fireRange && leadAim(bot, ship, target)) {
+    if (Math.abs(wrapAngle(aim.angle - ship.angle)) <= skill.fireCone) {
       // Ligne de tir libre : la balle ne doit toucher aucune planète (ni le sol sous le nez) avant l'interception.
       predictBullet(world, ship, aim.t);
       if (path.hit < 0) intent.fire = true;
@@ -121,7 +122,7 @@ function shootPlanet(world, bot, ship, intent) {
   const dy = planet.pos.y - ship.pos.y;
   const dist = hypot(dx, dy);
   const gap = dist - planet.radius;
-  if (gap <= 0 || gap > P.fireRange) return;
+  if (gap <= 0 || gap > botProfile(bot.level).fireRange) return;
   if (Math.abs(wrapAngle(Math.atan2(dy, dx) - ship.angle)) > Math.asin(planet.radius / dist))
     return;
   predictBullet(world, ship, BULLET_LIFETIME);
@@ -175,12 +176,12 @@ export function fireControl(world, bot, ship, intent) {
 }
 
 /** Menace d'un missile ennemi dont le cône de recherche contient le vaisseau, dans `missileNotice`. */
-function missileThreat(m, ship) {
+function missileThreat(m, ship, skill) {
   const sx = ship.pos.x - m.pos.x;
   const sy = ship.pos.y - m.pos.y;
   const speed = hypot(m.vel.x, m.vel.y);
   const dist = hypot(sx, sy);
-  if (speed < MIN_SPEED || dist > P.missileNotice || dist / speed >= threat.time) return;
+  if (speed < MIN_SPEED || dist > skill.missileNotice || dist / speed >= threat.time) return;
   if (Math.abs(wrapAngle(Math.atan2(sy, sx) - Math.atan2(m.vel.y, m.vel.x))) > MISSILE_SEEK_ANGLE)
     return;
   // On s'écarte de la trajectoire du missile, du côté où l'on se trouve (produit vectoriel).
@@ -191,10 +192,10 @@ function missileThreat(m, ship) {
 }
 
 /** Menace d'une balle ennemie dont l'approche la plus proche (< `bulletHorizon`) passerait dans `dodgeRadius`. */
-function bulletThreat(b, ship) {
+function bulletThreat(b, ship, skill) {
   const rx = b.pos.x - ship.pos.x;
   const ry = b.pos.y - ship.pos.y;
-  if (rx * rx + ry * ry > P.bulletNotice * P.bulletNotice) return;
+  if (rx * rx + ry * ry > skill.bulletNotice * skill.bulletNotice) return;
   const ux = b.vel.x - ship.vel.x;
   const uy = b.vel.y - ship.vel.y;
   const speedSq = ux * ux + uy * uy;
@@ -217,14 +218,16 @@ function bulletThreat(b, ship) {
 }
 
 /** Cherche la menace la plus imminente (missile ou balle d'une autre faction) : vrai si `threat` est écrit. */
-function scanThreats(world, faction, ship) {
+function scanThreats(world, bot, ship) {
+  const faction = bot.faction;
+  const skill = botProfile(bot.level);
   threat.time = Infinity;
   const pool = world.projectiles;
   for (let i = 0; i < pool.length; i++) {
     const p = pool[i];
     if (!p.active || p.owner === faction) continue;
-    if (p.kind === KIND.MISSILE) missileThreat(p, ship);
-    else if (P.dodgeBullets) bulletThreat(p, ship);
+    if (p.kind === KIND.MISSILE) missileThreat(p, ship, skill);
+    else if (skill.dodgeBullets) bulletThreat(p, ship, skill);
   }
   return threat.time < Infinity;
 }
@@ -237,7 +240,7 @@ function scanThreats(world, faction, ship) {
 export function evade(world, bot, ship, intent) {
   if (ship.landedOn >= 0) return false;
   if (bot.evadeTimer <= 0) {
-    if (!scanThreats(world, bot.faction, ship)) return false;
+    if (!scanThreats(world, bot, ship)) return false;
     bot.evadeAngle = Math.atan2(threat.dy, threat.dx);
     bot.evadeTimer = P.evadeTime;
   }
