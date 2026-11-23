@@ -3,6 +3,10 @@ import { GAME_HEIGHT, GAME_WIDTH, PALETTE } from './config.js';
 import { BootScene } from './scenes/BootScene.js';
 import { MenuScene } from './scenes/MenuScene.js';
 import { GameScene } from './scenes/GameScene.js';
+import { initInputSource } from './systems/inputSource.js';
+import { hasCoarsePointer } from './systems/platform.js';
+
+initInputSource(hasCoarsePointer());
 
 new Phaser.Game({
   type: Phaser.AUTO,

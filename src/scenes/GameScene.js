@@ -26,7 +26,7 @@ import { createMinimap } from '../systems/minimap.js';
 import { createPauseScreen } from '../systems/pauseScreen.js';
 import { createOffscreenIndicators } from '../systems/offscreenIndicators.js';
 import { createLandingAid } from '../systems/landingAid.js';
-import { createKeyboardInput } from '../systems/keyboardInput.js';
+import { createPlayerInput } from '../systems/playerInput.js';
 import { createStarfield } from '../systems/starfield.js';
 
 /** Délai (s) entre la fin de partie et l'écran de fin. */
@@ -53,7 +53,7 @@ export class GameScene extends Phaser.Scene {
       maxFrameDt: MAX_FRAME_DT,
       maxSteps: MAX_STEPS_PER_FRAME,
     });
-    this.pilot = createKeyboardInput(this);
+    this.pilot = createPlayerInput(this);
     createStarfield(this, this.world.width, this.world.height);
     this.cameras.main.setBounds(0, 0, this.world.width, this.world.height);
     this.gfx = this.add.graphics();
