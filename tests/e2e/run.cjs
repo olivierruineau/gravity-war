@@ -170,7 +170,7 @@ async function keyboardScenario(browser) {
     await page.evaluate(async () =>
       (await import('/src/systems/difficultySetting.js')).getDifficultyMode(),
     ),
-    'hard',
+    'easy',
   );
   await page.keyboard.press('h');
   await page.keyboard.press('Space');

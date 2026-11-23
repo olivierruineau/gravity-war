@@ -3,12 +3,13 @@ import { resetMute, isMuted } from '../../src/audio/mute.js';
 import { cycleValue } from '../../src/systems/cycleValue.js';
 import {
   DIFFICULTY_LABELS,
+  DIFFICULTY_MODES,
   cycleDifficultyMode,
   getDifficultyMode,
   resetDifficultyMode,
   resolveDifficulty,
 } from '../../src/systems/difficultySetting.js';
-import { DIFFICULTY_LEVELS } from '../../src/data/ai.js';
+import { SOURCE, resetInputSource, setSource } from '../../src/systems/inputSource.js';
 import { createOptionsModel } from '../../src/systems/optionsModel.js';
 import { buildOptionRows } from '../../src/systems/optionsPanel.js';
 import {
@@ -29,18 +30,31 @@ describe('cycleValue', () => {
 });
 
 describe('réglage de difficulté', () => {
-  beforeEach(resetDifficultyMode);
+  beforeEach(() => {
+    resetDifficultyMode();
+    resetInputSource();
+  });
 
-  it('normal par défaut, cycle dans les deux sens', () => {
-    expect(getDifficultyMode()).toBe('normal');
+  it('auto par défaut : normal au clavier, facile au tactile', () => {
+    expect(getDifficultyMode()).toBe('auto');
+    setSource(SOURCE.KEYBOARD);
     expect(resolveDifficulty()).toBe('normal');
-    expect(cycleDifficultyMode()).toBe('hard');
+    setSource(SOURCE.TOUCH);
+    expect(resolveDifficulty()).toBe('easy');
+  });
+
+  it('un niveau choisi ne dépend plus de l’appareil ; le cycle va dans les deux sens', () => {
     expect(cycleDifficultyMode()).toBe('easy');
+    expect(cycleDifficultyMode()).toBe('normal');
+    setSource(SOURCE.TOUCH);
+    expect(resolveDifficulty()).toBe('normal');
+    expect(cycleDifficultyMode(-1)).toBe('easy');
+    expect(cycleDifficultyMode(-1)).toBe('auto');
     expect(cycleDifficultyMode(-1)).toBe('hard');
   });
 
   it('un libellé par niveau', () => {
-    for (const level of DIFFICULTY_LEVELS) expect(DIFFICULTY_LABELS[level]).toBeTruthy();
+    for (const level of DIFFICULTY_MODES) expect(DIFFICULTY_LABELS[level]).toBeTruthy();
   });
 });
 
@@ -101,7 +115,7 @@ describe('lignes réelles des options', () => {
   it('chaque ligne agit sur son réglage', () => {
     const model = createOptionsModel(buildOptionRows(scene, { onControls() {} }));
     model.change(1);
-    expect(getDifficultyMode()).toBe('hard');
+    expect(getDifficultyMode()).toBe('easy');
     model.move(1);
     model.change(1);
     expect(getAssistMode()).not.toBe('auto');

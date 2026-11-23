@@ -53,7 +53,7 @@ Tirer sur une planète ennemie abîme d'abord ses tourelles, puis ses autres bâ
 
 ## Les bots
 
-Les deux bots suivent les mêmes règles que vous. Ils capturent des neutres, attaquent les planètes défendues, vous chassent, défendent leurs planètes menacées, se replient à vie basse et se réarment. Trois niveaux (FACILE, NORMAL, DIFFICILE, réglage **DIFFICULTE** des options) : ils changent la rapidité de décision, la précision de tir, la portée, l'agressivité et l'esquive des bots, jamais les règles.
+Les deux bots suivent les mêmes règles que vous. Ils capturent des neutres, attaquent les planètes défendues, vous chassent, défendent leurs planètes menacées, se replient à vie basse et se réarment. Trois niveaux (FACILE, NORMAL, DIFFICILE, réglage **DIFFICULTE** des options ; AUTO, le défaut, prend FACILE au tactile, où le jeu est plus dur, et NORMAL au clavier) : ils changent la rapidité de décision, la précision de tir, la portée, l'agressivité et l'esquive des bots, jamais les règles.
 
 ## Fin de partie
 

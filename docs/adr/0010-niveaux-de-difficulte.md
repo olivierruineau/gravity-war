@@ -14,6 +14,8 @@ Le test sur mobile a montré que la partie est plus dure au doigt (retour de pla
 - Le niveau est une chaîne dans l'état du bot (`bot.level`, JSON pur), passée à `createWorld(map, seed, { difficulty })` (normal par défaut). Les modules d'IA lisent `botProfile(bot.level)` pour ces réglages ; les autres restent sur `BOT_PROFILE`.
 - Aucune règle du jeu ne change : mêmes vitesses, mêmes dégâts, mêmes seuils d'atterrissage pour tous.
 
+- **Défaut par appareil (9.4)** : le réglage vaut `auto | easy | normal | hard`, `auto` par défaut. `auto` se résout au lancement de la partie (`resolveDifficulty`) : facile si la dernière source utilisée est le tactile, normal sinon (comme l'aide à la pose). Un niveau choisi à la main prime toujours. Mémorisé dans `localStorage` (`gravity-war.difficulty`).
+
 ## Alternatives écartées
 
 - Bonus de PV ou de dégâts pour les bots : triche visible et casse l'égalité des règles (ADR 0006).
