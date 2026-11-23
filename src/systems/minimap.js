@@ -6,7 +6,7 @@ import { minimapSize } from './minimapLayout.js';
 
 const MARGIN = 6;
 const MAX_W = 96;
-const MAX_H = 54;
+const MAX_H = 64;
 const DEPTH = 900;
 const MIN_PLANET_RADIUS = 1.5; // les petites planètes restent visibles
 const SHIP_RADIUS = 1.5;

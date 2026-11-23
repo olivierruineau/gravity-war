@@ -11,7 +11,7 @@ import { clearEvents } from '../core/events.js';
 import { consumeSteps, createClock } from '../core/clock.js';
 import { OUTCOME } from '../core/faction.js';
 import { createWorld, step } from '../core/world.js';
-import { arena } from '../data/maps/arena.js';
+import { triad } from '../data/maps/triad.js';
 import { drawPlanet } from '../entities/planetView.js';
 import { drawProjectiles } from '../entities/projectileView.js';
 import { drawShip } from '../entities/shipView.js';
@@ -46,7 +46,7 @@ export class GameScene extends Phaser.Scene {
   create() {
     // Graine tirée ici (couche Phaser) : le core, lui, reste déterministe pour une graine donnée.
     const seed = Math.floor(Math.random() * 2 ** 32);
-    this.world = createWorld(arena, seed, { eventCapacity: EVENT_CAPACITY, bots: BOT_FACTIONS });
+    this.world = createWorld(triad, seed, { eventCapacity: EVENT_CAPACITY, bots: BOT_FACTIONS });
     this.clock = createClock({
       dt: FIXED_DT,
       maxFrameDt: MAX_FRAME_DT,
