@@ -1,8 +1,9 @@
 // Rendu filaire d'une planète : un cercle dont la couleur indique le propriétaire, un cercle de portée
 // très discret pour lire la zone de gravité, les bâtiments dans le disque (ADR 0005 §3) et l'arc de capture.
-import { CAPTURE_TIME, PALETTE } from '../config.js';
+import { CAPTURE_ARC_WIDTH, CAPTURE_TIME, PALETTE } from '../config.js';
 import { NEUTRAL } from '../core/planet.js';
 import { BUILDINGS } from '../data/buildings.js';
+import { glowCircle } from './glow.js';
 
 // Cosmétique : disposition 2×2 fixe (slot → coin), tailles en fraction du rayon de la planète.
 const SLOT_OFFSET = 0.42; // distance du centre du bâtiment au centre de la planète, par axe
@@ -69,11 +70,13 @@ export function drawPlanet(g, planet) {
   const { x, y } = planet.pos;
   g.lineStyle(1, PALETTE.border, 0.5);
   g.strokeCircle(x, y, planet.range);
-  g.lineStyle(1, planetColor(planet.owner), 1);
+  const color = planetColor(planet.owner);
+  glowCircle(g, x, y, planet.radius, color);
+  g.lineStyle(1, color, 1);
   g.strokeCircle(x, y, planet.radius);
   drawBuildings(g, planet);
   if (planet.captureBy >= 0 && planet.captureTime > 0) {
-    g.lineStyle(1, planetColor(planet.captureBy), 1);
+    g.lineStyle(CAPTURE_ARC_WIDTH, planetColor(planet.captureBy), 1);
     g.beginPath();
     g.arc(
       x,

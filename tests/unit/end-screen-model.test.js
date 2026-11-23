@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { PALETTE } from '../../src/config.js';
 import { OUTCOME } from '../../src/core/faction.js';
 import { endScreenModel } from '../../src/systems/endScreenModel.js';
 
@@ -10,7 +11,7 @@ describe('endScreenModel', () => {
   it('victoire : titre vert, propose de rejouer ou de retourner au menu', () => {
     const m = endScreenModel(OUTCOME.VICTORY);
     expect(m.title).toBe('VICTOIRE');
-    expect(m.color).toBe('#4ae88a');
+    expect(m.color).toBe(PALETTE.ok);
     expect(m.hint).toContain('ESPACE');
     expect(m.hint).toContain('ECHAP');
   });
@@ -18,6 +19,6 @@ describe('endScreenModel', () => {
   it('défaite : titre rouge', () => {
     const m = endScreenModel(OUTCOME.DEFEAT);
     expect(m.title).toBe('DEFAITE');
-    expect(m.color).toBe('#e84a5f');
+    expect(m.color).toBe(PALETTE.danger);
   });
 });

@@ -2,6 +2,7 @@
 // Les missiles sont plus longs et plus épais, avec une petite pointe.
 import { PALETTE } from '../config.js';
 import { KIND } from '../core/projectile.js';
+import { glowLine } from './glow.js';
 
 const TRAIL = 0.025; // longueur du trait en secondes de vol (≈ 8 px pour une balle à 320 px/s)
 const MISSILE_LENGTH = 12; // px
@@ -18,8 +19,11 @@ export function drawProjectiles(g, projectiles) {
       drawMissile(g, p, color);
       continue;
     }
+    const tx = p.pos.x - p.vel.x * TRAIL;
+    const ty = p.pos.y - p.vel.y * TRAIL;
+    glowLine(g, p.pos.x, p.pos.y, tx, ty, color);
     g.lineStyle(1, color, 1);
-    g.lineBetween(p.pos.x, p.pos.y, p.pos.x - p.vel.x * TRAIL, p.pos.y - p.vel.y * TRAIL);
+    g.lineBetween(p.pos.x, p.pos.y, tx, ty);
   }
 }
 
@@ -27,8 +31,11 @@ function drawMissile(g, p, color) {
   const heading = Math.atan2(p.vel.y, p.vel.x);
   const dx = Math.cos(heading);
   const dy = Math.sin(heading);
+  const tx = p.pos.x - dx * MISSILE_LENGTH;
+  const ty = p.pos.y - dy * MISSILE_LENGTH;
+  glowLine(g, p.pos.x, p.pos.y, tx, ty, color, 1, MISSILE_WIDTH + 2);
   g.lineStyle(MISSILE_WIDTH, color, 1);
-  g.lineBetween(p.pos.x, p.pos.y, p.pos.x - dx * MISSILE_LENGTH, p.pos.y - dy * MISSILE_LENGTH);
+  g.lineBetween(p.pos.x, p.pos.y, tx, ty);
   // Barbes de la pointe, repliées vers l'arrière depuis la tête.
   g.lineStyle(1, color, 1);
   for (let side = -1; side <= 1; side += 2) {

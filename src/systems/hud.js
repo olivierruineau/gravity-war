@@ -1,6 +1,7 @@
 // HUD (6.1), fixé à l'écran : vie, bouclier et missiles en bas à gauche, vitesse en bas à droite.
 // Lecture seule ; la logique vit dans `hudModel` (testée), ici on ne fait que dessiner.
 import { GAME_HEIGHT, GAME_WIDTH, MISSILE_STOCK_MAX, PALETTE } from '../config.js';
+import { toCss } from './color.js';
 import { hudModel } from './hudModel.js';
 
 const MARGIN = 6; // distance au bord de l'écran
@@ -20,7 +21,7 @@ export function createHud(scene) {
     .text(GAME_WIDTH - MARGIN, GAME_HEIGHT - MARGIN, '', {
       fontFamily: 'monospace',
       fontSize: '8px',
-      color: '#7a80a8',
+      color: toCss(PALETTE.star),
     })
     .setOrigin(1, 1)
     .setScrollFactor(0)

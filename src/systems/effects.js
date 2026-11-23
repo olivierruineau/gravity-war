@@ -2,6 +2,7 @@
 // Purement cosmétique : pool préalloué, `Math.random` autorisé ici (n'influence pas la simulation).
 import { EFFECT_CAPACITY, PALETTE } from '../config.js';
 import { EVT } from '../core/events.js';
+import { glowCircle } from '../entities/glow.js';
 
 const RAYS = 8;
 // Types d'effet : forme et durée (s), rayon max (px).
@@ -85,6 +86,7 @@ export function createEffects(scene) {
           continue;
         }
         const radius = e.spec.radius * Math.sqrt(t); // freine vers la fin
+        glowCircle(g, e.x, e.y, radius, e.color, 1 - t);
         g.lineStyle(1, e.color, 1 - t);
         g.strokeCircle(e.x, e.y, radius);
         if (!e.spec.rays) continue;

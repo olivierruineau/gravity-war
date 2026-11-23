@@ -1,6 +1,7 @@
 // Écran de fin (6.4) : bandeau VICTOIRE / DÉFAITE par-dessus la partie figée, et choix rejouer / menu.
 // Affichage seulement : l'issue est décidée par le core (`world.outcome`, ADR 0005).
 import { GAME_HEIGHT, GAME_WIDTH, PALETTE, SCENES } from '../config.js';
+import { toCss } from './color.js';
 import { endScreenModel } from './endScreenModel.js';
 
 const DEPTH = 1100;
@@ -22,7 +23,7 @@ export function createEndScreen(scene) {
     .text(cx, GAME_HEIGHT * 0.6, '', {
       fontFamily: 'monospace',
       fontSize: '10px',
-      color: '#e8e8f0',
+      color: toCss(PALETTE.text),
     })
     .setOrigin(0.5)
     .setScrollFactor(0)
@@ -37,7 +38,7 @@ export function createEndScreen(scene) {
       if (shown || model === null) return;
       shown = true;
       veil.setVisible(true);
-      title.setText(model.title).setColor(model.color).setVisible(true);
+      title.setText(model.title).setColor(toCss(model.color)).setVisible(true);
       hint.setText(model.hint).setVisible(true);
       scene.input.keyboard.once('keydown-SPACE', () => scene.scene.restart());
       scene.input.keyboard.once('keydown-ESC', () => scene.scene.start(SCENES.MENU));

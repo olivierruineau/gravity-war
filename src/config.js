@@ -83,6 +83,11 @@ export const EFFECT_CAPACITY = 64;
 export const AUDIO_RANGE = 700;
 export const THRUST_SOUND_INTERVAL = 0.12; // secondes entre deux « pulsations » du moteur
 
+/** Lueur filaire (7.3) : un halo large et discret sous le trait net, pour les objets qui comptent. */
+export const GLOW_WIDTH = 3; // px
+export const GLOW_ALPHA = 0.18; // opacité du halo, multipliée par l'opacité du trait
+export const CAPTURE_ARC_WIDTH = 2; // px : la progression de capture ressort des contours à 1 px
+
 /** Palette restreinte façon années 90 (à ajuster avec la direction artistique). */
 export const PALETTE = {
   bg: 0x0b0b14,

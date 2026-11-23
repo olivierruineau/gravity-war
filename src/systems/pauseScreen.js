@@ -1,5 +1,6 @@
 // Pause (6.5) : touche P. Fige la scène (GameScene ne simule plus tant que `paused`), affiche l'aide des commandes ;
 // ECHAP revient au menu. Inactive une fois la partie décidée (l'écran de fin a ses propres touches).
+import { toCss } from './color.js';
 import { controlsLines } from '../data/controls.js';
 import { GAME_HEIGHT, GAME_WIDTH, PALETTE, SCENES } from '../config.js';
 
@@ -16,7 +17,7 @@ export function createPauseScreen(scene, canPause) {
     .text(cx, GAME_HEIGHT * 0.2, 'PAUSE', {
       fontFamily: 'monospace',
       fontSize: '20px',
-      color: '#ffcc33',
+      color: toCss(PALETTE.accent),
     })
     .setOrigin(0.5)
     .setScrollFactor(0)
@@ -26,7 +27,7 @@ export function createPauseScreen(scene, canPause) {
     .text(cx, GAME_HEIGHT * 0.5, [...controlsLines(), '', 'P : reprendre   ECHAP : menu'], {
       fontFamily: 'monospace',
       fontSize: '10px',
-      color: '#e8e8f0',
+      color: toCss(PALETTE.text),
       align: 'left',
     })
     .setOrigin(0.5)

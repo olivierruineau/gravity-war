@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH, PALETTE, SCENES } from '../config.js';
+import { toCss } from '../systems/color.js';
 import { playSfx, resumeAudio } from '../audio/sfx.js';
 import { controlsLines } from '../data/controls.js';
 
@@ -14,14 +15,14 @@ export class MenuScene extends Phaser.Scene {
       .text(cx, GAME_HEIGHT * 0.2, 'GRAVITY WAR', {
         fontFamily: 'monospace',
         fontSize: '32px',
-        color: '#ffcc33',
+        color: toCss(PALETTE.accent),
       })
       .setOrigin(0.5);
     const prompt = this.add
       .text(cx, GAME_HEIGHT * 0.78, 'ESPACE : JOUER', {
         fontFamily: 'monospace',
         fontSize: '12px',
-        color: '#e8e8f0',
+        color: toCss(PALETTE.text),
       })
       .setOrigin(0.5);
     this.tweens.add({ targets: prompt, alpha: 0, duration: 500, yoyo: true, repeat: -1 });
@@ -32,15 +33,15 @@ export class MenuScene extends Phaser.Scene {
       .text(cx, GAME_HEIGHT * 0.88, 'H : COMMANDES', {
         fontFamily: 'monospace',
         fontSize: '8px',
-        color: '#7a80a8',
+        color: toCss(PALETTE.star),
       })
       .setOrigin(0.5);
     const help = this.add
       .text(cx, GAME_HEIGHT * 0.48, controlsLines(), {
         fontFamily: 'monospace',
         fontSize: '10px',
-        color: '#e8e8f0',
-        backgroundColor: '#0b0b14',
+        color: toCss(PALETTE.text),
+        backgroundColor: toCss(PALETTE.bg),
         padding: { x: 8, y: 6 },
       })
       .setOrigin(0.5)
