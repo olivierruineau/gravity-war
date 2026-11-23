@@ -10,6 +10,7 @@ export const NAV_ACTIONS = [
   'mute',
   'help',
   'options',
+  'spectate',
   'up',
   'down',
   'left',
@@ -23,6 +24,7 @@ export const NAV_KEYS = {
   mute: ['M'],
   help: ['H'],
   options: ['O'], // menu et pause : écran d'options (9.3)
+  spectate: ['B'], // menu : observer les bots seuls (9.8)
   up: ['UP'], // options : ligne précédente
   down: ['DOWN'],
   left: ['LEFT'], // options : valeur précédente

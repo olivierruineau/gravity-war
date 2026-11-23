@@ -10,5 +10,6 @@ export function endScreenModel(outcome, touch = false) {
   const hint = touch ? '' : 'ESPACE : rejouer · ECHAP : menu';
   if (outcome === OUTCOME.VICTORY) return { title: 'VICTOIRE', color: PALETTE.ok, hint };
   if (outcome === OUTCOME.DEFEAT) return { title: 'DEFAITE', color: PALETTE.danger, hint };
+  if (outcome === OUTCOME.OVER) return { title: 'FIN DE PARTIE', color: PALETTE.accent, hint };
   return null;
 }

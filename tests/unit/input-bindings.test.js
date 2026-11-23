@@ -20,6 +20,7 @@ describe('table de navigation', () => {
       mute: ['M'],
       help: ['H'],
       options: ['O'],
+      spectate: ['B'],
       up: ['UP'],
       down: ['DOWN'],
       left: ['LEFT'],

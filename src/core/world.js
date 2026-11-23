@@ -33,13 +33,17 @@ import { applyIntent, createShip, integrate } from './ship.js';
  * @param {number} seed                            graine de l'aléa de simulation
  * @param {{ eventCapacity: number, bots?: number[], difficulty?: string }} options
  *   `bots` = factions pilotées par l'IA (ADR 0006), chacune avec un spawn ; aucune par défaut ;
- *   `difficulty` = niveau des bots (`easy|normal|hard`, ADR 0010), normal par défaut
+ *   `spectator` = mode observation (9.8) ; `difficulty` = niveau des bots (`easy|normal|hard`, ADR 0010), normal par défaut
  * @returns le monde ; `world.inGame` (FACTION_COUNT booléens) = factions avec au moins une planète au départ
  *   (les autres sont « hors jeu » : jamais éliminées, ni victoire ni défaite ne dépend d'elles).
  * @throws {Error} si la carte a plus de spawns que de factions, un `owner` de planète >= FACTION_COUNT,
  *   ou une faction de `bots` sans spawn
  */
-export function createWorld(map, seed, { eventCapacity, bots = [], difficulty }) {
+export function createWorld(
+  map,
+  seed,
+  { eventCapacity, bots = [], difficulty, spectator = false },
+) {
   const spawns = map.spawns ?? [];
   if (spawns.length > FACTION_COUNT)
     throw new Error(`Invalid map: ${spawns.length} spawns for ${FACTION_COUNT} factions`);
@@ -62,6 +66,7 @@ export function createWorld(map, seed, { eventCapacity, bots = [], difficulty })
     projectiles: createProjectiles(PROJECTILE_CAPACITY),
     events: createEvents(eventCapacity),
     factions: createFactions(planets),
+    spectator, // observation : toutes les factions sont des bots, la partie finit quand il n'en reste qu'une
     outcome: OUTCOME.PLAYING,
     inGame: [],
   };

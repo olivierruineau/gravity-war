@@ -11,7 +11,7 @@ import { GAME_HEIGHT, GAME_WIDTH, PALETTE, SCENES } from '../config.js';
 
 const DEPTH = 1050;
 
-export function createPauseScreen(scene, canPause, onToggleSound) {
+export function createPauseScreen(scene, canPause, onToggleSound, spectator = false) {
   const cx = GAME_WIDTH / 2;
   const veil = scene.add
     .rectangle(cx, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, PALETTE.bg, 0.75)
@@ -79,7 +79,7 @@ export function createPauseScreen(scene, canPause, onToggleSound) {
   let touch = false;
   const render = () => {
     const hint = touch ? [] : ['', 'P : reprendre   O : options   ECHAP : menu'];
-    help.setText([...controlsLines(touch), ...hint]);
+    help.setText([...controlsLines(touch, spectator), ...hint]);
     help.setY(GAME_HEIGHT * (touch ? 0.42 : 0.5)).setVisible(state.paused);
     resumeButton.setVisible(state.paused && touch);
     menuButton.setVisible(state.paused && touch);

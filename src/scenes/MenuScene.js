@@ -37,7 +37,7 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5);
     this.tweens.add({ targets: prompt, alpha: 0, duration: 500, yoyo: true, repeat: -1 });
     const helpHint = this.add
-      .text(cx, GAME_HEIGHT * 0.88, 'H : COMMANDES    O : OPTIONS', {
+      .text(cx, GAME_HEIGHT * 0.88, 'H : COMMANDES   O : OPTIONS   B : OBSERVER', {
         fontFamily: 'monospace',
         fontSize: '8px',
         color: toCss(PALETTE.star),
@@ -56,39 +56,49 @@ export class MenuScene extends Phaser.Scene {
     const toggleHelp = () => help.setVisible(!help.visible);
 
     let started = false;
-    const play = () => {
+    const play = (spectator = false) => {
       if (started || options.isBlocking()) return;
       started = true;
       resumeAudio();
       playSfx('select');
-      this.scene.start(SCENES.GAME);
+      this.scene.start(SCENES.GAME, { spectator });
     };
     const playButton = createButton(this, {
-      x: cx - 105,
+      x: cx - 150,
       y: GAME_HEIGHT * 0.77,
-      w: 100,
+      w: 92,
       h: 40,
       label: 'JOUER',
       fontSize: 14,
       color: PALETTE.accent,
-      onTap: play,
+      onTap: () => play(),
     });
     const helpButton = createButton(this, {
-      x: cx,
+      x: cx - 50,
       y: GAME_HEIGHT * 0.77,
-      w: 100,
+      w: 92,
       h: 40,
       label: 'COMMANDES',
       fontSize: 9,
       onTap: toggleHelp,
     });
     const optionsButton = createButton(this, {
-      x: cx + 105,
+      x: cx + 50,
       y: GAME_HEIGHT * 0.77,
-      w: 100,
+      w: 92,
       h: 40,
       label: 'OPTIONS',
+      fontSize: 9,
       onTap: () => options.open(),
+    });
+    const spectateButton = createButton(this, {
+      x: cx + 150,
+      y: GAME_HEIGHT * 0.77,
+      w: 92,
+      h: 40,
+      label: 'OBSERVER',
+      fontSize: 9,
+      onTap: () => play(true),
     });
     watchSource(this, (touch) => {
       prompt.setVisible(!touch);
@@ -96,6 +106,7 @@ export class MenuScene extends Phaser.Scene {
       playButton.setVisible(touch);
       helpButton.setVisible(touch);
       optionsButton.setVisible(touch);
+      spectateButton.setVisible(touch);
       help.setText(controlsLines(touch));
     });
 
@@ -116,6 +127,7 @@ export class MenuScene extends Phaser.Scene {
     const nav = createNavigation(this);
     nav.on('help', () => !options.isBlocking() && toggleHelp());
     nav.on('confirm', () => !options.isBlocking() && play());
+    nav.on('spectate', () => !options.isBlocking() && play(true));
     nav.on('options', () => !options.isBlocking() && options.open());
   }
 }

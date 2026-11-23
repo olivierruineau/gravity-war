@@ -43,7 +43,7 @@ export function createEndScreen(scene) {
     chosen = true;
     go();
   };
-  const replay = choose(() => scene.scene.restart());
+  const replay = choose(() => scene.scene.restart({ spectator: Boolean(scene.spectator) }));
   const toMenu = choose(() => scene.scene.start(SCENES.MENU));
   nav.on('confirm', replay);
   nav.on('back', toMenu);

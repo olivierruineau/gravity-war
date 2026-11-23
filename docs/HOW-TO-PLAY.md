@@ -55,6 +55,10 @@ Tirer sur une planète ennemie abîme d'abord ses tourelles, puis ses autres bâ
 
 Les deux bots suivent les mêmes règles que vous. Ils capturent des neutres, attaquent les planètes défendues, vous chassent, défendent leurs planètes menacées, se replient à vie basse et se réarment. Trois niveaux (FACILE, NORMAL, DIFFICILE, réglage **DIFFICULTE** des options ; AUTO, le défaut, prend FACILE au tactile, où le jeu est plus dur, et NORMAL au clavier) : ils changent la rapidité de décision, la précision de tir, la portée, l'agressivité et l'esquive des bots, jamais les règles.
 
+## Observer les bots
+
+Au menu, **OBSERVER** (touche `B`) lance une partie où les trois factions sont des bots, sans toi. La caméra suit l'un d'eux : **← →** (ou **◄ ►** au doigt, les mêmes touches que pour tourner) passent de l'un à l'autre. Le pilotage est masqué (ni poussée, ni tir) ; la pause, le son et les options restent disponibles. La partie finit quand une seule faction reste en jeu. Le niveau des bots suit le réglage DIFFICULTE.
+
 ## Fin de partie
 
 Victoire quand les deux bots sont éliminés ; défaite quand c'est vous. Un écran de fin propose de rejouer (`Espace`, bouton REJOUER) ou de revenir au menu (`Echap`, bouton MENU).

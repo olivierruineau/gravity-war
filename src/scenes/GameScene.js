@@ -30,13 +30,16 @@ import { createPlayerInput } from '../systems/playerInput.js';
 import { createFrameMonitor, markAutoLow } from '../systems/quality.js';
 import { resolveDifficulty } from '../systems/difficultySetting.js';
 import { applyRenderScale, placeCamera } from '../systems/renderScale.js';
+import { createSpectatorControls } from '../systems/spectatorControls.js';
+import { nextFollowed } from '../systems/spectator.js';
 import { createStarfield } from '../systems/starfield.js';
 
 /** Délai (s) entre la fin de partie et l'écran de fin. */
 const END_SCREEN_DELAY = 1.5;
 
-/** Factions pilotées par l'IA (ADR 0006) ; la faction 0 est le joueur. */
+/** Factions pilotées par l'IA (ADR 0006) ; la faction 0 est le joueur, sauf en observation (9.8). */
 const BOT_FACTIONS = [1, 2];
+const ALL_FACTIONS = [0, 1, 2];
 
 /**
  * Scène de jeu. Rester MINCE : elle orchestre la boucle à pas fixe, l'entrée et le rendu ;
@@ -47,13 +50,18 @@ export class GameScene extends Phaser.Scene {
     super(SCENES.GAME);
   }
 
+  init(data) {
+    this.spectator = Boolean(data?.spectator);
+  }
+
   create() {
     applyRenderScale(this);
     // Graine tirée ici (couche Phaser) : le core, lui, reste déterministe pour une graine donnée.
     const seed = Math.floor(Math.random() * 2 ** 32);
     this.world = createWorld(triad, seed, {
       eventCapacity: EVENT_CAPACITY,
-      bots: BOT_FACTIONS,
+      bots: this.spectator ? ALL_FACTIONS : BOT_FACTIONS,
+      spectator: this.spectator,
       difficulty: resolveDifficulty(),
     });
     this.clock = createClock({
@@ -61,7 +69,10 @@ export class GameScene extends Phaser.Scene {
       maxFrameDt: MAX_FRAME_DT,
       maxSteps: MAX_STEPS_PER_FRAME,
     });
-    this.pilot = createPlayerInput(this);
+    this.followed = 0; // faction suivie par la caméra (observation) ; 0 = le joueur
+    if (this.spectator)
+      this.spectate = createSpectatorControls(this, this.world, (f) => (this.followed = f));
+    else this.pilot = createPlayerInput(this);
     createStarfield(this, this.world.width, this.world.height);
     this.gfx = this.add.graphics();
     this.debug = createDebugOverlay(this);
@@ -74,6 +85,7 @@ export class GameScene extends Phaser.Scene {
       this,
       () => this.world.outcome === OUTCOME.PLAYING,
       this.mute.refresh,
+      this.spectator,
     );
     this.endDelay = END_SCREEN_DELAY; // laisse voir l'explosion finale avant le bandeau
     this.frameMonitor = createFrameMonitor(() => {
@@ -89,8 +101,11 @@ export class GameScene extends Phaser.Scene {
   update(_time, delta) {
     if (this.pause.paused) return; // tout est figé : ni simulation, ni entrées, ni effets
     this.frameMonitor.sample(delta / 1000);
-    const player = this.world.ships[0];
-    this.pilot.update(player.intent, this.world, player);
+    if (this.spectator && this.world.factions[this.followed].eliminated)
+      this.followed = nextFollowed(this.world, this.followed, 1);
+    const player = this.world.ships[this.followed]; // le joueur, ou le bot suivi en observation
+    if (!this.spectator) this.pilot.update(player.intent, this.world, player);
+    else this.spectate.update(this.followed);
     const steps = consumeSteps(this.clock, delta / 1000);
     // Partie décidée : on fige la simulation (l'issue est écrite une seule fois par le core) après un court délai.
     const over = this.world.outcome !== OUTCOME.PLAYING;

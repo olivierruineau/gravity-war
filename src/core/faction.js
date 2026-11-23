@@ -3,7 +3,8 @@ import { FACTION_COUNT } from '../config.js';
 import { BUILDINGS } from '../data/buildings.js';
 import { EVT, pushEvent } from './events.js';
 
-export const OUTCOME = { PLAYING: 0, VICTORY: 1, DEFEAT: 2 };
+/** `OVER` : fin d'une partie d'observation (bots seuls, 9.8) : il ne reste qu'une faction en jeu. */
+export const OUTCOME = { PLAYING: 0, VICTORY: 1, DEFEAT: 2, OVER: 3 };
 
 /** `eliminated` vaut vrai dès le départ pour une faction sans planète : « hors jeu », sans événement. */
 export function createFactions(planets) {
@@ -61,12 +62,18 @@ function hasLiveShip(ships, faction) {
 
 /**
  * Défaite si la faction 0 (en jeu au départ) est éliminée, victoire si tous les adversaires en jeu au départ
- * le sont. Sans faction 0 en jeu (bot contre bot), l'issue reste PLAYING.
+ * le sont. Sans faction 0 en jeu (bot contre bot), l'issue reste PLAYING. En mode observation (`world.spectator`),
+ * la partie finit (`OVER`) quand il ne reste qu'une faction en jeu.
  */
 function updateOutcome(world) {
   const { factions } = world;
   let outcome = OUTCOME.PLAYING;
-  if (world.inGame[0]) {
+  if (world.spectator) {
+    let left = 0;
+    for (let f = 0; f < factions.length; f++)
+      if (world.inGame[f] && !factions[f].eliminated) left++;
+    if (left <= 1) outcome = OUTCOME.OVER;
+  } else if (world.inGame[0]) {
     if (factions[0].eliminated) outcome = OUTCOME.DEFEAT;
     else {
       let rivalLeft = false;

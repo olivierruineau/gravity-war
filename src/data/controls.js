@@ -20,9 +20,27 @@ export const CONTROLS_TOUCH = [
   { keys: 'SON', action: 'Son on/off' },
 ];
 
+// Observation (bots seuls, 9.8) : seules les touches de rotation changent de bot, le reste du pilotage est masqué.
+export const CONTROLS_SPECTATOR = [
+  { keys: '← →', action: 'Changer de bot' },
+  { keys: 'P', action: 'Pause' },
+  { keys: 'M', action: 'Son on/off' },
+];
+export const CONTROLS_SPECTATOR_TOUCH = [
+  { keys: '◄ ►', action: 'Changer de bot' },
+  { keys: 'II', action: 'Pause' },
+  { keys: 'SON', action: 'Son on/off' },
+];
+
 /** Lignes d'aide alignées en colonnes : « ESPACE   Tir principal ». `touch` : la liste des gestes au doigt. */
-export function controlsLines(touch = false) {
-  const list = touch ? CONTROLS_TOUCH : CONTROLS;
+export function controlsLines(touch = false, spectator = false) {
+  const list = spectator
+    ? touch
+      ? CONTROLS_SPECTATOR_TOUCH
+      : CONTROLS_SPECTATOR
+    : touch
+      ? CONTROLS_TOUCH
+      : CONTROLS;
   const width = Math.max(...list.map((c) => c.keys.length));
   return list.map((c) => `${c.keys.padEnd(width)}  ${c.action}`);
 }

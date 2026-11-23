@@ -152,6 +152,7 @@ Spécification : [docs/SPEC.md](docs/SPEC.md). Architecture : [docs/ARCHITECTURE
 - [x] **9.4** Difficulté par défaut selon l'appareil : « facile » au tactile, « normal » au clavier (comme l'aide à la pose, option « auto » dans le menu Options) ; documenter dans HOW-TO-PLAY et l'ADR (code, doc)
 - [x] **9.5** Rendu des lignes plus fin et plus net : aujourd'hui le canevas fait 480×270 pixels réels agrandis par le navigateur, donc traits crénelés et épais d'au moins 1 pixel du jeu (≈ 2 à 3 px d'écran). Étudier une résolution interne adaptée à l'écran (taille réelle du canevas ou `devicePixelRatio`, plafonnée) avec la caméra et les coordonnées du monde inchangées, des traits de 1 px d'écran, et l'antialiasing de Graphics. Mesurer le coût (cadence ×4 et ×6) et l'effet sur `pixelArt`, `roundPixels`, les textes et la lueur ; décider par ADR (peut remplacer le parti pris « résolution basse » de CLAUDE.md pour le tracé) (arch, code, test-c)
 - [x] **9.6** Revue et documentation : README, HOW-TO-PLAY, ARCHITECTURE, REVIEW-MOBILE à jour ; recette sur appareil (`docs/CHECKLIST-MOBILE.md`) : aide à la pose, difficulté, options, netteté (rev, doc)
+- [x] **9.8** Mode observation (bots seuls) : bouton OBSERVER / touche `B` au menu, ← → (◄ ► au doigt) changent de bot, autres commandes masquées ; fin quand une faction reste (arch, code, test-c)
 - [x] **9.7** Mode debug dans les Options (cadence, position, bots), mémorisé, aussi sur `F3` ; adresse de la version en ligne en tête du README (code, doc)
 
 ---

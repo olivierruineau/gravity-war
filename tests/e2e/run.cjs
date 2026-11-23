@@ -286,6 +286,41 @@ async function mixedScenario(browser) {
   await context.close();
 }
 
+async function spectatorScenario(browser) {
+  console.log('\n# Observation — bots seuls');
+  const { context, page, errors, g } = await newPage(browser, {
+    viewport: { width: 1280, height: 720 },
+  });
+  const state = () =>
+    page.evaluate(
+      `(() => { const s = window.__game.scene.getScene('GameScene'); return { spectator: s.spectator, followed: s.followed, bots: s.world.ai.length, hasPilot: Boolean(s.pilot) }; })()`,
+    );
+  await page.keyboard.press('b');
+  await settle(page, 800);
+  check('B lance l’observation', await g.active('GameScene'));
+  eq('trois bots, le joueur n’en est plus un', await state(), {
+    spectator: true,
+    followed: 0,
+    bots: 3,
+    hasPilot: false,
+  });
+  await page.keyboard.press('ArrowRight');
+  await settle(page, 200);
+  eq('→ suit le bot suivant', (await state()).followed, 1);
+  await page.keyboard.press('ArrowLeft');
+  await page.keyboard.press('ArrowLeft');
+  await settle(page, 200);
+  eq('← revient en arrière, en boucle', (await state()).followed, 2);
+  await page.keyboard.down('ArrowUp');
+  await page.keyboard.down('Space');
+  await settle(page, 200);
+  await page.keyboard.up('ArrowUp');
+  await page.keyboard.up('Space');
+  eq('pas d’entrée de pilotage', (await state()).hasPilot, false);
+  eq('aucune erreur de page', errors, []);
+  await context.close();
+}
+
 (async () => {
   const server = await startServer();
   const browser = await chromium.launch();
@@ -294,6 +329,7 @@ async function mixedScenario(browser) {
     await touchScenario(browser, 'iPhone 13 (iOS)', 'iPhone 13 landscape');
     await keyboardScenario(browser);
     await mixedScenario(browser);
+    await spectatorScenario(browser);
   } finally {
     await browser.close();
     server.kill();
