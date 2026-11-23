@@ -2,7 +2,14 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0b0b14" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>Gravity War</title>
     <link rel="icon" href="data:," />
     <style>
@@ -12,10 +19,48 @@
         height: 100%;
         background: #0b0b14;
         overflow: hidden;
+        overscroll-behavior: none; /* pas de tirer-pour-rafraichir */
+        touch-action: none; /* pas de zoom, defilement ni double-tap : le jeu gere ses doigts */
+        -webkit-user-select: none;
+        user-select: none; /* pas de selection de texte */
+        -webkit-touch-callout: none; /* pas de menu contextuel iOS */
+        -webkit-tap-highlight-color: transparent;
       }
-      #game {
+      body {
+        position: fixed; /* iOS : empeche le rebond de la page */
+        inset: 0;
         width: 100%;
-        height: 100%;
+      }
+      /* Le jeu reste hors de l'encoche et des barres systeme : marges de zone sure. */
+      #game {
+        position: fixed;
+        top: env(safe-area-inset-top, 0px);
+        right: env(safe-area-inset-right, 0px);
+        bottom: env(safe-area-inset-bottom, 0px);
+        left: env(safe-area-inset-left, 0px);
+      }
+      /* Paysage seul : sur un appareil tactile en portrait, une invite couvre le jeu. */
+      #rotate {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 10;
+        background: #0b0b14;
+        color: #d8d8e8;
+        font: 16px monospace;
+        text-align: center;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 16px;
+      }
+      #rotate .icon {
+        font-size: 48px;
+      }
+      @media (pointer: coarse) and (orientation: portrait) {
+        #rotate {
+          display: flex;
+        }
       }
       canvas {
         image-rendering: pixelated;
@@ -25,6 +70,10 @@
   </head>
   <body>
     <div id="game"></div>
+    <div id="rotate">
+      <div class="icon">&#8635;</div>
+      <div>Tournez l'appareil<br />(mode paysage)</div>
+    </div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

@@ -4,6 +4,8 @@ import { toCss } from '../systems/color.js';
 import { createMuteKey } from '../systems/muteKey.js';
 import { playSfx, resumeAudio } from '../audio/sfx.js';
 import { controlsLines } from '../data/controls.js';
+import { createButton } from '../systems/uiButton.js';
+import { canFullscreen, enterFullscreen } from '../systems/platform.js';
 
 export class MenuScene extends Phaser.Scene {
   constructor() {
@@ -48,6 +50,17 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setVisible(false);
     createMuteKey(this);
+    if (canFullscreen(this)) {
+      createButton(this, {
+        x: GAME_WIDTH - 44,
+        y: 26,
+        w: 76,
+        h: 24,
+        label: 'PLEIN ECRAN',
+        fontSize: 8,
+        onTap: () => enterFullscreen(this),
+      });
+    }
     const toggleHelp = () => help.setVisible(!help.visible);
     this.input.keyboard.on('keydown-H', toggleHelp);
     this.events.once('shutdown', () => this.input.keyboard.off('keydown-H', toggleHelp));
