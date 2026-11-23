@@ -15,7 +15,7 @@ export const arena = {
     { x: 2000, y: 1100, radius: 50, gravity: 60 },
     { x: 1200, y: 750, radius: 30, gravity: 50 },
   ],
-  // spawns[i] = départ de la faction i, posée sur sa planète de base. La faction 1 (futur bot 1) est pour
-  // l'instant une cible d'entraînement immobile : elle réapparaît sur sa base après sa mort.
-  spawns: [{ planet: 0 }, { planet: 1 }],
+  // spawns[i] = départ de la faction i, posée sur sa planète de base. Les factions 1 et 2 sont pilotées par
+  // l'IA (`bots: [1, 2]` dans GameScene) ; sans bots, elles restent des cibles immobiles.
+  spawns: [{ planet: 0 }, { planet: 1 }, { planet: 2 }],
 };

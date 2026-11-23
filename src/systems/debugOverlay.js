@@ -1,6 +1,9 @@
-// Overlay de debug (touche F3) : FPS, vitesse, position, tick, événements perdus.
+// Overlay de debug (touche F3) : FPS, vitesse, position, tick, événements perdus, mode et cible des bots.
 // Lecture seule de `world` ; ne s'actualise que lorsqu'il est visible.
 import Phaser from 'phaser';
+import { AI_MODE } from '../core/ai/mode.js';
+
+const MODE_NAMES = Object.fromEntries(Object.entries(AI_MODE).map(([name, id]) => [id, name]));
 
 export function createDebugOverlay(scene) {
   const text = scene.add
@@ -25,6 +28,10 @@ export function createDebugOverlay(scene) {
           `pos ${ship.pos.x.toFixed(0)}, ${ship.pos.y.toFixed(0)}`,
           `vitesse ${speed.toFixed(1)}  angle ${((ship.angle * 180) / Math.PI).toFixed(0)}°`,
           `événements perdus ${world.events.dropped}`,
+          ...world.ai.map((bot) => {
+            const target = bot.target >= 0 ? ` -> ${bot.target}` : '';
+            return `bot ${bot.faction} ${MODE_NAMES[bot.mode]}${target}  ${bot.modeTime.toFixed(0)}s`;
+          }),
         ].join('\n'),
       );
     },

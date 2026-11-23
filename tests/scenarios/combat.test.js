@@ -560,11 +560,11 @@ describe('déterminisme d’un combat', () => {
 });
 
 describe('carte arena (intégration)', () => {
-  it('le monde contient 2 vaisseaux posés sur leurs bases et 3 planètes possédées par 0, 1 et 2', () => {
+  it('le monde contient 3 vaisseaux posés sur leurs bases et 3 planètes possédées par 0, 1 et 2', () => {
     const world = createWorld(arena, 1, { eventCapacity: 64 });
-    expect(world.ships).toHaveLength(2);
-    expect(world.ships.map((s) => s.landedOn)).toEqual([0, 1]);
-    expect(world.ships.map((s) => s.faction)).toEqual([0, 1]);
+    expect(world.ships).toHaveLength(3);
+    expect(world.ships.map((s) => s.landedOn)).toEqual([0, 1, 2]);
+    expect(world.ships.map((s) => s.faction)).toEqual([0, 1, 2]);
     expect(world.planets.filter((p) => p.owner >= 0).map((p) => p.owner)).toEqual([0, 1, 2]);
     expect(world.planets.slice(0, 3).map((p) => p.owner)).toEqual([0, 1, 2]);
     for (const ship of world.ships) {

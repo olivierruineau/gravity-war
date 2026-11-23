@@ -23,6 +23,9 @@ import { createLandingAid } from '../systems/landingAid.js';
 import { createKeyboardInput } from '../systems/keyboardInput.js';
 import { createStarfield } from '../systems/starfield.js';
 
+/** Factions pilotées par l'IA (ADR 0006) ; la faction 0 est le joueur. */
+const BOT_FACTIONS = [1, 2];
+
 /**
  * Scène de jeu. Rester MINCE : elle orchestre la boucle à pas fixe, l'entrée et le rendu ;
  * les règles de jeu vivent dans `src/core` (ADR 0002).
@@ -35,7 +38,7 @@ export class GameScene extends Phaser.Scene {
   create() {
     // Graine tirée ici (couche Phaser) : le core, lui, reste déterministe pour une graine donnée.
     const seed = Math.floor(Math.random() * 2 ** 32);
-    this.world = createWorld(arena, seed, { eventCapacity: EVENT_CAPACITY });
+    this.world = createWorld(arena, seed, { eventCapacity: EVENT_CAPACITY, bots: BOT_FACTIONS });
     this.clock = createClock({
       dt: FIXED_DT,
       maxFrameDt: MAX_FRAME_DT,

@@ -82,14 +82,14 @@ Spécification : [docs/SPEC.md](docs/SPEC.md). Architecture : [docs/ARCHITECTURE
 **Fin de phase :** 2 bots pilotent, capturent, défendent et attaquent avec les mêmes règles que le joueur.
 **Revue Opus** en fin de phase.
 
-- [ ] **5.1** ADR 0006 : architecture de l'IA (machine à états / utilité), les bots produisent les mêmes intentions que le joueur, perception limitée au monde de `core/` (arch)
+- [x] **5.1** ADR 0006 : architecture de l'IA (machine à états / utilité), les bots produisent les mêmes intentions que le joueur, perception limitée au monde de `core/` (arch)
       Points issus de la revue 4.11 à trancher dans l'ADR : intentions calculées DANS `step` (étape 1) à chaque pas, pas par frame ; flux RNG séparé (`world.aiRng`) pour ne pas décaler les tourelles ; requêtes pures à exposer (`findMissileTarget`, ciblage des tourelles, `nearestPlanet` avec filtres « non possédée par f » / « sans défense », prédiction balistique sans allocation avec `gravityAt` — balles soumises à la gravité, missiles non) ; l'IA lit l'ÉTAT, pas les événements (file perdue si pleine) ; état « planète attaquée » à ajouter (ex. `planet.lastHitTick`) ; ajouter `{ planet: 2 }` aux spawns d'`arena` (5.7).
 - [x] **5.2** Navigation sensible à la gravité : s'orienter, rejoindre une cible, freiner par 180° + poussée ; tests de scénarios (code, test-c)
 - [x] **5.3** Contrôleur d'atterrissage : approche, alignement, vitesse radiale sous le seuil ; tests (code, test-c)
 - [x] **5.4** Comportement « capturer une planète neutre » (choix de cible, trajet, capture) (code, test-c)
 - [x] **5.5** Comportement combat : viser et tirer, esquiver, missiles ; attaquer les planètes ennemies (tourelles puis capture) (code, test-c)
 - [x] **5.6** Comportement défense/repli : réagir aux attaques sur ses planètes, repli si vie basse (code, test-c)
-- [ ] **5.7** Déploiement de 2 bots (2 couleurs) sur la carte ; réglage de l'agressivité (code)
+- [x] **5.7** Déploiement de 2 bots (2 couleurs) sur la carte ; réglage de l'agressivité (code)
 - [ ] **5.8** Revue de l'IA et de la performance (rev)
       À vérifier en revue : findDetour ignore la vitesse et les tourelles hors cible (seed 14 : 6 PV perdus après décollage) ; esquive des balles peu efficace (14 morts sur 20 face à un tireur parfait) ; écarts 5.5 à consigner dans l'ADR (assaultMinHealth 30, esquive ajoutée) ; ping-pong de captures sur planètes sans tourelle ; constantes slotValue/enemyCaptureFactor/occupiedFactor à lister dans l'ADR 0006.
 
