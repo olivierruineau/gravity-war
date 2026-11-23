@@ -102,10 +102,10 @@ describe('bâtiments : chronologie complète sur une planète possédée sans b�
     run(world, 140 * 60);
     const p = world.planets[0];
     expect(p.buildings.every((s) => s.built)).toBe(true);
-    expect(p.buildings[TURRET].hp).toBe(BUILDINGS[TURRET].turret.hp);
-    expect(p.buildings[HEAVY].hp).toBe(BUILDINGS[HEAVY].turret.hp);
-    expect(p.buildings[FACTORY].hp).toBe(0);
-    expect(p.buildings[GENERATOR].hp).toBe(0);
+    expect(p.buildings[TURRET].hp).toBe(BUILDINGS[TURRET].hp);
+    expect(p.buildings[HEAVY].hp).toBe(BUILDINGS[HEAVY].hp);
+    expect(p.buildings[FACTORY].hp).toBe(BUILDINGS[FACTORY].hp);
+    expect(p.buildings[GENERATOR].hp).toBe(BUILDINGS[GENERATOR].hp);
     expect(p.buildProgress).toBe(0);
     expect(hasDefenses(p)).toBe(true);
     expect(run(world, 3000)).toHaveLength(0);
@@ -209,7 +209,7 @@ describe('bâtiments : slots déjà construits au départ', () => {
     const world = makeWorld([{ ...OWNED, built: 2 }]);
     const p = world.planets[0];
     expect(p.buildings.map((s) => s.built)).toEqual([true, true, false, false]);
-    expect(p.buildings[TURRET].hp).toBe(BUILDINGS[TURRET].turret.hp);
+    expect(p.buildings[TURRET].hp).toBe(BUILDINGS[TURRET].hp);
     expect(world.factions[0].hasMissiles).toBe(true);
     expect(world.factions[0].hasShield).toBe(false);
 

@@ -1,4 +1,4 @@
-// Tourelles des planètes (ADR 0005 §4) : tir radial automatique et dégâts subis.
+// Tourelles des planètes (ADR 0005 §4) : tir radial automatique.
 import { TURRET_MUZZLE_OFFSET } from '../config.js';
 import { BUILDINGS } from '../data/buildings.js';
 import { EVT, pushEvent } from './events.js';
@@ -59,21 +59,5 @@ export function updateTurrets(world, dt) {
       if (index >= 0) pushEvent(events, EVT.TURRET_SHOT, x, y, i, s); // pool plein : pas de balle, pas d'événement
       slot.cooldown = spec.cooldown;
     }
-  }
-}
-
-/** Inflige `damage` au premier slot tourelle construit de la planète ; à 0 PV, il est détruit et le chantier repart de zéro. */
-export function damageTurret(world, planetIndex, damage, x, y) {
-  const planet = world.planets[planetIndex];
-  for (let s = 0; s < BUILDINGS.length; s++) {
-    if (BUILDINGS[s].turret === undefined || !planet.buildings[s].built) continue;
-    const slot = planet.buildings[s];
-    slot.hp -= damage;
-    if (slot.hp > 0) return;
-    slot.built = false;
-    slot.hp = 0;
-    planet.buildProgress = 0;
-    pushEvent(world.events, EVT.TURRET_DESTROYED, x, y, planetIndex, s);
-    return;
   }
 }

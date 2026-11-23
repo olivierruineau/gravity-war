@@ -71,7 +71,7 @@ function createRecorder(world) {
       const tick = world.tick;
       for (const e of eventsOf(world, EVT.CAPTURED)) log.captured.push({ tick, ...e });
       for (const e of eventsOf(world, EVT.BUILT)) log.built.push({ tick, ...e });
-      for (const e of eventsOf(world, EVT.TURRET_DESTROYED)) log.destroyed.push({ tick, ...e });
+      for (const e of eventsOf(world, EVT.BUILDING_DESTROYED)) log.destroyed.push({ tick, ...e });
     },
     run(n) {
       for (let i = 0; i < n; i++) this.step();
@@ -135,7 +135,7 @@ describe('capture ennemie : une tourelle construite bloque tout', () => {
   it('même une tourelle lourde seule (base détruite, lourde construite) bloque la capture', () => {
     const world = makeWorld({ built: 0 });
     world.planets[ENEMY].buildings[3].built = true;
-    world.planets[ENEMY].buildings[3].hp = BUILDINGS[3].turret.hp;
+    world.planets[ENEMY].buildings[3].hp = BUILDINGS[3].hp;
     const rec = createRecorder(world);
     rec.run(10 * 60);
     expect(rec.log.captured).toHaveLength(0);
@@ -239,7 +239,7 @@ describe('capture ennemie : tourelle détruite puis capteur posé 3 s', () => {
     expect(built[0].b).toBe(0);
     // `updateBuildings` précède `updateCapture` : le chantier démarre au pas suivant la capture.
     expect(Math.abs(built[0].tick - capturedAt - TURRET_STEPS)).toBeLessThanOrEqual(TOL);
-    expect(world.planets[ENEMY].buildings[0]).toMatchObject({ built: true, hp: TURRET.hp });
+    expect(world.planets[ENEMY].buildings[0]).toMatchObject({ built: true, hp: BUILDINGS[0].hp });
     expect(world.planets[ENEMY].owner).toBe(0);
     expect(world.ships[0].hp).toBe(hpAtCapture);
     // La faction 0 n'a que la tourelle neuve sur cette planète (pas d'usine) : toujours pas de missiles.

@@ -377,7 +377,7 @@ describe('updateCapture : défenses', () => {
     const world = makeWorld();
     const p = world.planets[ENEMY];
     p.buildings[TURRET].built = true;
-    p.buildings[TURRET].hp = BUILDINGS[TURRET].turret.hp;
+    p.buildings[TURRET].hp = BUILDINGS[TURRET].hp;
     land(world, 0, ENEMY);
     expect(capture(world, 3 * CAPTURE_STEPS)).toHaveLength(0);
     expectIdle(p);

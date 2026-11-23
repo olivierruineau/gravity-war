@@ -36,7 +36,7 @@ function createRecorder(world) {
       step(world, FIXED_DT);
       const tick = world.tick;
       for (const e of eventsOf(world, EVT.TURRET_SHOT)) log.shots.push({ tick, ...e });
-      for (const e of eventsOf(world, EVT.TURRET_DESTROYED)) log.destroyed.push({ tick, ...e });
+      for (const e of eventsOf(world, EVT.BUILDING_DESTROYED)) log.destroyed.push({ tick, ...e });
       for (const e of eventsOf(world, EVT.BUILT)) log.built.push({ tick, ...e });
       for (const e of eventsOf(world, EVT.BULLET_HIT)) log.hits.push({ tick, ...e });
       for (const e of eventsOf(world, EVT.SHIP_HIT)) log.shipsHit.push({ tick, ...e });
@@ -267,7 +267,7 @@ describe('tourelle : détruite à coups de balles', () => {
     );
   }
 
-  /** Tire jusqu'au TURRET_DESTROYED ; renvoie le nombre de balles de l'intrus absorbées par la planète. */
+  /** Tire jusqu'au BUILDING_DESTROYED ; renvoie le nombre de balles de l'intrus absorbées par la planète. */
   function fireUntilDestroyed(world, rec) {
     const ship = world.ships[0];
     let impacts = 0;
@@ -287,12 +287,12 @@ describe('tourelle : détruite à coups de balles', () => {
     respawnShip(world.ships[0], 0, world.planets[0]);
   }
 
-  it('7 balles de 12 (80 PV) : une seule TURRET_DESTROYED (a = planète, b = slot 0), 6 balles laissent 8 PV', () => {
+  it('7 balles de 12 (80 PV) : une seule BUILDING_DESTROYED (a = planète, b = slot 0), 6 balles laissent 8 PV', () => {
     const world = attackedWorld();
     const rec = createRecorder(world);
     rec.run(60); // 1 s de développement avant l'attaque
     const turret = world.planets[0].buildings[0];
-    expect(turret).toMatchObject({ built: true, hp: TURRET.hp });
+    expect(turret).toMatchObject({ built: true, hp: BUILDINGS[0].hp });
     const progressBefore = world.planets[0].buildProgress;
     expect(progressBefore).toBeGreaterThan(0.9);
 
@@ -308,7 +308,7 @@ describe('tourelle : détruite à coups de balles', () => {
     world.ships[0].intent.fire = false;
 
     expect(impacts).toBe(7);
-    expect(hpAfterSix).toBe(TURRET.hp - 6 * 12);
+    expect(hpAfterSix).toBe(BUILDINGS[0].hp - 6 * 12);
     expect(rec.log.destroyed).toHaveLength(1);
     expect(rec.log.destroyed[0]).toMatchObject({ a: 0, b: 0 });
     expect(turret).toMatchObject({ built: false, hp: 0 });
@@ -355,7 +355,7 @@ describe('tourelle : détruite à coups de balles', () => {
     expect(Math.abs(rec.log.built[0].tick - destroyedAt - (TURRET_STEPS - 1))).toBeLessThanOrEqual(
       TOL,
     );
-    expect(world.planets[0].buildings[0]).toMatchObject({ built: true, hp: TURRET.hp });
+    expect(world.planets[0].buildings[0]).toMatchObject({ built: true, hp: BUILDINGS[0].hp });
   });
 
   it('une fois reconstruite, la tourelle tire de nouveau sur l’intrus encore là', () => {
@@ -433,7 +433,7 @@ describe('tourelle : déterminisme', () => {
     const { world } = run(33);
     for (const planet of world.planets) {
       planet.buildings.forEach((slot, s) => {
-        const max = BUILDINGS[s].turret?.hp ?? 0;
+        const max = BUILDINGS[s].hp;
         expect(slot.hp).toBeGreaterThanOrEqual(0);
         expect(slot.hp).toBeLessThanOrEqual(max);
         if (!slot.built) expect(slot.hp).toBe(0);

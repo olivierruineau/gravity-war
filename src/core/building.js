@@ -21,6 +21,30 @@ export function resetBuildings(planet) {
   planet.buildProgress = 0;
 }
 
+/**
+ * Inflige `damage` à un seul slot construit : la première tourelle, sinon le premier bâtiment (ordre du catalogue).
+ * L'excédent est perdu ; à 0 PV le slot est détruit et le chantier repart de zéro (ADR 0007).
+ */
+export function damageBuilding(world, planetIndex, damage, x, y) {
+  const planet = world.planets[planetIndex];
+  let target = -1;
+  for (let s = 0; s < BUILDINGS.length && target < 0; s++) {
+    if (BUILDINGS[s].turret !== undefined && planet.buildings[s].built) target = s;
+  }
+  for (let s = 0; s < BUILDINGS.length && target < 0; s++) {
+    if (planet.buildings[s].built) target = s;
+  }
+  if (target < 0) return;
+  const slot = planet.buildings[target];
+  slot.hp -= damage;
+  if (slot.hp > 0) return;
+  slot.built = false;
+  slot.hp = 0;
+  slot.cooldown = 0;
+  planet.buildProgress = 0;
+  pushEvent(world.events, EVT.BUILDING_DESTROYED, x, y, planetIndex, target);
+}
+
 /** Fait avancer le chantier (premier slot non construit) des planètes possédées. */
 export function updateBuildings(world, dt) {
   const { planets, events } = world;
@@ -34,7 +58,7 @@ export function updateBuildings(world, dt) {
     if (p.buildProgress < BUILDINGS[s].buildTime) continue;
     const slot = p.buildings[s];
     slot.built = true;
-    slot.hp = BUILDINGS[s].turret !== undefined ? BUILDINGS[s].turret.hp : 0;
+    slot.hp = BUILDINGS[s].hp;
     slot.cooldown = 0;
     p.buildProgress = 0;
     pushEvent(events, EVT.BUILT, p.pos.x, p.pos.y, i, s);

@@ -7,8 +7,8 @@ import { KIND, spawnProjectile } from '../../src/core/projectile.js';
 import { createWorld } from '../../src/core/world.js';
 
 // Planète à (100, 100), r = 20. Un projectile en (110, 100) est à 10 px du centre : absorbé.
-const BASE_HP = BUILDINGS[0].turret.hp; // 80
-const HEAVY_HP = BUILDINGS[3].turret.hp; // 160
+const BASE_HP = BUILDINGS[0].hp; // 80
+const HEAVY_HP = BUILDINGS[3].hp; // 160
 
 function worldWith(planet) {
   return createWorld(
@@ -33,7 +33,7 @@ describe('collideProjectilesPlanets : dégâts aux tourelles', () => {
     collideProjectilesPlanets(world);
     expect(world.projectiles[i].active).toBe(false);
     expect(world.planets[0].buildings[0].hp).toBe(BASE_HP - 6);
-    expect(types(world)).toEqual([EVT.BULLET_HIT]); // la tourelle survit : pas de TURRET_DESTROYED
+    expect(types(world)).toEqual([EVT.BULLET_HIT]); // la tourelle survit : pas de BUILDING_DESTROYED
     expect(world.events.items[0]).toMatchObject({ x: 110, y: 100, a: 0, b: i });
   });
 
@@ -80,7 +80,7 @@ describe('collideProjectilesPlanets : dégâts aux tourelles', () => {
     expect(world.events.count).toBe(0);
   });
 
-  it('7 balles de 12 détruisent la tourelle de base (6 la laissent à 8 PV) : TURRET_DESTROYED au point d’impact', () => {
+  it('7 balles de 12 détruisent la tourelle de base (6 la laissent à 8 PV) : BUILDING_DESTROYED au point d’impact', () => {
     const world = worldWith({ owner: 0, built: 1 });
     world.planets[0].buildProgress = 9;
     for (let k = 0; k < 6; k++) {
@@ -88,7 +88,7 @@ describe('collideProjectilesPlanets : dégâts aux tourelles', () => {
       collideProjectilesPlanets(world);
     }
     expect(world.planets[0].buildings[0]).toMatchObject({ built: true, hp: 8 });
-    expect(types(world).includes(EVT.TURRET_DESTROYED)).toBe(false);
+    expect(types(world).includes(EVT.BUILDING_DESTROYED)).toBe(false);
     expect(world.planets[0].buildProgress).toBe(9);
 
     shoot(world, { owner: 1, damage: 12, x: 105, y: 102 });
@@ -96,8 +96,8 @@ describe('collideProjectilesPlanets : dégâts aux tourelles', () => {
     expect(world.planets[0].buildings[0]).toMatchObject({ built: false, hp: 0 });
     expect(world.planets[0].buildProgress).toBe(0);
     const last = world.events.items[world.events.count - 1];
-    expect(last).toMatchObject({ type: EVT.TURRET_DESTROYED, x: 105, y: 102, a: 0, b: 0 });
-    // Le BULLET_HIT du coup fatal précède TURRET_DESTROYED.
+    expect(last).toMatchObject({ type: EVT.BUILDING_DESTROYED, x: 105, y: 102, a: 0, b: 0 });
+    // Le BULLET_HIT du coup fatal précède BUILDING_DESTROYED.
     expect(world.events.items[world.events.count - 2].type).toBe(EVT.BULLET_HIT);
   });
 

@@ -13,7 +13,7 @@ export const EVT = {
   RESPAWN: 6, // a = vaisseau, b = planète de réapparition
   BUILT: 9, // bâtiment achevé : a = planète, b = slot
   TURRET_SHOT: 10, // a = planète, b = slot
-  TURRET_DESTROYED: 11, // a = planète, b = slot
+  BUILDING_DESTROYED: 11, // a = planète, b = slot
   MISSILE_LAUNCH: 12, // a = vaisseau, b = projectile
   REARM: 13, // a = vaisseau, b = stock
   ELIMINATED: 14, // a = faction

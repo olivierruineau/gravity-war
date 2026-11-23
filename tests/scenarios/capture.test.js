@@ -148,7 +148,7 @@ describe('capture : atterrissage réel sur une planète neutre', () => {
     expect(Math.abs(builtOnTarget[0].tick - capturedAt - TURRET_STEPS)).toBeLessThanOrEqual(TOL);
     expect(builtOnTarget[0]).toMatchObject({ x: TARGET_POS.x, y: TARGET_POS.y });
     const p = world.planets[TARGET];
-    expect(p.buildings[0]).toEqual({ built: true, hp: BUILDINGS[0].turret.hp, cooldown: 0 });
+    expect(p.buildings[0]).toEqual({ built: true, hp: BUILDINGS[0].hp, cooldown: 0 });
     // Le chantier suivant (usine) a démarré au pas qui suit le BUILT : progression ≈ pas écoulés × dt.
     expect(p.buildProgress).toBeCloseTo((world.tick - builtOnTarget[0].tick) * FIXED_DT, 6); // somme de dt flottants
   });

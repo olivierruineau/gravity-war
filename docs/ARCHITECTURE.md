@@ -40,7 +40,7 @@
 - Contact vaisseau/planète dans `core/landing.js` : `evaluateLanding` (vitesse d'approche, tangentielle, erreur d'angle) est la seule source des seuils (collision, aide visuelle, IA). Atterrissage → `landedOn`, vitesse nulle, `EVT.LANDED` ; sinon dégâts proportionnels à l'excès de vitesse, rebond garanti, `EVT.IMPACT`.
 - Ordre d'un pas, par vaisseau vivant : intentions → maintien/décollage si posé (un vaisseau posé saute la suite) → gravité + intégration → bornes → contact planètes.
 
-## Factions, capture, bâtiments, combat ([ADR 0005](adr/0005-factions-batiments-capture.md), phase 4 — en cours d'implémentation)
+## Factions, capture, bâtiments, combat ([ADR 0005](adr/0005-factions-batiments-capture.md), phase 4)
 
 - `world.factions[f]` = `{ planetCount, hasMissiles, hasShield, eliminated }`, résumé **recalculé à chaque pas** depuis les planètes par `updateFactions` (seul écrivain), sauf `eliminated`, qui est définitif. Une faction sans planète au départ est **hors jeu** : elle ne capture pas et n'est jamais éliminée (cibles d'entraînement, mini-cartes de test). `world.outcome` vaut PLAYING, VICTORY ou DEFEAT, du point de vue de la faction 0.
 - Planète : `captureBy`/`captureTime`. La capture avance si **exactement un** vaisseau vivant est posé, d'une autre faction non éliminée, et qu'aucune tourelle n'est construite. Elle a lieu après `CAPTURE_TIME`, puis les bâtiments sont réinitialisés.
@@ -48,7 +48,15 @@
 - Tourelles : tirent radialement dans le pool commun (owner = faction de la planète), sans anticipation et avec dispersion seedée. Leur zone touchable est le disque de la planète : un projectile ennemi absorbé par la planète abîme la première tourelle construite.
 - Missiles : stock par vaisseau, débloqués par l'usine. Ils ignorent la gravité, et leur cible est réacquise à chaque pas dans un cône (pas de champ `target`). Réarmement posé sur une planète de sa faction équipée d'une usine.
 - Bouclier : absorbé dans `damageShip` avant les PV. Recharge après un délai sans dégâts, en vol comme posé, si la faction a un générateur.
-- Ordre d'un pas : vaisseaux (respawn, ou intentions, armes, posé, gravité, bornes, contact) → tourelles → guidage et déplacement des projectiles → collisions des projectiles → bouclier et réarmement → bâtiments → capture → factions → `tick++`.
+- Ordre d'un pas : IA des bots (intentions) → vaisseaux (respawn, ou intentions, armes, posé, gravité, bornes, contact) → tourelles → guidage et déplacement des projectiles → collisions des projectiles → bouclier et réarmement → bâtiments → capture → factions → `tick++`.
+
+## IA des bots ([ADR 0006](adr/0006-ia-des-bots.md), phase 5)
+
+- `core/ai/` est pur. Il ne s'active que pour les factions passées en option (`createWorld(map, seed, { bots: [1, 2] })`) ; sans cette option, il n'y a aucun bot (tests, cible d'entraînement). Il tourne à l'**étape 1 de `step`** et n'écrit que `ships[f].intent`, `world.ai[k]` (état JSON du bot) et `world.aiRng` (flux d'aléa séparé : les tourelles gardent `world.rng`). Il ne lit jamais `world.events`.
+- Deux couches. La **décision** (`decide.js`, toutes les 0,5 s) choisit par score d'utilité un couple (mode, cible) : CAPTURE, ASSAULT, HUNT, DEFEND, RETREAT, REARM ou IDLE. Elle a une hystérésis (bonus de l'option en cours, engagement minimal) et un bannissement anti-blocage. Le **pilote** (`pilot.js`, `touchdown.js`, `combat.js`, à chaque pas) traduit ce but en intentions discrètes. Ses priorités : réflexe anti-crash, puis esquive de missile, puis manœuvre. Il tire indépendamment du mouvement.
+- Le pilote prédit avec `core/predict.js` (`predictPath`, le même intégrateur que `step`, avec `gravityAt`) et juge l'atterrissage avec `evaluateLanding` sur l'état de contact prédit : il ne recopie aucune loi physique.
+- Perception : tout l'état stratégique, comme la minimap. Les missiles ne sont vus que dans un rayon local. Jamais l'`intent` ni le stock des autres.
+- Réglages dans `src/data/ai.js` (`BOT_PROFILE`, une seule difficulté).
 
 ## Boucle de jeu
 
@@ -68,10 +76,12 @@ Résolution interne 480×270, `pixelArt` + `roundPixels`, mise à l'échelle `FI
 
 ## Décisions
 
-| ADR                                            | Sujet                                                       | Statut                                     |
-| ---------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------ |
-| [0001](adr/0001-stack-technique.md)            | Stack technique                                             | Accepté                                    |
-| [0002](adr/0002-architecture-core.md)          | Architecture de `core/` et pont rendu                       | Accepté                                    |
-| [0003](adr/0003-gravite-et-atterrissage.md)    | Gravité, collision et atterrissage                          | Accepté (§2 « sommation » amendé par 0004) |
-| [0004](adr/0004-zone-gravite-dominante.md)     | Zone de gravité dominante (chevauchements)                  | Accepté                                    |
-| [0005](adr/0005-factions-batiments-capture.md) | Factions, capture, bâtiments, tourelles, missiles, bouclier | Proposé (précise 0002 §1, §4, §5)          |
+| ADR                                            | Sujet                                                       | Statut                                      |
+| ---------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------- |
+| [0001](adr/0001-stack-technique.md)            | Stack technique                                             | Accepté                                     |
+| [0002](adr/0002-architecture-core.md)          | Architecture de `core/` et pont rendu                       | Accepté                                     |
+| [0003](adr/0003-gravite-et-atterrissage.md)    | Gravité, collision et atterrissage                          | Accepté (§2 « sommation » amendé par 0004)  |
+| [0004](adr/0004-zone-gravite-dominante.md)     | Zone de gravité dominante (chevauchements)                  | Accepté                                     |
+| [0005](adr/0005-factions-batiments-capture.md) | Factions, capture, bâtiments, tourelles, missiles, bouclier | Accepté (précise 0002 ; amendé par 0007)    |
+| [0006](adr/0006-ia-des-bots.md)                | IA des bots : décision par utilité, pilote, prédiction      | Accepté (précise 0002 §2, §5, §6 ; 0005 §8) |
+| [0007](adr/0007-degats-aux-batiments.md)       | Dégâts aux bâtiments : défenses, puis bâtiments             | Accepté (amende 0005 §3, §4)                |

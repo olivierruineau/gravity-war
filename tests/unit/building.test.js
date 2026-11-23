@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { FIXED_DT } from '../../src/config.js';
 import { BUILDINGS } from '../../src/data/buildings.js';
-import { hasDefenses, resetBuildings, updateBuildings } from '../../src/core/building.js';
+import {
+  damageBuilding,
+  hasDefenses,
+  resetBuildings,
+  updateBuildings,
+} from '../../src/core/building.js';
 import { clearEvents, createEvents, EVT } from '../../src/core/events.js';
 import { createPlanet } from '../../src/core/planet.js';
+import { createWorld } from '../../src/core/world.js';
 
 // Slots du catalogue (ADR 0005 §3) : 0 tourelle, 1 usine, 2 générateur, 3 tourelle lourde.
 const TURRET = 0;
@@ -149,7 +155,7 @@ describe('updateBuildings : planète possédée', () => {
     expect(steps).toBe(BUILDINGS[TURRET].buildTime / DT);
     expect(p.buildings[TURRET]).toEqual({
       built: true,
-      hp: BUILDINGS[TURRET].turret.hp,
+      hp: BUILDINGS[TURRET].hp,
       cooldown: 0,
     });
     expect(p.buildProgress).toBe(0);
@@ -177,10 +183,10 @@ describe('updateBuildings : planète possédée', () => {
       built.push(p.buildings[slot].built);
     }
     expect(built).toEqual([true, true, true, true]);
-    expect(p.buildings[HEAVY].hp).toBe(BUILDINGS[HEAVY].turret.hp);
+    expect(p.buildings[HEAVY].hp).toBe(BUILDINGS[HEAVY].hp);
     // Usine et générateur : pas de PV.
-    expect(p.buildings[FACTORY].hp).toBe(0);
-    expect(p.buildings[GENERATOR].hp).toBe(0);
+    expect(p.buildings[FACTORY].hp).toBe(BUILDINGS[FACTORY].hp);
+    expect(p.buildings[GENERATOR].hp).toBe(BUILDINGS[GENERATOR].hp);
   });
 
   it('au pas FIXED_DT : la tourelle arrive à buildTime / FIXED_DT pas, à ±1 près', () => {
@@ -223,7 +229,7 @@ describe('updateBuildings : slots déjà construits au départ', () => {
     // La tourelle de départ n'a pas été retouchée.
     expect(p.buildings[TURRET]).toEqual({
       built: true,
-      hp: BUILDINGS[TURRET].turret.hp,
+      hp: BUILDINGS[TURRET].hp,
       cooldown: 0,
     });
   });
@@ -247,7 +253,7 @@ describe('updateBuildings : tourelle détruite', () => {
     const { steps, event } = stepUntilBuilt(world, DT, 1000);
     expect(event.b).toBe(TURRET);
     expect(steps).toBe(BUILDINGS[TURRET].buildTime / DT);
-    expect(p.buildings[TURRET].hp).toBe(BUILDINGS[TURRET].turret.hp);
+    expect(p.buildings[TURRET].hp).toBe(BUILDINGS[TURRET].hp);
     expect(p.buildings[FACTORY].built).toBe(true); // intacte
     expect(p.buildings[GENERATOR].built).toBe(false); // pas commencée avant la reconstruction
   });
@@ -259,7 +265,7 @@ describe('updateBuildings : tourelle détruite', () => {
     expect(p.buildProgress).toBe(10);
     p.buildings[TURRET].built = false;
     p.buildings[TURRET].hp = 0;
-    p.buildProgress = 0; // c'est damageTurret qui remet le chantier à zéro (ADR 0005 §4), pas updateBuildings
+    p.buildProgress = 0; // c'est damageBuilding qui remet le chantier à zéro (ADR 0005 §4), pas updateBuildings
     const { steps, event } = stepUntilBuilt(world, DT, 1000);
     expect(event.b).toBe(TURRET);
     expect(steps).toBe(BUILDINGS[TURRET].buildTime / DT);
@@ -297,5 +303,135 @@ describe('updateBuildings : plusieurs planètes indépendantes', () => {
     const built = eventsOf(world, EVT.BUILT);
     expect(built).toHaveLength(1);
     expect(built[0]).toMatchObject({ a: 1, b: TURRET, x: 900, y: Y });
+  });
+});
+
+/** Monde réel à une planète (500, 500, r = 40) possédée par la faction 0 : `damageBuilding` lit `world.planets` et `world.events`. */
+function makeOwnedWorld({ owner = 0, built = 1, seed = 1 } = {}) {
+  return createWorld(
+    { width: 2000, height: 2000, planets: [{ x: 500, y: 500, radius: 40, owner, built }] },
+    seed,
+    { eventCapacity: 512 },
+  );
+}
+
+describe('damageBuilding', () => {
+  const HP = BUILDINGS[0].hp; // 80
+
+  it('retire les dégâts au premier slot tourelle construit, sans événement tant qu’il reste des PV', () => {
+    const world = makeOwnedWorld();
+    damageBuilding(world, 0, 10, 1, 2);
+    expect(world.planets[0].buildings[0].hp).toBe(HP - 10);
+    expect(world.planets[0].buildings[0].built).toBe(true);
+    expect(world.events.count).toBe(0);
+  });
+
+  it('à 0 PV : built = false, hp = 0, buildProgress = 0, BUILDING_DESTROYED (a = planète, b = slot)', () => {
+    const world = makeOwnedWorld();
+    world.planets[0].buildProgress = 12.5;
+    damageBuilding(world, 0, HP, 123, 456);
+    const slot = world.planets[0].buildings[0];
+    expect(slot.built).toBe(false);
+    expect(slot.hp).toBe(0);
+    expect(world.planets[0].buildProgress).toBe(0);
+    expect(world.events.count).toBe(1);
+    expect(world.events.items[0]).toMatchObject({
+      type: EVT.BUILDING_DESTROYED,
+      x: 123,
+      y: 456,
+      a: 0,
+      b: 0,
+    });
+  });
+
+  it('PV − 1 : la tourelle survit avec 1 PV ; un dégât de plus la détruit', () => {
+    const world = makeOwnedWorld();
+    damageBuilding(world, 0, HP - 1, 0, 0);
+    expect(world.planets[0].buildings[0]).toMatchObject({ built: true, hp: 1 });
+    expect(world.events.count).toBe(0);
+    damageBuilding(world, 0, 1, 0, 0);
+    expect(world.planets[0].buildings[0]).toMatchObject({ built: false, hp: 0 });
+  });
+
+  it('un dégât excessif détruit sans PV négatifs, un seul événement', () => {
+    const world = makeOwnedWorld();
+    damageBuilding(world, 0, 10 * HP, 0, 0);
+    expect(world.planets[0].buildings[0].hp).toBe(0);
+    expect(eventsOf(world, EVT.BUILDING_DESTROYED)).toHaveLength(1);
+  });
+
+  it('cumule les coups : 7 balles de 12 détruisent, 6 laissent 8 PV', () => {
+    const world = makeOwnedWorld();
+    for (let i = 0; i < 6; i++) damageBuilding(world, 0, 12, 0, 0);
+    expect(world.planets[0].buildings[0].hp).toBe(HP - 72);
+    expect(world.events.count).toBe(0);
+    damageBuilding(world, 0, 12, 0, 0);
+    expect(world.planets[0].buildings[0].built).toBe(false);
+    expect(world.events.count).toBe(1);
+  });
+
+  it('la tourelle lourde n’est touchée qu’après la destruction de la tourelle de base', () => {
+    const world = makeOwnedWorld({ built: 4 });
+    const heavy = world.planets[0].buildings[HEAVY];
+    expect(heavy.hp).toBe(BUILDINGS[HEAVY].hp);
+    damageBuilding(world, 0, HP - 1, 0, 0);
+    expect(heavy.hp).toBe(BUILDINGS[HEAVY].hp); // base à 1 PV : la lourde est intacte
+    damageBuilding(world, 0, 1, 0, 0); // base détruite
+    expect(world.planets[0].buildings[0].built).toBe(false);
+    expect(heavy).toMatchObject({ built: true, hp: BUILDINGS[HEAVY].hp });
+    damageBuilding(world, 0, 20, 0, 0); // maintenant la lourde encaisse
+    expect(heavy.hp).toBe(BUILDINGS[HEAVY].hp - 20);
+  });
+
+  it('détruire la lourde : BUILDING_DESTROYED avec b = 3 et la planète n’a plus de tourelle', () => {
+    const world = makeOwnedWorld({ built: 4 });
+    damageBuilding(world, 0, HP, 0, 0);
+    clearEvents(world.events);
+    damageBuilding(world, 0, BUILDINGS[HEAVY].hp, 5, 6);
+    expect(world.events.items[0]).toMatchObject({
+      type: EVT.BUILDING_DESTROYED,
+      a: 0,
+      b: HEAVY,
+    });
+    expect(world.planets[0].buildings[HEAVY]).toMatchObject({ built: false, hp: 0 });
+    // Usine et générateur construits (built: 4) : intacts, la destruction n'en touche qu'un.
+    expect(world.planets[0].buildings[1].built).toBe(true);
+    expect(world.planets[0].buildings[2].built).toBe(true);
+  });
+
+  it('sans tourelle construite : rien (ni PV, ni événement, ni chantier touché)', () => {
+    const world = makeOwnedWorld({ built: 0 });
+    world.planets[0].buildProgress = 7;
+    const before = JSON.stringify(world.planets[0]);
+    damageBuilding(world, 0, 50, 0, 0);
+    expect(JSON.stringify(world.planets[0])).toBe(before);
+    expect(world.events.count).toBe(0);
+  });
+
+  it('sans tourelle, les bâtiments non tourelles sont ciblés (usine seule construite, ADR 0007)', () => {
+    const world = makeOwnedWorld({ built: 0 });
+    world.planets[0].buildings[1].built = true;
+    world.planets[0].buildings[1].hp = BUILDINGS[1].hp;
+    damageBuilding(world, 0, 1000, 0, 0);
+    expect(world.planets[0].buildings[1]).toMatchObject({ built: false, hp: 0 });
+    expect(eventsOf(world, EVT.BUILDING_DESTROYED)).toHaveLength(1);
+  });
+
+  it('une planète autre que celle visée n’est pas touchée', () => {
+    const world = createWorld(
+      {
+        width: 2000,
+        height: 2000,
+        planets: [
+          { x: 200, y: 200, radius: 30, owner: 0, built: 1 },
+          { x: 900, y: 900, radius: 30, owner: 0, built: 1 },
+        ],
+      },
+      1,
+      { eventCapacity: 8 },
+    );
+    damageBuilding(world, 1, 10, 0, 0);
+    expect(world.planets[0].buildings[0].hp).toBe(HP);
+    expect(world.planets[1].buildings[0].hp).toBe(HP - 10);
   });
 });

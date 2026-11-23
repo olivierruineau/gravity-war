@@ -3,7 +3,7 @@ import { FIXED_DT, PROJECTILE_CAPACITY, TURRET_MUZZLE_OFFSET } from '../../src/c
 import { BUILDINGS } from '../../src/data/buildings.js';
 import { clearEvents, EVT } from '../../src/core/events.js';
 import { KIND, spawnProjectile } from '../../src/core/projectile.js';
-import { damageTurret, updateTurrets } from '../../src/core/turret.js';
+import { updateTurrets } from '../../src/core/turret.js';
 import { createWorld } from '../../src/core/world.js';
 
 // Planète de test : centre (500, 500), r = 40, possédée par la faction 0, tourelle de base construite.
@@ -225,7 +225,7 @@ describe('updateTurrets : cadence', () => {
     const world = makeWorld({ built: 0 });
     const slot = world.planets[0].buildings[HEAVY_SLOT];
     slot.built = true;
-    slot.hp = HEAVY.hp;
+    slot.hp = BUILDINGS[HEAVY_SLOT].hp;
     const ship = placeShip(world, 1, 199.9);
     updateTurrets(world, FIXED_DT);
     expect(activeProjectiles(world)).toHaveLength(1);
@@ -412,125 +412,5 @@ describe('updateTurrets : cas où rien ne se passe', () => {
     }
     expect(() => updateTurrets(world, FIXED_DT)).not.toThrow();
     expect(activeProjectiles(world)).toHaveLength(PROJECTILE_CAPACITY);
-  });
-});
-
-describe('damageTurret', () => {
-  const HP = BASE.hp; // 80
-
-  it('retire les dégâts au premier slot tourelle construit, sans événement tant qu’il reste des PV', () => {
-    const world = makeWorld();
-    damageTurret(world, 0, 10, 1, 2);
-    expect(world.planets[0].buildings[0].hp).toBe(HP - 10);
-    expect(world.planets[0].buildings[0].built).toBe(true);
-    expect(world.events.count).toBe(0);
-  });
-
-  it('à 0 PV : built = false, hp = 0, buildProgress = 0, TURRET_DESTROYED (a = planète, b = slot)', () => {
-    const world = makeWorld();
-    world.planets[0].buildProgress = 12.5;
-    damageTurret(world, 0, HP, 123, 456);
-    const slot = world.planets[0].buildings[0];
-    expect(slot.built).toBe(false);
-    expect(slot.hp).toBe(0);
-    expect(world.planets[0].buildProgress).toBe(0);
-    expect(world.events.count).toBe(1);
-    expect(world.events.items[0]).toMatchObject({
-      type: EVT.TURRET_DESTROYED,
-      x: 123,
-      y: 456,
-      a: 0,
-      b: 0,
-    });
-  });
-
-  it('PV − 1 : la tourelle survit avec 1 PV ; un dégât de plus la détruit', () => {
-    const world = makeWorld();
-    damageTurret(world, 0, HP - 1, 0, 0);
-    expect(world.planets[0].buildings[0]).toMatchObject({ built: true, hp: 1 });
-    expect(world.events.count).toBe(0);
-    damageTurret(world, 0, 1, 0, 0);
-    expect(world.planets[0].buildings[0]).toMatchObject({ built: false, hp: 0 });
-  });
-
-  it('un dégât excessif détruit sans PV négatifs, un seul événement', () => {
-    const world = makeWorld();
-    damageTurret(world, 0, 10 * HP, 0, 0);
-    expect(world.planets[0].buildings[0].hp).toBe(0);
-    expect(eventsOf(world, EVT.TURRET_DESTROYED)).toHaveLength(1);
-  });
-
-  it('cumule les coups : 7 balles de 12 détruisent, 6 laissent 8 PV', () => {
-    const world = makeWorld();
-    for (let i = 0; i < 6; i++) damageTurret(world, 0, 12, 0, 0);
-    expect(world.planets[0].buildings[0].hp).toBe(HP - 72);
-    expect(world.events.count).toBe(0);
-    damageTurret(world, 0, 12, 0, 0);
-    expect(world.planets[0].buildings[0].built).toBe(false);
-    expect(world.events.count).toBe(1);
-  });
-
-  it('la tourelle lourde n’est touchée qu’après la destruction de la tourelle de base', () => {
-    const world = makeWorld({ built: 4 });
-    const heavy = world.planets[0].buildings[HEAVY_SLOT];
-    expect(heavy.hp).toBe(HEAVY.hp);
-    damageTurret(world, 0, HP - 1, 0, 0);
-    expect(heavy.hp).toBe(HEAVY.hp); // base à 1 PV : la lourde est intacte
-    damageTurret(world, 0, 1, 0, 0); // base détruite
-    expect(world.planets[0].buildings[0].built).toBe(false);
-    expect(heavy).toMatchObject({ built: true, hp: HEAVY.hp });
-    damageTurret(world, 0, 20, 0, 0); // maintenant la lourde encaisse
-    expect(heavy.hp).toBe(HEAVY.hp - 20);
-  });
-
-  it('détruire la lourde : TURRET_DESTROYED avec b = 3 et la planète n’a plus de tourelle', () => {
-    const world = makeWorld({ built: 4 });
-    damageTurret(world, 0, HP, 0, 0);
-    clearEvents(world.events);
-    damageTurret(world, 0, HEAVY.hp, 5, 6);
-    expect(world.events.items[0]).toMatchObject({
-      type: EVT.TURRET_DESTROYED,
-      a: 0,
-      b: HEAVY_SLOT,
-    });
-    expect(world.planets[0].buildings[HEAVY_SLOT]).toMatchObject({ built: false, hp: 0 });
-    // Usine et générateur construits (built: 4) : intacts, ils ne sont pas des tourelles.
-    expect(world.planets[0].buildings[1].built).toBe(true);
-    expect(world.planets[0].buildings[2].built).toBe(true);
-  });
-
-  it('sans tourelle construite : rien (ni PV, ni événement, ni chantier touché)', () => {
-    const world = makeWorld({ built: 0 });
-    world.planets[0].buildProgress = 7;
-    const before = JSON.stringify(world.planets[0]);
-    damageTurret(world, 0, 50, 0, 0);
-    expect(JSON.stringify(world.planets[0])).toBe(before);
-    expect(world.events.count).toBe(0);
-  });
-
-  it('les bâtiments non tourelles ne sont jamais ciblés (usine seule construite)', () => {
-    const world = makeWorld({ built: 0 });
-    world.planets[0].buildings[1].built = true;
-    damageTurret(world, 0, 1000, 0, 0);
-    expect(world.planets[0].buildings[1].built).toBe(true);
-    expect(world.events.count).toBe(0);
-  });
-
-  it('une planète autre que celle visée n’est pas touchée', () => {
-    const world = createWorld(
-      {
-        width: 2000,
-        height: 2000,
-        planets: [
-          { x: 200, y: 200, radius: 30, owner: 0, built: 1 },
-          { x: 900, y: 900, radius: 30, owner: 0, built: 1 },
-        ],
-      },
-      1,
-      { eventCapacity: 8 },
-    );
-    damageTurret(world, 1, 10, 0, 0);
-    expect(world.planets[0].buildings[0].hp).toBe(HP);
-    expect(world.planets[1].buildings[0].hp).toBe(HP - 10);
   });
 });

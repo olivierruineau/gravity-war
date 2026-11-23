@@ -59,7 +59,7 @@ export function createEffects(scene) {
           case EVT.MISSILE_LAUNCH:
             spawn(FLASH, ev.x, ev.y, PALETTE.accent);
             break;
-          case EVT.TURRET_DESTROYED:
+          case EVT.BUILDING_DESTROYED:
             spawn(MEDIUM_EXPLOSION, ev.x, ev.y, PALETTE.accent);
             break;
           case EVT.CAPTURED:

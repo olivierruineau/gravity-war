@@ -21,7 +21,7 @@ const SHAPES = {
 };
 const SITE_ALPHA = 0.3; // contour du chantier en cours
 const SITE_FILL_ALPHA = 0.6;
-const MIN_TURRET_ALPHA = 0.4; // une tourelle à 0 PV (avant destruction) reste visible
+const MIN_BUILDING_ALPHA = 0.4; // un bâtiment à 0 PV (avant destruction) reste visible
 const CAPTURE_GAP = 4; // px entre la planète et l'arc de capture
 const ARC_START = -Math.PI / 2; // l'arc part du haut
 
@@ -46,11 +46,8 @@ function drawBuildings(g, planet) {
     const hw = shape.hw * planet.radius;
     const hh = shape.hh * planet.radius;
     if (slot.built) {
-      const turret = BUILDINGS[s].turret;
       const alpha =
-        turret === undefined
-          ? 1
-          : MIN_TURRET_ALPHA + (1 - MIN_TURRET_ALPHA) * Math.max(0, slot.hp / turret.hp);
+        MIN_BUILDING_ALPHA + (1 - MIN_BUILDING_ALPHA) * Math.max(0, slot.hp / BUILDINGS[s].hp);
       g.lineStyle(1, color, alpha);
       g.strokeRect(cx - hw, cy - hh, 2 * hw, 2 * hh);
       if (shape.inner !== undefined) {

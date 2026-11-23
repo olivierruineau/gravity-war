@@ -2,7 +2,7 @@
 import { SHIP_COLLISION_RADIUS } from '../config.js';
 import { EVT, pushEvent } from './events.js';
 import { damageShip } from './lifecycle.js';
-import { damageTurret } from './turret.js';
+import { damageBuilding } from './building.js';
 
 /** Un projectile qui entre dans une planète est absorbé (événement BULLET_HIT au point d'impact). */
 export function collideProjectilesPlanets(world) {
@@ -19,7 +19,7 @@ export function collideProjectilesPlanets(world) {
         p.active = false;
         pushEvent(world.events, EVT.BULLET_HIT, p.pos.x, p.pos.y, j, i);
         if (planet.owner >= 0 && planet.owner !== p.owner) {
-          damageTurret(world, j, p.damage, p.pos.x, p.pos.y);
+          damageBuilding(world, j, p.damage, p.pos.x, p.pos.y);
         }
         break;
       }

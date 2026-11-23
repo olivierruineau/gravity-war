@@ -22,7 +22,7 @@ export function createPlanet({
   const builtCount = owner === NEUTRAL ? 0 : built; // une neutre n'a jamais de bâtiment
   const buildings = BUILDINGS.map((b, i) => ({
     built: i < builtCount,
-    hp: i < builtCount && b.turret ? b.turret.hp : 0,
+    hp: i < builtCount ? b.hp : 0,
     cooldown: 0,
   }));
   return {

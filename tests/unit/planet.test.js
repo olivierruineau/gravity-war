@@ -271,7 +271,7 @@ describe('createPlanet : bâtiments par défaut', () => {
 describe('createPlanet : bâtiments déjà construits (built)', () => {
   it('built: 1 : seul le slot 0 (tourelle) est construit, à pleins PV', () => {
     const planet = createPlanet({ x: CX, y: CY, radius: 60, owner: 0, built: 1 });
-    expect(planet.buildings[0]).toEqual({ built: true, hp: BUILDINGS[0].turret.hp, cooldown: 0 });
+    expect(planet.buildings[0]).toEqual({ built: true, hp: BUILDINGS[0].hp, cooldown: 0 });
   });
 
   it('built: 1 : les autres slots restent non construits', () => {
@@ -284,9 +284,9 @@ describe('createPlanet : bâtiments déjà construits (built)', () => {
     expect(planet.buildings.slice(0, 2).map((b) => b.built)).toEqual([true, true]);
   });
 
-  it('built: 2 : la tourelle a ses PV max, l’usine de missiles n’a pas de PV', () => {
+  it('built: 2 : la tourelle et l’usine de missiles ont leurs PV max', () => {
     const planet = createPlanet({ x: CX, y: CY, radius: 60, owner: 0, built: 2 });
-    expect(planet.buildings[1]).toEqual({ built: true, hp: 0, cooldown: 0 });
+    expect(planet.buildings[1]).toEqual({ built: true, hp: BUILDINGS[1].hp, cooldown: 0 });
   });
 
   it('built: 2 : les slots suivants restent non construits', () => {
@@ -302,7 +302,7 @@ describe('createPlanet : bâtiments déjà construits (built)', () => {
 
   it('built supérieur au nombre de slots : la tourelle lourde reçoit ses PV max', () => {
     const planet = createPlanet({ x: CX, y: CY, radius: 60, owner: 0, built: 99 });
-    expect(planet.buildings[3].hp).toBe(BUILDINGS[3].turret.hp);
+    expect(planet.buildings[3].hp).toBe(BUILDINGS[3].hp);
   });
 
   it('une neutre ignore built : aucun slot construit, aucun PV', () => {

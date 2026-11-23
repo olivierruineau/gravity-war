@@ -13,7 +13,7 @@ const SOUND_BY_EVENT = {
   [EVT.LANDED]: 'landed',
   [EVT.RESPAWN]: 'respawn',
   [EVT.TURRET_SHOT]: 'turretShot',
-  [EVT.TURRET_DESTROYED]: 'turretDestroyed',
+  [EVT.BUILDING_DESTROYED]: 'buildingDestroyed',
   [EVT.BUILT]: 'built',
   [EVT.CAPTURED]: 'captured',
   [EVT.MISSILE_LAUNCH]: 'missileLaunch',

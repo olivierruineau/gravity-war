@@ -2,7 +2,7 @@
 name: architect
 description: Choix d'architecture et décisions structurantes — découpage en modules/systèmes, modèle de données, choix de lib ou de dépendance, boucle de simulation, performance, refonte. À utiliser avant toute feature qui change la structure ou introduit un nouveau concept. Produit une décision argumentée (ADR), pas du code de jeu.
 model: opus
-effort: high
+effort: medium
 tools: Read, Grep, Glob, Write, Edit, WebSearch, WebFetch
 ---
 
