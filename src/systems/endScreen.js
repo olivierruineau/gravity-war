@@ -8,6 +8,7 @@ import { isTouch } from './inputSource.js';
 import { createButton } from './uiButton.js';
 
 const DEPTH = 1100;
+const ARM_DELAY_MS = 600; // un tir ou un appui encore en cours ne doit pas valider l'écran à peine affiché
 
 export function createEndScreen(scene) {
   const cx = GAME_WIDTH / 2;
@@ -36,8 +37,9 @@ export function createEndScreen(scene) {
   const nav = createNavigation(scene);
   // Les actions ne comptent qu'une fois l'écran affiché ; la première suffit (pas de double redémarrage).
   let chosen = false;
+  let armedAt = Infinity;
   const choose = (go) => () => {
-    if (!shown || chosen) return;
+    if (!shown || chosen || scene.time.now < armedAt) return;
     chosen = true;
     go();
   };
@@ -53,6 +55,7 @@ export function createEndScreen(scene) {
       const model = endScreenModel(outcome, touch);
       if (shown || model === null) return;
       shown = true;
+      armedAt = scene.time.now + ARM_DELAY_MS;
       veil.setVisible(true);
       title.setText(model.title).setColor(toCss(model.color)).setVisible(true);
       hint.setText(model.hint).setVisible(true);

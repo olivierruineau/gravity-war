@@ -9,12 +9,9 @@ import { createPressed, mergeTouchIntent, readPointers } from './touchModel.js';
 const DEPTH = 940;
 const IDLE_ALPHA = 0.55;
 const PRESSED_FILL_ALPHA = 0.35;
-const MULTI_TOUCH_POINTERS = 2; // + le pointeur par défaut : 3 doigts au moins sur l'écran
 
 export function createTouchControls(scene) {
-  scene.input.addPointer(MULTI_TOUCH_POINTERS);
-  const { manager } = scene.input;
-  const pointers = [manager.mousePointer, ...manager.pointers].filter(Boolean);
+  const { pointers } = scene.input.manager; // souris + doigts, créés une fois pour toutes (config du jeu)
   const pressed = createPressed(TOUCH_BUTTONS);
   const g = scene.add.graphics().setScrollFactor(0).setDepth(DEPTH);
   const labels = TOUCH_BUTTONS.map((b) =>

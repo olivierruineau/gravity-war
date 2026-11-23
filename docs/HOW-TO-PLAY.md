@@ -6,6 +6,14 @@ Les valeurs chiffrées viennent de `src/config.js` et `src/data/` ; elles peuven
 
 Le vaisseau obéit à l'inertie et à la gravité des planètes. `←` `→` tournent, `↑` pousse dans l'axe du nez, sans limite de carburant. Rien ne freine : pour ralentir, retournez-vous et poussez. Les bords de la carte vous repoussent doucement, sans dégâts. La flèche de gravité sur le vaisseau montre l'attraction dominante.
 
+## Au doigt (téléphone, tablette)
+
+Tenez l'appareil en **paysage**. Les commandes apparaissent au premier toucher : **◄ ►** (pouce gauche) tournent, **▲** pousse, **TIR** tire et **MIS** lance un missile (pouce droit). Trois doigts en même temps marchent, et glisser d'un bouton à l'autre sans lever le doigt change de commande. **II** met en pause (REPRENDRE ou MENU ensuite), **SON** coupe le son. La pause se déclenche aussi toute seule si l'application passe en arrière-plan.
+
+Si vous touchez une touche du clavier, les boutons disparaissent et l'aide suit les touches ; un toucher les ramène. Au menu, **AIDE POSE** règle l'alignement automatique du nez à l'approche d'une planète : AUTO (actif au tactile seulement), OUI ou NON. Elle ne gêne ni la rotation ni le tir, et vous gardez la maîtrise de la vitesse. **QUALITE** (AUTO, HAUTE, BASSE) coupe la lueur des traits sur un appareil lent ; en AUTO, le jeu le fait tout seul si la cadence passe sous 40 images par seconde.
+
+**Installer le jeu** : Android Chrome, « Installer l'application » ; iPhone, Partager puis « Sur l'écran d'accueil ». Il se lance alors en plein écran et marche hors ligne.
+
 ## Atterrir
 
 Une planète vous attire jusqu'à cinq fois son rayon. Pour vous poser, il faut à la fois :
@@ -49,4 +57,4 @@ Les deux bots suivent les mêmes règles que vous. Ils capturent des neutres, at
 
 ## Fin de partie
 
-Victoire quand les deux bots sont éliminés ; défaite quand c'est vous. Un écran de fin propose de rejouer (`Espace`) ou de revenir au menu (`Echap`).
+Victoire quand les deux bots sont éliminés ; défaite quand c'est vous. Un écran de fin propose de rejouer (`Espace`, bouton REJOUER) ou de revenir au menu (`Echap`, bouton MENU).

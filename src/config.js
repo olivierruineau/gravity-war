@@ -3,6 +3,7 @@
 /** Résolution interne basse (16:9). Le canvas est ensuite mis à l'échelle (pixel-perfect). */
 export const GAME_WIDTH = 480;
 export const GAME_HEIGHT = 270;
+export const TOUCH_POINTERS = 3; // doigts pris en charge en même temps (multi-touch : rotation, poussée, tir)
 
 /** Pas de temps fixe de la simulation (en secondes) : physique déterministe. */
 export const FIXED_DT = 1 / 60;

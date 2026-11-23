@@ -132,7 +132,7 @@ async function touchScenario(browser, label, device) {
   // Fin de partie : REJOUER puis MENU.
   await tap(170, 208);
   await g.forceOutcome('DEFEAT');
-  await page.waitForTimeout(2200);
+  await page.waitForTimeout(2600);
   const before = await g.worldId();
   await tap(170, 194); // REJOUER
   check(
@@ -140,7 +140,7 @@ async function touchScenario(browser, label, device) {
     (await g.active('GameScene')) && (await g.worldId()) !== before,
   );
   await g.forceOutcome('VICTORY');
-  await page.waitForTimeout(2200);
+  await page.waitForTimeout(2600);
   await tap(310, 194); // MENU
   check('MENU depuis l’écran de fin', await g.active('MenuScene'));
 
@@ -206,7 +206,7 @@ async function keyboardScenario(browser) {
   await page.keyboard.press('Space');
   await settle(page, 400);
   await g.forceOutcome('DEFEAT');
-  await page.waitForTimeout(2200);
+  await page.waitForTimeout(2600);
   const before = await g.worldId();
   await page.keyboard.press('Space');
   await settle(page, 400);
@@ -215,7 +215,7 @@ async function keyboardScenario(browser) {
     (await g.active('GameScene')) && (await g.worldId()) !== before,
   );
   await g.forceOutcome('VICTORY');
-  await page.waitForTimeout(2200);
+  await page.waitForTimeout(2600);
   await page.keyboard.press('Escape');
   await settle(page);
   check('ÉCHAP à l’écran de fin revient au menu', await g.active('MenuScene'));

@@ -37,7 +37,7 @@ Disposition en paysage (coordonnées du jeu, boutons ronds de **40 px de diamèt
 | gauche        | ◄ et ► (rotation), côte à côte, en bas à gauche                  |
 | droit         | poussée, TIR (le plus grand), MISSILE au-dessus, en bas à droite |
 
-La poussée est à droite pour qu'un pouce gauche puisse tourner pendant que le droit pousse et tire ; trois doigts au moins sont pris en charge (`input.addPointer(2)` donne 4 pointeurs). Pause, son et plein écran sont de petits boutons en haut, hors de portée des pouces de jeu ; ils sont aussi des cibles de 40 px. Le HUD quitte les coins du bas (8.6).
+La poussée est à droite pour qu'un pouce gauche puisse tourner pendant que le droit pousse et tire ; trois doigts sont pris en charge (`input.activePointers: 3` dans la config du jeu, plus la souris). Pause, son et plein écran sont de petits boutons en haut, hors de portée des pouces de jeu ; ils sont aussi des cibles de 40 px. Le HUD quitte les coins du bas (8.6).
 
 ### 4. Aide à la maniabilité tactile : réglable, active par défaut au tactile
 

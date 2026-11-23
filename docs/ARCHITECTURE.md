@@ -62,7 +62,7 @@
 
 `GameScene.update(time, delta)` :
 
-1. l'input clavier écrit `ships[0].intent` ;
+1. `systems/playerInput.js` écrit `ships[0].intent` : le clavier d'abord, puis les doigts (overlay tactile), puis l'aide à la pose si elle est active ;
 2. `n = consumeSteps(clock, delta / 1000)` (`core/clock.js`) : accumulateur, delta plafonné à `MAX_FRAME_DT`, au plus `MAX_STEPS_PER_FRAME` pas, arriéré jeté au-delà ;
 3. `n` fois `step(world, FIXED_DT)` — l'IA des bots écrit leurs intentions au début de chaque pas ;
 4. rendu **immédiat** : `clear()` des `Graphics` et redessin filaire de tout l'état (fonctions de dessin de `entities/`) ;
@@ -80,10 +80,21 @@ Résolution interne 480×270, `pixelArt` + `roundPixels`, mise à l'échelle `FI
 
 Tout est dans `systems/`, en lecture seule de `world`. La logique de ce qui s'affiche est séparée du dessin quand elle est testable :
 
-- `hud.js` + `hudModel.js` : vie, bouclier, missiles (bas gauche), vitesse (bas droite).
+- `hud.js` + `hudModel.js` : vie, bouclier, missiles et vitesse, **en haut** : les deux coins du bas sont réservés aux pouces. Les positions vivent dans `hudLayout.js` (testé : rien ne recouvre un bouton de jeu).
 - `minimap.js` + `minimapLayout.js` : carte entière en haut à droite, cadre de la caméra.
 - `offscreenIndicators.js` + `offscreenLayout.js` : flèches au bord vers les ennemis et la planète objectif.
 - `endScreen.js` + `endScreenModel.js`, `pauseScreen.js`, et l'aide des commandes dont la source unique est `data/controls.js`.
+
+## Entrée multi-sources (phase 8, [ADR 0008](adr/0008-entree-multi-sources.md))
+
+Clavier et tactile sont actifs **en même temps** ; seul l'affichage suit la dernière source utilisée (`systems/inputSource.js`, état partagé : `keyboard` ou `touch`).
+
+- **Navigation** : `data/inputBindings.js` associe les actions (`confirm`, `back`, `pause`, `mute`, `help`, `assist`, `quality`) à leurs touches ; `systems/navigation.js` expose `on(action, fn)` aux scènes, qui ne connaissent jamais les touches, et `watchSource(scene, fn)` pour adapter les vues. Une manette ajoutera une colonne à la table.
+- **Pilotage** : `keyboardInput.js` écrit les quatre champs de l'`Intent`, `touchControls.js` (overlay, disposition dans `data/touchLayout.js`) les complète par OU logique, `landingAssist.js` n'écrit que `rotate`. Le modèle tactile (`touchModel.js`) lit l'état des pointeurs à chaque frame : un doigt perdu ou annulé se relâche seul.
+- **Boutons d'interface** : `uiButton.js` (cibles de 40 px du jeu, soit ≥ 44 px CSS dès 297 px de hauteur), `settingRow.js` pour les réglages du menu (aide à la pose, qualité).
+- **Plateforme** : `platform.js` (pointeur grossier, portrait, plein écran, `watchAway` → pause automatique), `audio/lifecycle.js` (déblocage au premier geste, suspension en arrière-plan), `build/pwaPlugin.js` + `build/sw.template.js` (hors ligne, [ADR 0009](adr/0009-pwa-hors-ligne.md)), `quality.js` (lueur coupée si la cadence passe sous 40 fps).
+
+Tests : unitaires sur les modèles purs ; scénarios d'appareils Playwright (`npm run e2e`, `tests/e2e/`) ; checklist manuelle [`CHECKLIST-MOBILE.md`](CHECKLIST-MOBILE.md). Revue : [`REVIEW-MOBILE.md`](REVIEW-MOBILE.md).
 
 ## Carte (7.1)
 

@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { GAME_HEIGHT, GAME_WIDTH, PALETTE } from './config.js';
+import { GAME_HEIGHT, GAME_WIDTH, PALETTE, TOUCH_POINTERS } from './config.js';
 import { BootScene } from './scenes/BootScene.js';
 import { MenuScene } from './scenes/MenuScene.js';
 import { GameScene } from './scenes/GameScene.js';
@@ -26,6 +26,7 @@ const game = new Phaser.Game({
   backgroundColor: PALETTE.bg,
   pixelArt: true, // filtrage "nearest" : pixels nets
   roundPixels: true,
+  input: { activePointers: TOUCH_POINTERS }, // + la souris : `manager.pointers[0]`
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
