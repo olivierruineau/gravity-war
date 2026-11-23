@@ -113,7 +113,7 @@ Spécification : [docs/SPEC.md](docs/SPEC.md). Architecture : [docs/ARCHITECTURE
 - [x] **7.3** Polish visuel filaire : épaisseurs, lueur légère, cohérence de la palette (code)
 - [x] **7.4** Passage de performance : allocations dans `update`, pooling, nettoyage des listeners (code)
 - [x] **7.5** Revue globale avant release (rev)
-- [ ] **7.6** Documentation finale (README, ARCHITECTURE à jour, how-to-play) + build de production (doc)
+- [x] **7.6** Documentation finale (README, ARCHITECTURE à jour, how-to-play) + build de production (doc)
 
 ---
 

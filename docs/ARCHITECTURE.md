@@ -68,11 +68,30 @@
 4. rendu **immédiat** : `clear()` des `Graphics` et redessin filaire de tout l'état (fonctions de dessin de `entities/`) ;
 5. lecture de la file `world.events` (effets, sons) puis `clearEvents(world)`.
 
+La scène gère aussi deux états d'affichage, hors règles du core : la **pause** (`P`, `systems/pauseScreen.js`) arrête tout, et une partie **décidée** (`world.outcome`) fige la simulation 1,5 s après l'issue (`END_SCREEN_DELAY`) avant d'afficher l'écran de fin (`systems/endScreen.js`) ; `Espace` relance, `Echap` ramène au menu. Les listeners clavier sont retirés à la sortie de scène.
+
 Pas d'interpolation de rendu en v1 (à ajouter seulement si une saccade est constatée sur écran > 60 Hz). La simulation ne dépend jamais de la fréquence d'affichage.
 
 ## Rendu rétro
 
-Résolution interne 480×270, `pixelArt` + `roundPixels`, mise à l'échelle `FIT` centrée, `image-rendering: pixelated` sur le canvas.
+Résolution interne 480×270, `pixelArt` + `roundPixels`, mise à l'échelle `FIT` centrée, `image-rendering: pixelated` sur le canvas. Une lueur discrète (`entities/glow.js` : un halo de `GLOW_WIDTH` px à `GLOW_ALPHA` sous le trait net) habille vaisseaux, planètes, projectiles et explosions. Les couleurs viennent toutes de `PALETTE` (les textes passent par `systems/color.js`).
+
+## Interface (phase 6)
+
+Tout est dans `systems/`, en lecture seule de `world`. La logique de ce qui s'affiche est séparée du dessin quand elle est testable :
+
+- `hud.js` + `hudModel.js` : vie, bouclier, missiles (bas gauche), vitesse (bas droite).
+- `minimap.js` + `minimapLayout.js` : carte entière en haut à droite, cadre de la caméra.
+- `offscreenIndicators.js` + `offscreenLayout.js` : flèches au bord vers les ennemis et la planète objectif.
+- `endScreen.js` + `endScreenModel.js`, `pauseScreen.js`, et l'aide des commandes dont la source unique est `data/controls.js`.
+
+## Carte (7.1)
+
+`src/data/maps/triad.js` : 2600×2400, 13 planètes, symétrie de rotation d'ordre 3 (trois bases à 900 px du centre, à 120°), surfaces espacées d'au moins 120 px et portées de gravité disjointes. `tests/unit/triad-map.test.js` vérifie symétrie, équité des distances et bornes. `arena.js` reste la carte de développement des tests. Aperçu : [`triad-map.png`](triad-map.png).
+
+## Performance (7.4)
+
+Aucune allocation dans la boucle de simulation. `Math.hypot` alloue à chaque appel : utiliser `hypot` de `core/math.js` (ESLint l'impose dans tout `src/`). Mesure : ≈ 0,03 ms par pas pour 3 vaisseaux et 2 IA, soit 63 passages du ramasse-miettes pour 10 min de partie. Revue complète : [`REVIEW-v1.md`](REVIEW-v1.md).
 
 ## Décisions
 

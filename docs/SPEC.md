@@ -56,6 +56,8 @@ Les valeurs chiffrées (vitesses, PV, durées…) sont des points de départ à 
 - **HUD** : vie, bouclier, stock de missiles, vitesse.
 - **Minimap filaire** dans un coin (planètes colorées, vaisseaux) pour une carte plus grande que l'écran.
 - **Indicateurs d'aide à l'atterrissage** (voir ci-dessus).
+- **Flèches hors écran** vers chaque vaisseau ennemi et vers la planète objectif (non possédée) la plus proche.
+- **Menu principal** (jouer, aide des commandes), **pause** (`P`) et **écran de fin** (victoire / défaite, rejouer ou menu).
 
 ## 5. Hypothèses à valider (proposées par défaut, modifiables)
 
