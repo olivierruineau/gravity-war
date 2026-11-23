@@ -2,12 +2,6 @@
 // Générateur de paramètres : https://killedbyapixel.github.io/ZzFX/
 import { zzfx, ZZFX } from 'zzfx';
 
-let enabled = true;
-
-export function setSfxEnabled(value) {
-  enabled = value;
-}
-
 /** Les navigateurs exigent un geste utilisateur avant de jouer du son : appeler après un clic/touche. */
 export function resumeAudio() {
   if (ZZFX.audioContext?.state === 'suspended') ZZFX.audioContext.resume();
@@ -61,6 +55,6 @@ for (const name of Object.keys(SOUNDS)) {
 /** `volume` ∈ [0, 1] multiplie le volume de base du son (atténuation par la distance, voir audioEvents). */
 export function playSfx(name, volume = 1) {
   const rest = REST[name];
-  if (!enabled || !rest || volume <= 0) return;
+  if (!rest || volume <= 0) return;
   zzfx(BASE_VOLUME[name] * volume, ...rest);
 }
