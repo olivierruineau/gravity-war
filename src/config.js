@@ -46,6 +46,7 @@ export const IMPACT_RESTITUTION = 0.3; // rebond radial = 30 % de la vitesse d'a
 export const IMPACT_MIN_BOUNCE_SPEED = 30; // ...mais jamais moins de 30 px/s (pas de contact au repos)
 export const IMPACT_TANGENTIAL_DAMPING = 0.5; // frottement sur la composante tangentielle
 export const TAKEOFF_MIN_NORMAL_SPEED = 1e-6; // sous ce seuil (bruit d'arrondi), une poussée tangentielle ne fait pas décoller
+export const ASSIST_LANDING_DEADBAND = LANDING_MAX_ANGLE / 4; // l'aide à la pose cesse de tourner sous cet écart (évite de grelotter)
 export const LANDING_AID_ALTITUDE = 120; // altitude sous laquelle l'aide à l'atterrissage s'affiche
 
 /** Mur de carte : rebond amorti, sans dégâts (SPEC §5.6). 0 = collé au mur, 1 = rebond parfait. */

@@ -3,7 +3,7 @@
 // Noms de touches : ceux de Phaser (`keydown-<NOM>`).
 
 /** Actions ponctuelles de navigation (par opposition au pilotage, qui est un état maintenu). */
-export const NAV_ACTIONS = ['confirm', 'back', 'pause', 'mute', 'help'];
+export const NAV_ACTIONS = ['confirm', 'back', 'pause', 'mute', 'help', 'assist'];
 
 export const NAV_KEYS = {
   confirm: ['SPACE'], // valider : jouer, rejouer
@@ -11,4 +11,5 @@ export const NAV_KEYS = {
   pause: ['P'],
   mute: ['M'],
   help: ['H'],
+  assist: ['A'], // menu : aide à l'atterrissage (auto / oui / non)
 };

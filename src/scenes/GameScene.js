@@ -74,7 +74,7 @@ export class GameScene extends Phaser.Scene {
   update(_time, delta) {
     if (this.pause.paused) return; // tout est figé : ni simulation, ni entrées, ni effets
     const player = this.world.ships[0];
-    this.pilot.update(player.intent);
+    this.pilot.update(player.intent, this.world, player);
     const steps = consumeSteps(this.clock, delta / 1000);
     // Partie décidée : on fige la simulation (l'issue est écrite une seule fois par le core) après un court délai.
     const over = this.world.outcome !== OUTCOME.PLAYING;

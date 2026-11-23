@@ -7,6 +7,7 @@ import { createButton } from '../systems/uiButton.js';
 import { canFullscreen, enterFullscreen } from '../systems/platform.js';
 import { playSfx, resumeAudio } from '../audio/sfx.js';
 import { controlsLines } from '../data/controls.js';
+import { ASSIST_LABELS, cycleAssistMode, getAssistMode } from '../systems/assistSetting.js';
 
 export class MenuScene extends Phaser.Scene {
   constructor() {
@@ -40,6 +41,14 @@ export class MenuScene extends Phaser.Scene {
         color: toCss(PALETTE.star),
       })
       .setOrigin(0.5);
+    const assistLine = () => `AIDE ATTERRISSAGE : ${ASSIST_LABELS[getAssistMode()]}`;
+    const assistHint = this.add
+      .text(cx, GAME_HEIGHT * 0.92, `A : ${assistLine()}`, {
+        fontFamily: 'monospace',
+        fontSize: '8px',
+        color: toCss(PALETTE.star),
+      })
+      .setOrigin(0.5);
     const help = this.add
       .text(cx, GAME_HEIGHT * 0.48, controlsLines(), {
         fontFamily: 'monospace',
@@ -62,7 +71,7 @@ export class MenuScene extends Phaser.Scene {
     };
     const playButton = createButton(this, {
       x: cx - 70,
-      y: GAME_HEIGHT * 0.82,
+      y: GAME_HEIGHT * 0.77,
       w: 120,
       h: 40,
       label: 'JOUER',
@@ -72,13 +81,29 @@ export class MenuScene extends Phaser.Scene {
     });
     const helpButton = createButton(this, {
       x: cx + 70,
-      y: GAME_HEIGHT * 0.82,
+      y: GAME_HEIGHT * 0.77,
       w: 120,
       h: 40,
       label: 'COMMANDES',
       onTap: toggleHelp,
     });
+    const assistButton = createButton(this, {
+      x: cx,
+      y: GAME_HEIGHT * 0.92,
+      w: 200,
+      h: 28,
+      label: assistLine(),
+      fontSize: 8,
+      onTap: () => cycleAndShow(),
+    });
+    const cycleAndShow = () => {
+      cycleAssistMode();
+      assistHint.setText(`A : ${assistLine()}`);
+      assistButton.setLabel(assistLine());
+    };
     watchSource(this, (touch) => {
+      assistHint.setVisible(!touch);
+      assistButton.setVisible(touch);
       prompt.setVisible(!touch);
       helpHint.setVisible(!touch);
       playButton.setVisible(touch);
@@ -102,5 +127,6 @@ export class MenuScene extends Phaser.Scene {
     const nav = createNavigation(this);
     nav.on('help', toggleHelp);
     nav.on('confirm', play);
+    nav.on('assist', cycleAndShow);
   }
 }

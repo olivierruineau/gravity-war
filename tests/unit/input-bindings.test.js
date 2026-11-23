@@ -12,13 +12,14 @@ describe('table de navigation', () => {
     expect(new Set(all).size).toBe(all.length);
   });
 
-  it('garde les touches de la v1 (non-régression clavier)', () => {
+  it('garde les touches de la v1 (plus l’aide, ajoutée en 8.7) (non-régression clavier)', () => {
     expect(NAV_KEYS).toEqual({
       confirm: ['SPACE'],
       back: ['ESC'],
       pause: ['P'],
       mute: ['M'],
       help: ['H'],
+      assist: ['A'],
     });
   });
 });

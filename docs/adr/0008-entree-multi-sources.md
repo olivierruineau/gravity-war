@@ -41,7 +41,7 @@ La poussée est à droite pour qu'un pouce gauche puisse tourner pendant que le 
 
 ### 4. Aide à la maniabilité tactile : réglable, active par défaut au tactile
 
-L'aide vit **dans la couche d'entrée**, comme un filtre d'intention du joueur seul. Le core, les règles d'atterrissage et les bots ne changent pas. Elle est désactivée au clavier par défaut, activée au tactile, réglable au menu. Détail en 8.7 ; le principe est fixé ici : elle ne produit que des `Intent` valides (rotation discrète), jamais d'accès direct à l'angle ou à la vitesse du vaisseau.
+L'aide vit **dans la couche d'entrée**, comme un filtre d'intention du joueur seul. Le core, les règles d'atterrissage et les bots ne changent pas. Elle est désactivée au clavier par défaut, activée au tactile, réglable au menu. Détail (8.7) : une seule aide, **l'alignement à la pose** (`systems/landingAssist.js`). Près d'une planète (altitude ≤ `LANDING_AID_ALTITUDE`) et en approche, si aucun doigt ne tourne et que le joueur ne tire pas, elle tourne le nez vers la normale (critère d'angle de `evaluateLanding`) jusqu'à une zone morte de `LANDING_MAX_ANGLE / 4`. Les seuils d'atterrissage ne bougent pas : l'aide ne fait que l'orientation, la vitesse reste au joueur. Pas de « stabilisation de rotation » : la rotation du vaisseau est déjà à vitesse constante, sans inertie. Réglage au menu (`A` ou bouton) : AUTO (actif au tactile seulement), OUI, NON, mémorisé dans `localStorage`. Le principe est fixé ici : elle ne produit que des `Intent` valides (rotation discrète), jamais d'accès direct à l'angle ou à la vitesse du vaisseau.
 
 ### 5. Plateforme
 
