@@ -1,6 +1,8 @@
 import { defineConfig } from 'vitest/config';
+import { pwaPlugin } from './build/pwaPlugin.js';
 
 export default defineConfig({
+  plugins: [pwaPlugin()],
   base: './', // build relatif : déployable n'importe où (itch.io, GitHub Pages…)
   build: {
     target: 'es2022',

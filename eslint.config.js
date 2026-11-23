@@ -43,7 +43,12 @@ export default [
     },
   },
   {
-    files: ['tests/**/*.js', '*.config.js'],
+    files: ['tests/**/*.js', '*.config.js', 'build/pwaPlugin.js'],
     languageOptions: { globals: globals.node },
+  },
+  {
+    // Le service worker tourne hors page : ses globales sont celles d'un worker, pas du navigateur.
+    files: ['build/sw.template.js'],
+    languageOptions: { globals: globals.serviceworker },
   },
 ];

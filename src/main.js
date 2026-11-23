@@ -9,6 +9,13 @@ import { initInputSource } from './systems/inputSource.js';
 import { hasCoarsePointer } from './systems/platform.js';
 
 initInputSource(hasCoarsePointer());
+
+// Service worker : seulement en production (en dev, il masquerait les changements du serveur Vite).
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () =>
+    navigator.serviceWorker.register('./sw.js').catch(() => {}),
+  );
+}
 installAudioLifecycle(ZZFX.audioContext, document);
 
 new Phaser.Game({
