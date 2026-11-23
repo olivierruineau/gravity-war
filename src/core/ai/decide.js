@@ -115,14 +115,21 @@ function builtSlots(planet) {
   return count;
 }
 
-/** Faction adverse en jeu qui a le plus de planètes (−1 si aucune) : ses cibles reçoivent `leaderBonus`. */
-function leaderOf(factions, faction) {
+/**
+ * Faction adverse en jeu qui a strictement le plus de planètes (−1 si aucune, ou si plusieurs sont à égalité) :
+ * ses cibles reçoivent `leaderBonus`. Une égalité ne désigne personne : départager par l'indice ferait de la
+ * faction 0 la cible permanente des deux autres au début de partie (biais mesuré en 7.2).
+ */
+export function leaderOf(factions, faction) {
   let leader = -1;
   let most = 0;
   for (let f = 0; f < factions.length; f++) {
-    if (f === faction || factions[f].eliminated || factions[f].planetCount <= most) continue;
-    most = factions[f].planetCount;
-    leader = f;
+    if (f === faction || factions[f].eliminated) continue;
+    const count = factions[f].planetCount;
+    if (count > most) {
+      most = count;
+      leader = f;
+    } else if (count === most) leader = -1;
   }
   return leader;
 }

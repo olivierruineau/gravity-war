@@ -216,3 +216,15 @@ Priorité à chaque pas, de la plus haute à la plus basse : **(1) éviter un cr
 ## Carte « Triade » (7.1) et biais de l'IA
 
 La carte finale proposée (`src/data/maps/triad.js`, aperçu `docs/triad-map.png`) est symétrique d'ordre 3 : le biais de base de l'arène (bot 2 plus central, §7) disparaît. Mesure jetable, 3 factions pilotées par l'IA, 300 s, 80 seeds : planètes détenues en moyenne 2,95 / 3,30 / 3,61 (factions 0 / 1 / 2). En permutant les bases entre les factions (décalage 1 puis 2), l'avantage reste attaché à **l'indice de la faction** (≈ 2,9 / 3,4 / 3,6, puis 3,0 / 3,2 / 3,9), pas à la base : la carte est équitable, le biais vient de l'IA (ordre de décision, départage des égalités). À traiter en 7.2.
+
+## Équilibrage 7.2 : mesures et décisions
+
+Mesures jetables hors du dépôt, carte Triade, IA sur les trois factions, graines fixes.
+
+- **Biais d'indice corrigé.** Cause : `leaderOf` départageait les égalités par l'indice le plus bas. Au début, tous les adversaires ont 1 planète, donc la faction 0 recevait `leaderBonus` des deux bots et la faction 2 jamais. Désormais une égalité en tête ne désigne personne (test `tests/unit/ai-leader.test.js`). Après correction, 300 s × 60 seeds avec permutation des bases : planètes moyennes ≈ 4,0 / 3,8 / 3,8 (avant : 2,95 / 3,30 / 3,61, croissant avec l'indice), plus de motif lié à l'indice.
+- **Rythme actuel (réglages inchangés).** À 3 IA sur 900 s × 20 seeds : aucune élimination, ≈ 3 morts par faction, ≈ 64 changements de propriétaire par partie : les planètes circulent sans qu'un bot soit éliminé.
+- **Levier `aggression`** (multiplie ASSAULT et HUNT), 600 s × 12 seeds : 1 → 0/12 parties avec élimination, 2 → 5/12, 2,5 → 8/12 (≈ 10 morts par partie), 4 → 8/12 (≈ 14 morts). **Rejeté** : dès 2, les bots ne capturent plus aucune neutre en 120 s (tests `ai-decision` à 0 %), car chasse et assaut passent devant l'expansion.
+- **Levier `assault` seul** : 2,4 → 7/12 éliminations pour ≈ 3 morts, mais même effet de bord (plus de HUNT contre un vaisseau immobile, plus de capture de neutres en 120 s). **Rejeté.**
+- **Facteur de conquête tardive** (poids d'ASSAULT relevé quand il ne reste plus de neutre), valeurs 1 à 4 : aucun effet net (0 à 1 partie sur 12 conclue). **Retiré**, pas de paramètre mort.
+- **Joueur inactif contre 2 bots** (900 s × 16 seeds) : jamais éliminé, il garde sa base (≈ 10 morts par partie) car il réapparaît dessus et conteste la capture (ADR 0005). Ce n'est pas représentatif d'un joueur actif : ne pas s'en servir pour régler la difficulté.
+- **Conclusion** : les réglages restent aux valeurs de départ, sauf la correction du biais. Le rythme (parties à 3 IA qui ne se terminent pas) et les seuils d'atterrissage, dégâts, cadences et durées de développement demandent une **partie jouée** ; les balayages ci-dessus servent de repère.

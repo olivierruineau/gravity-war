@@ -108,8 +108,8 @@ Spécification : [docs/SPEC.md](docs/SPEC.md). Architecture : [docs/ARCHITECTURE
 **Fin de phase :** version v1 jouable, équilibrée, publiable.
 **Revue Opus** globale avant livraison.
 
-- [~] **7.1** Conception de la carte finale (placement, tailles, gravité, planètes de départ équitables) (code)
-- [ ] **7.2** Équilibrage : seuils d'atterrissage, dégâts, cadences, durées de développement, agressivité des bots (code)
+- [x] **7.1** Conception de la carte finale (placement, tailles, gravité, planètes de départ équitables) (code)
+- [~] **7.2** Équilibrage : seuils d'atterrissage, dégâts, cadences, durées de développement, agressivité des bots (code)
 - [ ] **7.3** Polish visuel filaire : épaisseurs, lueur légère, cohérence de la palette (code)
 - [ ] **7.4** Passage de performance : allocations dans `update`, pooling, nettoyage des listeners (code)
 - [ ] **7.5** Revue globale avant release (rev)
