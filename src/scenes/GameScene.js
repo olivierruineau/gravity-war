@@ -113,7 +113,10 @@ export class GameScene extends Phaser.Scene {
       this.endDelay -= delta / 1000;
       if (this.endDelay <= 0) this.endScreen.show(this.world.outcome);
     }
+    const simStart = performance.now();
     if (!over || this.endDelay > 0) for (let i = 0; i < steps; i++) step(this.world, FIXED_DT);
+    const drawStart = performance.now();
+    this.debug.recordSim(drawStart - simStart, steps);
 
     // Rendu immédiat : on efface et on redessine tout depuis l'état du core.
     placeCamera(this.cameras.main, player.pos.x, player.pos.y, this.world.width, this.world.height); // bornée à la carte
@@ -133,6 +136,7 @@ export class GameScene extends Phaser.Scene {
     this.hud.update(player, faction);
     this.minimap.update();
     this.offscreen.update(this.world, player);
+    this.debug.recordDraw(performance.now() - drawStart);
     this.debug.update(this.world, player);
 
     this.audio.handle(this.world.events, player.pos);

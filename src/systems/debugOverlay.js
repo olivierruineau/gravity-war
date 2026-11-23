@@ -1,4 +1,4 @@
-// Overlay de debug (touche F3 ou option DEBUG) : FPS, vitesse, position, tick, événements perdus, mode et cible des bots.
+// Overlay de debug (touche F3 ou option DEBUG) : FPS, temps de calcul/affichage, vitesse, position, tick, événements perdus, mode et cible des bots.
 // Lecture seule de `world` ; ne s'actualise que lorsqu'il est visible.
 import Phaser from 'phaser';
 import { PALETTE } from '../config.js';
@@ -10,6 +10,7 @@ import { hypot } from '../core/math.js';
 const MODE_NAMES = Object.fromEntries(Object.entries(AI_MODE).map(([name, id]) => [id, name]));
 
 const DEBUG_Y = 50; // sous les boutons II et SON du haut
+const TIMING_SMOOTHING = 0.05; // poids d'une nouvelle mesure dans la moyenne glissante
 
 export function createDebugOverlay(scene) {
   const text = scene.add
@@ -24,7 +25,18 @@ export function createDebugOverlay(scene) {
   keyboard.on('keydown-F3', toggle);
   scene.events.once('shutdown', () => keyboard.off('keydown-F3', toggle));
 
+  // Moyennes glissantes (ms) : un tick de simulation, et le dessin d'une image (CPU, hors présentation GPU).
+  let tickMs = 0;
+  let drawMs = 0;
+  const smooth = (avg, value) => avg + (value - avg) * TIMING_SMOOTHING;
+
   return {
+    recordSim(totalMs, steps) {
+      if (steps > 0) tickMs = smooth(tickMs, totalMs / steps);
+    },
+    recordDraw(ms) {
+      drawMs = smooth(drawMs, ms);
+    },
     update(world, ship) {
       text.setVisible(isDebugOn());
       if (!isDebugOn()) return;
@@ -32,6 +44,7 @@ export function createDebugOverlay(scene) {
       text.setText(
         [
           `FPS ${Math.round(scene.game.loop.actualFps)}  tick ${world.tick}`,
+          `calcul ${tickMs.toFixed(2)} ms/tick  affichage ${drawMs.toFixed(2)} ms`,
           `pos ${ship.pos.x.toFixed(0)}, ${ship.pos.y.toFixed(0)}`,
           `vitesse ${speed.toFixed(1)}  angle ${((ship.angle * 180) / Math.PI).toFixed(0)}°`,
           `événements perdus ${world.events.dropped}`,
