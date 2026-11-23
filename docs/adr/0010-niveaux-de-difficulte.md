@@ -10,7 +10,7 @@ Le test sur mobile a montré que la partie est plus dure au doigt (retour de pla
 ## Décision
 
 - `data/ai.js` garde `BOT_PROFILE` (= niveau **normal**, inchangé) et ajoute `DIFFICULTY_LEVELS`, des **surcharges** par niveau et `botProfile(level)` (profil complet gelé, normal si le niveau est inconnu).
-- Seuls dix réglages varient : `startDelay`, `decisionPeriod` (cadence), `reactionTime` (délai avant le premier tir), `aimError` et `fireCone` (précision), `fireRange`, `aggression`, `missileNotice` et `bulletNotice` (perception), `dodgeBullets` (esquive). Le facile décide lentement, vise mal, tire de plus près, ne voit pas les balles ; le difficile décide vite, vise juste, tire de loin et est plus agressif.
+- Seuls dix réglages varient : `startDelay`, `decisionPeriod` (cadence), `reactionTime` (délai avant le premier tir), `aimError` et `fireCone` (précision), `fireRange`, `aggression`, `missileNotice` et `bulletNotice` (perception), `dodgeBullets` (esquive). Le facile décide lentement, vise mal, tire de plus près, ne voit pas les balles ; le difficile réagit vite, vise juste et voit mieux les menaces. Mesuré : une cadence de décision plus rapide, une portée de tir ou une agressivité plus grandes le rendaient plus faible que le normal (il se jetait au combat et mourait plus), d'où un difficile limité à la précision et à la perception.
 - Le niveau est une chaîne dans l'état du bot (`bot.level`, JSON pur), passée à `createWorld(map, seed, { difficulty })` (normal par défaut). Les modules d'IA lisent `botProfile(bot.level)` pour ces réglages ; les autres restent sur `BOT_PROFILE`.
 - Aucune règle du jeu ne change : mêmes vitesses, mêmes dégâts, mêmes seuils d'atterrissage pour tous.
 

@@ -21,6 +21,7 @@ export const BOT_PROFILE = {
   commitBonus: 1.3,
   minCommit: 2,
   scoreNoise: 0.05,
+  captureFinish: 1.5, // s : une capture à moins de ce délai de son terme est menée à bout (repli et défense attendent)
   giveUpTime: 45,
   banTime: 30,
   slotValue: 0.2, // bonus de score par bâtiment construit sur la cible
@@ -115,12 +116,9 @@ const OVERRIDES = {
   },
   hard: {
     startDelay: 1,
-    decisionPeriod: 0.3,
     reactionTime: 0.12,
     aimError: 0.02,
     fireCone: 0.04,
-    fireRange: 420,
-    aggression: 1.3,
     missileNotice: 280,
     bulletNotice: 160,
   },

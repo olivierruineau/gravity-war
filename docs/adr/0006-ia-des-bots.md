@@ -228,3 +228,7 @@ Mesures jetables hors du dépôt, carte Triade, IA sur les trois factions, grain
 - **Facteur de conquête tardive** (poids d'ASSAULT relevé quand il ne reste plus de neutre), valeurs 1 à 4 : aucun effet net (0 à 1 partie sur 12 conclue). **Retiré**, pas de paramètre mort.
 - **Joueur inactif contre 2 bots** (900 s × 16 seeds) : jamais éliminé, il garde sa base (≈ 10 morts par partie) car il réapparaît dessus et conteste la capture (ADR 0005). Ce n'est pas représentatif d'un joueur actif : ne pas s'en servir pour régler la difficulté.
 - **Conclusion** : les réglages restent aux valeurs de départ, sauf la correction du biais. Le rythme (parties à 3 IA qui ne se terminent pas) et les seuils d'atterrissage, dégâts, cadences et durées de développement demandent une **partie jouée** ; les balayages ci-dessus servent de repère.
+
+## Addendum — capture menée à bout
+
+Retour de playtest (observation) : un bot posé sur une planète ennemie repartait avant la fin des 3 s (repli à PV bas, défense d'une planète touchée), et la planète ne changeait pas de camp. Mesure sur 10 parties de 4 min : le moteur de capture est correct (toute capture ininterrompue aboutit), ce sont les décisions qui interrompaient, parfois à 2,9 s sur 3 s. `decide` ne change plus de but quand le bot est posé sur sa cible de CAPTURE, seul à la capturer, avec moins de `captureFinish` (1,5 s) à attendre. Test : `tests/scenarios/ai-finish-capture.test.js`.

@@ -3,7 +3,13 @@
 // bloquées, bruit tiré dans `world.aiRng`. Modes décidés : CAPTURE, ASSAULT, HUNT, DEFEND, RETREAT, REARM, IDLE. Les buts posés de l'extérieur
 // (GOTO, LAND : tests et debug) ne sont jamais remplacés. Aucune allocation : le meilleur candidat est gardé dans
 // `best`, un scratch de module.
-import { FIXED_DT, MISSILE_STOCK_MAX, SHIELD_MAX, SHIP_MAX_HP } from '../../config.js';
+import {
+  CAPTURE_TIME,
+  FIXED_DT,
+  MISSILE_STOCK_MAX,
+  SHIELD_MAX,
+  SHIP_MAX_HP,
+} from '../../config.js';
 import { BOT_PROFILE as P, botProfile } from '../../data/ai.js';
 import { BUILDINGS } from '../../data/buildings.js';
 import { defenseRange, hasDefenses, hasMissileFactory } from '../building.js';
@@ -163,6 +169,16 @@ function offer(world, bot, mode, target, score, urgent = false) {
 }
 
 /**
+ * Capture presque terminée : le bot posé sur sa cible, seul à la capturer, reste jusqu'au bout (`captureFinish`).
+ * Sans cela, un repli ou une défense déclenchés à 2,9 s sur 3 s faisaient tout perdre pour quelques dixièmes.
+ */
+function finishingCapture(world, bot, ship) {
+  if (bot.mode !== CAPTURE || ship.landedOn !== bot.target) return false;
+  const planet = world.planets[bot.target];
+  return planet.captureBy === bot.faction && CAPTURE_TIME - planet.captureTime <= P.captureFinish;
+}
+
+/**
  * Décide du but du bot : met à jour `underFire`, puis choisit (mode, cible) par utilité. Si le couple change,
  * `phase` et `modeTime` repartent de zéro (sauf un décollage en cours, qui vaut pour tous les modes).
  * @param {object} world
@@ -174,6 +190,7 @@ export function decide(world, bot, ship) {
   bot.underFire = health < bot.lastHealth;
   bot.lastHealth = health;
   if (bot.mode === GOTO || bot.mode === LAND) return;
+  if (finishingCapture(world, bot, ship)) return;
 
   const { planets, ships, factions } = world;
   const faction = bot.faction;
