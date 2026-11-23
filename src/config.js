@@ -49,6 +49,8 @@ export const IMPACT_TANGENTIAL_DAMPING = 0.5; // frottement sur la composante ta
 export const TAKEOFF_MIN_NORMAL_SPEED = 1e-6; // sous ce seuil (bruit d'arrondi), une poussée tangentielle ne fait pas décoller
 export const ASSIST_LANDING_DEADBAND = LANDING_MAX_ANGLE / 4; // l'aide à la pose cesse de tourner sous cet écart (évite de grelotter)
 export const LANDING_AID_ALTITUDE = 120; // altitude sous laquelle l'aide à l'atterrissage s'affiche
+export const ASSIST_ALTITUDE = 70; // altitude sous laquelle l'aide à la pose tourne le nez (9.1 : plus bas, pour ne pas gêner l'approche)
+export const ASSIST_TANGENTIAL_SPEED = 0.8 * LANDING_MAX_TANGENTIAL_SPEED; // au-delà, le nez vise contre la vitesse latérale
 
 /** Mur de carte : rebond amorti, sans dégâts (SPEC §5.6). 0 = collé au mur, 1 = rebond parfait. */
 export const BOUNDS_RESTITUTION = 0.5;

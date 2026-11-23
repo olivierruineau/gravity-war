@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
+  ASSIST_ALTITUDE,
   ASSIST_LANDING_DEADBAND,
   FIXED_DT,
-  LANDING_AID_ALTITUDE,
   LANDING_MAX_ANGLE,
   SHIP_COLLISION_RADIUS,
 } from '../../src/config.js';
@@ -35,18 +35,18 @@ const UP = -Math.PI / 2;
 
 describe('aide à la pose', () => {
   it('tourne le nez vers la normale, dans le bon sens', () => {
-    const left = shipAbove(80, 30, UP + 1); // nez trop à droite de la normale → il faut tourner vers −
+    const left = shipAbove(50, 30, UP + 1); // nez trop à droite de la normale → il faut tourner vers −
     const intent = createIntent();
     expect(applyLandingAssist(world, left, intent)).toBe(true);
     expect(intent.rotate).toBe(-1);
-    const right = shipAbove(80, 30, UP - 1);
+    const right = shipAbove(50, 30, UP - 1);
     const intent2 = createIntent();
     applyLandingAssist(world, right, intent2);
     expect(intent2.rotate).toBe(1);
   });
 
   it('aligne le nez sur la normale avant l’impact, avec un vaisseau abandonné à lui-même', () => {
-    const ship = shipAbove(100, 25, UP + 2);
+    const ship = shipAbove(65, 25, UP + 2);
     const out = {};
     for (let i = 0; i < 90; i++) {
       ship.intent = createIntent();
@@ -60,14 +60,14 @@ describe('aide à la pose', () => {
   });
 
   it('ne fait rien dans la zone morte (pas de tremblement)', () => {
-    const ship = shipAbove(80, 30, UP + ASSIST_LANDING_DEADBAND / 2);
+    const ship = shipAbove(50, 30, UP + ASSIST_LANDING_DEADBAND / 2);
     const intent = createIntent();
     expect(applyLandingAssist(world, ship, intent)).toBe(false);
     expect(intent.rotate).toBe(0);
   });
 
   it('cède à un doigt qui tourne ou à un tir en cours', () => {
-    const ship = shipAbove(80, 30, UP + 1);
+    const ship = shipAbove(50, 30, UP + 1);
     const turning = { ...createIntent(), rotate: 1 };
     expect(applyLandingAssist(world, ship, turning)).toBe(false);
     expect(turning.rotate).toBe(1);
@@ -76,21 +76,37 @@ describe('aide à la pose', () => {
     expect(firing.rotate).toBe(0);
   });
 
+  it('se retire quand le joueur pousse', () => {
+    const ship = shipAbove(40, 30, UP + 1);
+    const intent = { ...createIntent(), thrust: true };
+    expect(applyLandingAssist(world, ship, intent)).toBe(false);
+    expect(intent.rotate).toBe(0);
+  });
+
+  it('vise contre une vitesse latérale forte, pas la normale', () => {
+    const ship = shipAbove(40, 20, UP); // nez sur la normale, dérive vers la droite (+x)
+    ship.vel.x = 60;
+    const intent = createIntent();
+    expect(applyLandingAssist(world, ship, intent)).toBe(true);
+    ship.angle = Math.PI; // nez vers −x : contre la dérive → plus rien à corriger
+    expect(applyLandingAssist(world, ship, createIntent())).toBe(false);
+  });
+
   it('reste inactive loin de la planète, en s’éloignant, posé ou mort', () => {
-    const far = shipAbove(LANDING_AID_ALTITUDE + 50, 30, UP + 1);
+    const far = shipAbove(ASSIST_ALTITUDE + 30, 30, UP + 1);
     expect(applyLandingAssist(world, far, createIntent())).toBe(false);
-    const leaving = shipAbove(80, -30, UP + 1);
+    const leaving = shipAbove(50, -30, UP + 1);
     expect(applyLandingAssist(world, leaving, createIntent())).toBe(false);
     const landed = shipAbove(0, 0, UP + 1);
     landed.landedOn = 0;
     expect(applyLandingAssist(world, landed, createIntent())).toBe(false);
-    const dead = shipAbove(80, 30, UP + 1);
+    const dead = shipAbove(50, 30, UP + 1);
     dead.alive = false;
     expect(applyLandingAssist(world, dead, createIntent())).toBe(false);
   });
 
   it('n’écrit que la rotation discrète', () => {
-    const ship = shipAbove(80, 30, UP + 1);
+    const ship = shipAbove(50, 30, UP + 1);
     const intent = createIntent();
     applyLandingAssist(world, ship, intent);
     expect(intent).toEqual({ rotate: -1, thrust: false, fire: false, missile: false });
