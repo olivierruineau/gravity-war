@@ -4,12 +4,10 @@ import { toCss } from '../systems/color.js';
 import { createMuteKey } from '../systems/muteKey.js';
 import { createNavigation, watchSource } from '../systems/navigation.js';
 import { createButton } from '../systems/uiButton.js';
-import { createSettingRow } from '../systems/settingRow.js';
-import { QUALITY_LABELS, cycleQualityMode, getQualityMode } from '../systems/quality.js';
+import { createOptionsPanel } from '../systems/optionsPanel.js';
 import { canFullscreen, enterFullscreen } from '../systems/platform.js';
 import { playSfx, resumeAudio } from '../audio/sfx.js';
 import { controlsLines } from '../data/controls.js';
-import { ASSIST_LABELS, cycleAssistMode, getAssistMode } from '../systems/assistSetting.js';
 
 export class MenuScene extends Phaser.Scene {
   constructor() {
@@ -37,7 +35,7 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5);
     this.tweens.add({ targets: prompt, alpha: 0, duration: 500, yoyo: true, repeat: -1 });
     const helpHint = this.add
-      .text(cx, GAME_HEIGHT * 0.88, 'H : COMMANDES', {
+      .text(cx, GAME_HEIGHT * 0.88, 'H : COMMANDES    O : OPTIONS', {
         fontFamily: 'monospace',
         fontSize: '8px',
         color: toCss(PALETTE.star),
@@ -57,16 +55,16 @@ export class MenuScene extends Phaser.Scene {
 
     let started = false;
     const play = () => {
-      if (started) return;
+      if (started || options.isBlocking()) return;
       started = true;
       resumeAudio();
       playSfx('select');
       this.scene.start(SCENES.GAME);
     };
     const playButton = createButton(this, {
-      x: cx - 70,
+      x: cx - 105,
       y: GAME_HEIGHT * 0.77,
-      w: 120,
+      w: 100,
       h: 40,
       label: 'JOUER',
       fontSize: 14,
@@ -74,40 +72,32 @@ export class MenuScene extends Phaser.Scene {
       onTap: play,
     });
     const helpButton = createButton(this, {
-      x: cx + 70,
+      x: cx,
       y: GAME_HEIGHT * 0.77,
-      w: 120,
+      w: 100,
       h: 40,
       label: 'COMMANDES',
+      fontSize: 9,
       onTap: toggleHelp,
     });
-    const assistRow = createSettingRow(this, {
-      x: cx - 110,
-      y: GAME_HEIGHT * 0.92,
-      w: 210,
-      key: 'A',
-      label: () => `AIDE POSE ${ASSIST_LABELS[getAssistMode()]}`,
-      cycle: cycleAssistMode,
-    });
-    const qualityRow = createSettingRow(this, {
-      x: cx + 110,
-      y: GAME_HEIGHT * 0.92,
-      w: 210,
-      key: 'Q',
-      label: () => `QUALITE ${QUALITY_LABELS[getQualityMode()]}`,
-      cycle: cycleQualityMode,
+    const optionsButton = createButton(this, {
+      x: cx + 105,
+      y: GAME_HEIGHT * 0.77,
+      w: 100,
+      h: 40,
+      label: 'OPTIONS',
+      onTap: () => options.open(),
     });
     watchSource(this, (touch) => {
-      assistRow.showTouch(touch);
-      qualityRow.showTouch(touch);
       prompt.setVisible(!touch);
       helpHint.setVisible(!touch);
       playButton.setVisible(touch);
       helpButton.setVisible(touch);
+      optionsButton.setVisible(touch);
       help.setText(controlsLines(touch));
     });
 
-    createMuteKey(this);
+    const mute = createMuteKey(this);
     if (canFullscreen(this)) {
       createButton(this, {
         x: GAME_WIDTH - 44,
@@ -120,10 +110,10 @@ export class MenuScene extends Phaser.Scene {
       });
     }
 
+    const options = createOptionsPanel(this, { onToggleSound: mute.refresh });
     const nav = createNavigation(this);
-    nav.on('help', toggleHelp);
-    nav.on('confirm', play);
-    nav.on('assist', assistRow.cycle);
-    nav.on('quality', qualityRow.cycle);
+    nav.on('help', () => !options.isBlocking() && toggleHelp());
+    nav.on('confirm', () => !options.isBlocking() && play());
+    nav.on('options', () => !options.isBlocking() && options.open());
   }
 }

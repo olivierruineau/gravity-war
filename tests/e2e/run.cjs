@@ -98,7 +98,7 @@ async function touchScenario(browser, label, device) {
   };
 
   eq('démarre au tactile (pointeur grossier)', await g.source(), 'touch');
-  await tap(170, 208); // JOUER
+  await tap(135, 208); // JOUER
   check('JOUER au doigt lance la partie', await g.active('GameScene'));
 
   // Trois doigts : rotation gauche + poussée + tir.
@@ -122,15 +122,15 @@ async function touchScenario(browser, label, device) {
   // Pause et reprise au doigt.
   await tap(26, 26);
   check('bouton II met en pause', await g.paused());
-  await tap(170, 194); // REPRENDRE
+  await tap(135, 194); // REPRENDRE
   check('REPRENDRE relance', !(await g.paused()));
   // Pause puis MENU.
   await tap(26, 26);
-  await tap(310, 194);
+  await tap(345, 194);
   check('MENU depuis la pause', await g.active('MenuScene'));
 
   // Fin de partie : REJOUER puis MENU.
-  await tap(170, 208);
+  await tap(135, 208);
   await g.forceOutcome('DEFEAT');
   await page.waitForTimeout(2600);
   const before = await g.worldId();
@@ -145,7 +145,7 @@ async function touchScenario(browser, label, device) {
   check('MENU depuis l’écran de fin', await g.active('MenuScene'));
 
   // Portrait : invite « tournez l'appareil » et pause.
-  await tap(170, 208);
+  await tap(135, 208);
   await page.setViewportSize({ width: 412, height: 915 });
   await settle(page, 500);
   check('portrait : invite affichée', await page.locator('#rotate').isVisible());
@@ -160,6 +160,18 @@ async function keyboardScenario(browser) {
     viewport: { width: 1280, height: 720 },
   });
   eq('démarre au clavier', await g.source(), 'keyboard');
+  await page.keyboard.press('o');
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('Escape');
+  await settle(page, 200);
+  check('options : ECHAP ferme sans quitter le menu', await g.active('MenuScene'));
+  eq(
+    'options : la difficulté se règle',
+    await page.evaluate(async () =>
+      (await import('/src/systems/difficultySetting.js')).getDifficultyMode(),
+    ),
+    'hard',
+  );
   await page.keyboard.press('h');
   await page.keyboard.press('Space');
   await settle(page, 500);

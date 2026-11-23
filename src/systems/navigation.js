@@ -29,7 +29,16 @@ export function createNavigation(scene) {
     on(action, handler) {
       if (!NAV_ACTIONS.includes(action))
         throw new Error(`Action de navigation inconnue : ${action}`);
-      for (const key of NAV_KEYS[action]) bind(keyboard, `keydown-${key}`, handler);
+      for (const key of NAV_KEYS[action]) {
+        // Phaser peut rejouer la même touche physique au cours d'une image lente (file d'événements relue) :
+        // un événement navigateur (même `timeStamp`) ne déclenche l'action qu'une fois.
+        let lastStamp = -1;
+        bind(keyboard, `keydown-${key}`, (event) => {
+          if (event && event.timeStamp === lastStamp) return;
+          lastStamp = event?.timeStamp ?? -1;
+          handler();
+        });
+      }
     },
   };
 }

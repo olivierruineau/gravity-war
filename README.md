@@ -27,8 +27,7 @@ Une version de production se construit avec `npm run build` (dossier `dist/`, ch
 | `M`        | Couper / rétablir le son                       |
 | `F3`       | Overlay de debug (FPS, mode des bots)          |
 | `H` (menu) | Aide des commandes                             |
-| `A` (menu) | Aide à l'atterrissage : auto, oui, non         |
-| `Q` (menu) | Qualité : auto, haute, basse                   |
+| `O`        | Options (menu et pause) : ↑ ↓ ← → Espace Echap |
 
 **Au doigt (paysage)** : ◄ ► à gauche pour tourner ; à droite ▲ (poussée), TIR et MIS (missile) ; II (pause) et SON en haut à gauche. Trois doigts en même temps sont pris en charge. L'aide à l'atterrissage (alignement automatique du nez à l'approche) est active au tactile par défaut.
 
@@ -53,4 +52,4 @@ Node 22 ou plus. Le code de jeu pur est dans `src/core/` (sans Phaser ni DOM, te
 
 ## Version actuelle (v1 + mobile)
 
-Une carte fixe (« Triade », 13 planètes, symétrique pour trois bases), deux bots, une seule difficulté. Jouable au clavier et au doigt (paysage), installable hors ligne. Hors périmètre : niveaux de difficulté, nombre de bots réglable, génération de cartes, campagne, manette, musique.
+Une carte fixe (« Triade », 13 planètes, symétrique pour trois bases), deux bots, trois niveaux de difficulté (menu Options). Jouable au clavier et au doigt (paysage), installable hors ligne. Hors périmètre : nombre de bots réglable, génération de cartes, campagne, manette, musique.

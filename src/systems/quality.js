@@ -1,5 +1,6 @@
 // Qualité d'affichage (8.9) : réglage auto / haute / basse, et moniteur de cadence pour le mode auto.
 // Un seul degré de dégradation pour l'instant : la lueur filaire (≈ le double de traits dessinés). Le moniteur est pur.
+import { cycleValue } from './cycleValue.js';
 import { QUALITY_LOW_FPS, QUALITY_WARMUP, QUALITY_WINDOW } from '../config.js';
 
 export const QUALITY_MODES = ['auto', 'high', 'low'];
@@ -24,8 +25,8 @@ export const getQualityMode = () => mode;
 /** La lueur est-elle dessinée ? « auto » la garde tant que la cadence tient. */
 export const isGlowOn = () => mode === 'high' || (mode === 'auto' && !autoLow);
 
-export function cycleQualityMode() {
-  mode = QUALITY_MODES[(QUALITY_MODES.indexOf(mode) + 1) % QUALITY_MODES.length];
+export function cycleQualityMode(dir = 1) {
+  mode = cycleValue(QUALITY_MODES, mode, dir);
   try {
     globalThis.localStorage?.setItem(KEY, mode);
   } catch {

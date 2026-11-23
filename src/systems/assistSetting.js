@@ -1,5 +1,6 @@
 // Réglage de l'aide à la pose (8.7) : auto (active au tactile seulement), oui, non. Mémorisé si le navigateur le permet.
 import { isTouch } from './inputSource.js';
+import { cycleValue } from './cycleValue.js';
 
 export const ASSIST_MODES = ['auto', 'on', 'off'];
 const KEY = 'gravity-war.assist';
@@ -17,9 +18,9 @@ let mode = load();
 
 export const getAssistMode = () => mode;
 
-/** Passe au mode suivant (auto → oui → non) et le retient. */
-export function cycleAssistMode() {
-  mode = ASSIST_MODES[(ASSIST_MODES.indexOf(mode) + 1) % ASSIST_MODES.length];
+/** Passe au mode suivant (`dir` = 1) ou précédent (−1) : auto → oui → non, et le retient. */
+export function cycleAssistMode(dir = 1) {
+  mode = cycleValue(ASSIST_MODES, mode, dir);
   try {
     globalThis.localStorage?.setItem(KEY, mode);
   } catch {

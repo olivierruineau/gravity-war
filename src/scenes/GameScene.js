@@ -28,6 +28,7 @@ import { createOffscreenIndicators } from '../systems/offscreenIndicators.js';
 import { createLandingAid } from '../systems/landingAid.js';
 import { createPlayerInput } from '../systems/playerInput.js';
 import { createFrameMonitor, markAutoLow } from '../systems/quality.js';
+import { resolveDifficulty } from '../systems/difficultySetting.js';
 import { createStarfield } from '../systems/starfield.js';
 
 /** Délai (s) entre la fin de partie et l'écran de fin. */
@@ -48,7 +49,11 @@ export class GameScene extends Phaser.Scene {
   create() {
     // Graine tirée ici (couche Phaser) : le core, lui, reste déterministe pour une graine donnée.
     const seed = Math.floor(Math.random() * 2 ** 32);
-    this.world = createWorld(triad, seed, { eventCapacity: EVENT_CAPACITY, bots: BOT_FACTIONS });
+    this.world = createWorld(triad, seed, {
+      eventCapacity: EVENT_CAPACITY,
+      bots: BOT_FACTIONS,
+      difficulty: resolveDifficulty(),
+    });
     this.clock = createClock({
       dt: FIXED_DT,
       maxFrameDt: MAX_FRAME_DT,
@@ -59,12 +64,16 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, this.world.width, this.world.height);
     this.gfx = this.add.graphics();
     this.debug = createDebugOverlay(this);
-    createMuteKey(this);
+    this.mute = createMuteKey(this);
     this.hud = createHud(this);
     this.minimap = createMinimap(this, this.world);
     this.offscreen = createOffscreenIndicators(this);
     this.endScreen = createEndScreen(this);
-    this.pause = createPauseScreen(this, () => this.world.outcome === OUTCOME.PLAYING);
+    this.pause = createPauseScreen(
+      this,
+      () => this.world.outcome === OUTCOME.PLAYING,
+      this.mute.refresh,
+    );
     this.endDelay = END_SCREEN_DELAY; // laisse voir l'explosion finale avant le bandeau
     this.frameMonitor = createFrameMonitor(markAutoLow);
     this.landingAid = createLandingAid(this);

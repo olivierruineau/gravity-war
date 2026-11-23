@@ -9,7 +9,7 @@ import { MIN_FONT, READOUT, TOP_BUTTONS } from './hudLayout.js';
 
 const DEPTH = 950;
 
-/** Un bouton `SON` s'affiche en plus au doigt, sauf si `button` est faux. */
+/** Retourne `{ refresh }` : à appeler quand la sourdine change ailleurs (écran d'options). Un bouton `SON` s'affiche en plus au doigt, sauf si `button` est faux. */
 export function createMuteKey(scene, { button = true } = {}) {
   const label = scene.add
     .text(READOUT.right, READOUT.y + READOUT.lineHeight, 'SON COUPE', {
@@ -22,9 +22,13 @@ export function createMuteKey(scene, { button = true } = {}) {
     .setDepth(DEPTH)
     .setVisible(isMuted());
   const buttonLabel = () => (isMuted() ? 'MUET' : 'SON');
-  const toggle = () => {
-    label.setVisible(toggleMute());
+  const refresh = () => {
+    label.setVisible(isMuted());
     soundButton?.setLabel(buttonLabel());
+  };
+  const toggle = () => {
+    toggleMute();
+    refresh();
   };
   const soundButton = button
     ? createButton(scene, {
@@ -36,4 +40,5 @@ export function createMuteKey(scene, { button = true } = {}) {
     : null;
   if (soundButton) watchSource(scene, (touch) => soundButton.setVisible(touch));
   createNavigation(scene).on('mute', toggle);
+  return { refresh };
 }
