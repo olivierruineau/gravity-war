@@ -49,6 +49,16 @@ export const BOT_PROFILE = {
   landTangentialMax: 20,
   landMaxTilt: 0.2,
   takeoffAltitude: 40,
+  landDescentSpeed: 12, // vitesse visée vers la planète quand aucun contact n'est prévu (px/s)
+  landEntryTolerance: 10, // marge sur l'altitude d'entrée pour passer en descente
+  landFlareAltitude: 15, // sous cette altitude : nez sur la normale, remise des gaz possible
+  landBrakeFactor: 0.7, // part de la poussée sur laquelle compte le « suicide burn » (le reste = marge)
+  landHorizon: 3, // s, horizon de la prédiction du contact (chute de l'altitude d'entrée en < 3 s)
+  landAbortTangential: 30, // vitesse tangentielle prévue au-delà de laquelle on remet les gaz
+  landAbortTilt: 0.35, // écart de nez prévu au-delà duquel on remet les gaz
+  landAbortRadial: 40, // vitesse d'approche que même une poussée pleine ne ramènerait plus sous ce seuil : gaz
+  landGoAroundSpeed: 30, // vitesse de fuite (px/s) à laquelle la remise des gaz passe la main à l'approche
+  landAbortAltitude: 2, // × landEntryAltitude : au-delà, la descente redevient une approche
 
   // Combat
   aimError: 0.05,

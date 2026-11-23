@@ -1,4 +1,5 @@
 // Modes de l'IA (entiers : l'état `world.ai` reste JSON pur). Réexporté par bot.js (ADR 0006 §1).
+// LAND : but « se poser sur la planète `bot.target` » (brique de CAPTURE, DEFEND, RETREAT, REARM, IDLE ; ADR 0006 §4.4).
 // GOTO n'est pas un mode de jeu : but « rejoindre (goalX, goalY) et s'y arrêter », posé par un test ou le debug.
 export const AI_MODE = {
   NONE: 0,
@@ -10,4 +11,5 @@ export const AI_MODE = {
   RETREAT: 6,
   REARM: 7,
   GOTO: 8,
+  LAND: 9,
 };

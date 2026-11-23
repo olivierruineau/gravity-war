@@ -85,7 +85,7 @@ Spécification : [docs/SPEC.md](docs/SPEC.md). Architecture : [docs/ARCHITECTURE
 - [ ] **5.1** ADR 0006 : architecture de l'IA (machine à états / utilité), les bots produisent les mêmes intentions que le joueur, perception limitée au monde de `core/` (arch)
       Points issus de la revue 4.11 à trancher dans l'ADR : intentions calculées DANS `step` (étape 1) à chaque pas, pas par frame ; flux RNG séparé (`world.aiRng`) pour ne pas décaler les tourelles ; requêtes pures à exposer (`findMissileTarget`, ciblage des tourelles, `nearestPlanet` avec filtres « non possédée par f » / « sans défense », prédiction balistique sans allocation avec `gravityAt` — balles soumises à la gravité, missiles non) ; l'IA lit l'ÉTAT, pas les événements (file perdue si pleine) ; état « planète attaquée » à ajouter (ex. `planet.lastHitTick`) ; ajouter `{ planet: 2 }` aux spawns d'`arena` (5.7).
 - [x] **5.2** Navigation sensible à la gravité : s'orienter, rejoindre une cible, freiner par 180° + poussée ; tests de scénarios (code, test-c)
-- [ ] **5.3** Contrôleur d'atterrissage : approche, alignement, vitesse radiale sous le seuil ; tests (code, test-c)
+- [x] **5.3** Contrôleur d'atterrissage : approche, alignement, vitesse radiale sous le seuil ; tests (code, test-c)
 - [ ] **5.4** Comportement « capturer une planète neutre » (choix de cible, trajet, capture) (code, test-c)
 - [ ] **5.5** Comportement combat : viser et tirer, esquiver, missiles ; attaquer les planètes ennemies (tourelles puis capture) (code, test-c)
 - [ ] **5.6** Comportement défense/repli : réagir aux attaques sur ses planètes, repli si vie basse (code, test-c)
