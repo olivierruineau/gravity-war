@@ -271,6 +271,11 @@ export function hunt(world, bot, ship, intent) {
     flyTo(world, ship, intent, ship.pos.x, ship.pos.y, -1);
     return;
   }
+  engage(world, bot, ship, intent, target);
+}
+
+/** Navigation et visée de HUNT sur un vaisseau ennemi vivant (réutilisées par DEFEND). */
+function engage(world, bot, ship, intent, target) {
   const dx = ship.pos.x - target.pos.x;
   const dy = ship.pos.y - target.pos.y;
   const dist = Math.hypot(dx, dy);
@@ -297,6 +302,31 @@ export function hunt(world, bot, ship, intent) {
     ship,
     leadAim(bot, ship, target) ? aim.angle : Math.atan2(-dy, -dx) + bot.aimBias,
   );
+}
+
+/**
+ * Attaquant de la planète `bot.target` : vaisseau ennemi vivant le plus proche de sa surface, à moins de
+ * `defendRadius` (en vol, ou posé sur elle). −1 si personne : DEFEND se pose alors pour renforcer.
+ */
+export function findAttacker(world, bot) {
+  const planet = world.planets[bot.target];
+  let best = -1;
+  let bestGap = P.defendRadius;
+  for (let k = 0; k < world.ships.length; k++) {
+    const other = world.ships[k];
+    if (!other.alive || other.faction === bot.faction) continue;
+    if (other.landedOn >= 0 && other.landedOn !== bot.target) continue; // posé ailleurs : ne menace pas cette planète
+    const gap = Math.hypot(other.pos.x - planet.pos.x, other.pos.y - planet.pos.y) - planet.radius;
+    if (gap >= bestGap) continue;
+    bestGap = gap;
+    best = k;
+  }
+  return best;
+}
+
+/** DEFEND avec un attaquant (`bot.attacker` ≥ 0) : même engagement que HUNT. */
+export function defend(world, bot, ship, intent) {
+  engage(world, bot, ship, intent, world.ships[bot.attacker]);
 }
 
 /**

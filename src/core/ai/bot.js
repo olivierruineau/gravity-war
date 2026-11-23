@@ -18,6 +18,7 @@ export function createBotState(faction, rank) {
     faction,
     mode: AI_MODE.NONE,
     target: -1,
+    attacker: -1, // DEFEND : index du vaisseau ennemi chassé près de la planète cible, −1 = aucun
     phase: 0,
     decisionTimer: BOT_PROFILE.startDelay + (rank * BOT_PROFILE.decisionPeriod) / 2,
     modeTime: 0,

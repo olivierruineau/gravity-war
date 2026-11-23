@@ -14,13 +14,18 @@ export const AI_MODE = {
   LAND: 9,
 };
 
-/** Vrai si le but du bot est de se poser sur la planète `bot.target` (IDLE sans planète attend sur place). */
+/**
+ * Vrai si le but du bot est de se poser sur la planète `bot.target` (IDLE sans planète attend sur place).
+ * DEFEND ne se pose que sans attaquant à chasser (`bot.attacker` < 0, recalculé à chaque pas par pilot.js).
+ */
 export function isLanding(bot) {
   const { mode } = bot;
   return (
     mode === AI_MODE.LAND ||
     mode === AI_MODE.CAPTURE ||
     mode === AI_MODE.REARM ||
+    mode === AI_MODE.RETREAT ||
+    (mode === AI_MODE.DEFEND && bot.attacker < 0) ||
     (mode === AI_MODE.IDLE && bot.target >= 0)
   );
 }

@@ -406,9 +406,14 @@ describe('IA combat : esquive des balles', () => {
     sniper.intent.fire = true;
   };
 
+  // `lowHealth = 0` neutralise le repli (RETREAT) : sinon un bot blessé fuit au lieu de combattre, et la comparaison
+  // mélangerait l'esquive avec la décision de fuir (RETREAT n'est pas désactivable par son poids : son score urgent
+  // préempte tout). Seule l'esquive des balles varie entre les deux séries ; le repli est couvert par
+  // ai-defense.test.js.
   function duelAgainstSniper(dodge) {
-    const saved = P.dodgeBullets;
+    const saved = { dodgeBullets: P.dodgeBullets, lowHealth: P.lowHealth };
     P.dodgeBullets = dodge;
+    P.lowHealth = 0;
     try {
       return runSeeds((seed, rng) => {
         const pos = polar(HOME, range(rng, 600, 680), range(rng, -1.4, -0.2));
@@ -432,7 +437,7 @@ describe('IA combat : esquive des balles', () => {
         return { damage, sniperDead: !world.ships[HUMAN].alive, ...rec };
       });
     } finally {
-      P.dodgeBullets = saved;
+      Object.assign(P, saved);
     }
   }
   const mean = (rs) => rs.reduce((a, r) => a + r.damage, 0) / rs.length;
@@ -441,6 +446,7 @@ describe('IA combat : esquive des balles', () => {
 
   it('le profil de bot est restauré après la comparaison', () => {
     expect(P.dodgeBullets).toBe(true);
+    expect(P.lowHealth).toBeGreaterThan(0);
   });
 
   it('esquivant, le bot encaisse moins de dégâts en moyenne que sans esquive', () => {
@@ -448,8 +454,8 @@ describe('IA combat : esquive des balles', () => {
   });
 
   it('esquivant, le bot meurt nettement moins souvent que sans esquive', () => {
-    // Mesuré sur les seeds 1 à 20 : 14 morts avec esquive contre 20 sans (un tireur à visée parfaite reste redoutable).
-    // On exige un écart d'au moins 3 seeds, bien en deçà du mesuré (6), pour ne pas dépendre d'une seule seed.
+    // Mesuré sur les seeds 1 à 20 (repli neutralisé) : 15 morts avec esquive contre 20 sans (un tireur à visée parfaite
+    // reste redoutable). On exige un écart d'au moins 3 seeds, en deçà du mesuré (5), pour ne pas dépendre d'une seule seed.
     const deaths = (rs) => rs.filter((r) => r.botDeaths > 0).length;
     expect(deaths(passive) - deaths(dodging)).toBeGreaterThanOrEqual(3);
   });

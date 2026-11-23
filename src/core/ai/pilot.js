@@ -5,7 +5,7 @@ import { SHIP_COLLISION_RADIUS, SHIP_THRUST } from '../../config.js';
 import { BOT_PROFILE as P } from '../../data/ai.js';
 import { resetIntent } from '../intent.js';
 import { predictPath } from '../predict.js';
-import { assault, evade, fireControl, hunt } from './combat.js';
+import { assault, defend, evade, findAttacker, fireControl, hunt } from './combat.js';
 import { AI_MODE, isLanding } from './mode.js';
 import { flyTo, thrustToward } from './navigate.js';
 import { land, takeoff, TOUCHDOWN_PHASE } from './touchdown.js';
@@ -50,6 +50,7 @@ function maneuver(world, bot, ship, intent) {
   if (!(landing && bot.phase >= TOUCHDOWN_PHASE.DESCENT) && evade(world, bot, ship, intent)) return;
   if (landing) land(world, bot, ship, intent);
   else if (bot.mode === AI_MODE.HUNT) hunt(world, bot, ship, intent);
+  else if (bot.mode === AI_MODE.DEFEND) defend(world, bot, ship, intent);
   else if (bot.mode === AI_MODE.ASSAULT) assault(world, bot, ship, intent);
   else flyTo(world, ship, intent, bot.goalX, bot.goalY, ship.landedOn); // GOTO, ou IDLE sans planète
 }
@@ -59,6 +60,8 @@ export function pilot(world, bot, ship) {
   const intent = ship.intent;
   resetIntent(intent);
   if (bot.mode === AI_MODE.NONE) return;
+  // Avant la manœuvre : isLanding() lit l'attaquant (DEFEND se pose seulement sans cible à chasser).
+  bot.attacker = bot.mode === AI_MODE.DEFEND ? findAttacker(world, bot) : -1;
   maneuver(world, bot, ship, intent);
   fireControl(world, bot, ship, intent);
 }

@@ -36,7 +36,13 @@ export const BOT_PROFILE = {
   lowHealth: 40,
   assaultMinHealth: 30, // hp + bouclier (la moitié de SHIP_MAX_HP : à 60 la moindre égratignure interdisait l'assaut)
   rearmBelow: 2,
-  defendMemory: 5,
+  defendMemory: 5, // s : une planète touchée depuis moins longtemps est « attaquée » (planet.lastHitTick)
+  defendRadius: 400, // px depuis la surface : un ennemi plus proche menace la planète (portée d'une balle : 512)
+  defendUrgent: 2, // facteur de DEFEND quand un ennemi est posé sur la planète (capture en cours) : préempte l'engagement
+  defendNearFactor: 0.5, // facteur de DEFEND quand un ennemi rôde sans avoir tiré ni s'être posé
+  retreatThreat: 300, // px : un ennemi plus proche que cela (vaisseau à vaisseau) met le bot « en danger »
+  retreatHold: 0.5, // sévérité minimale du repli tant que le bouclier se recharge (les PV ne reviennent pas)
+  retreatSafe: 300, // px depuis la surface : une planète sans ennemi dans ce rayon est un abri
 
   // Navigation
   cruiseSpeed: 150,

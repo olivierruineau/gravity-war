@@ -1,9 +1,9 @@
 // Couche « décision » de l'IA (ADR 0006 §3), appelée toutes les `decisionPeriod` secondes : score d'utilité de
 // chaque couple (mode, cible), hystérésis (bonus d'engagement et verrou `minCommit`), bannissement des cibles
-// bloquées, bruit tiré dans `world.aiRng`. Modes décidés : CAPTURE, ASSAULT, HUNT, REARM, IDLE. Les buts posés de l'extérieur
+// bloquées, bruit tiré dans `world.aiRng`. Modes décidés : CAPTURE, ASSAULT, HUNT, DEFEND, RETREAT, REARM, IDLE. Les buts posés de l'extérieur
 // (GOTO, LAND : tests et debug) ne sont jamais remplacés. Aucune allocation : le meilleur candidat est gardé dans
 // `best`, un scratch de module.
-import { MISSILE_STOCK_MAX, SHIP_MAX_HP } from '../../config.js';
+import { FIXED_DT, MISSILE_STOCK_MAX, SHIELD_MAX, SHIP_MAX_HP } from '../../config.js';
 import { BOT_PROFILE as P } from '../../data/ai.js';
 import { BUILDINGS } from '../../data/buildings.js';
 import { defenseRange, hasDefenses, hasMissileFactory } from '../building.js';
@@ -12,7 +12,12 @@ import { range } from '../rng.js';
 import { AI_MODE } from './mode.js';
 import { TOUCHDOWN_PHASE } from './touchdown.js';
 
-const { NONE, IDLE, CAPTURE, ASSAULT, HUNT, REARM, GOTO, LAND } = AI_MODE;
+const { NONE, IDLE, CAPTURE, ASSAULT, HUNT, DEFEND, RETREAT, REARM, GOTO, LAND } = AI_MODE;
+
+// Scores d'engagement (finis : Infinity ne se départagerait pas). Un option verrouillée par `minCommit` bat tout
+// candidat normal ; un candidat urgent (RETREAT, DEFEND d'une capture en cours) bat même une option verrouillée.
+const COMMIT_LOCK = 1e6;
+const PREEMPT = 1e9;
 
 const best = { mode: NONE, target: -1, score: -Infinity };
 
@@ -60,6 +65,50 @@ function occupiedByOther(ships, index, faction) {
   return false;
 }
 
+/**
+ * Vrai si un vaisseau vivant d'une autre faction est à moins de `reach` px de la surface de la planète. Posé,
+ * il ne compte que si `landed` (un ennemi qui capture ailleurs ne menace pas cette planète).
+ */
+function enemyWithin(ships, planet, faction, reach, landed) {
+  for (let k = 0; k < ships.length; k++) {
+    const s = ships[k];
+    if (!s.alive || s.faction === faction || (!landed && s.landedOn >= 0)) continue;
+    if (Math.hypot(s.pos.x - planet.pos.x, s.pos.y - planet.pos.y) - planet.radius < reach)
+      return true;
+  }
+  return false;
+}
+
+/** Vrai si un vaisseau vivant d'une autre faction est à moins de `reach` px du vaisseau `ship`. */
+function enemyNearShip(ships, ship, reach) {
+  for (let k = 0; k < ships.length; k++) {
+    const s = ships[k];
+    if (!s.alive || s.faction === ship.faction) continue;
+    if (Math.hypot(s.pos.x - ship.pos.x, s.pos.y - ship.pos.y) < reach) return true;
+  }
+  return false;
+}
+
+/** Vrai si la planète a été touchée depuis moins de `defendMemory` secondes. */
+function isRecentlyHit(world, planet) {
+  return planet.lastHitTick >= 0 && (world.tick - planet.lastHitTick) * FIXED_DT < P.defendMemory;
+}
+
+/**
+ * Menace sur une planète possédée, en facteur de DEFEND : `defendUrgent` si un ennemi y est posé, 1 si elle a été
+ * touchée depuis moins de `defendMemory` (planet.lastHitTick), `defendNearFactor` si un ennemi rôde à moins de
+ * `defendRadius`, 0 sinon.
+ */
+function defendUrgency(world, planet, index, faction) {
+  const { ships } = world;
+  for (let k = 0; k < ships.length; k++) {
+    if (ships[k].alive && ships[k].faction !== faction && ships[k].landedOn === index)
+      return P.defendUrgent;
+  }
+  if (isRecentlyHit(world, planet)) return 1;
+  return enemyWithin(ships, planet, faction, P.defendRadius, false) ? P.defendNearFactor : 0;
+}
+
 function builtSlots(planet) {
   let count = 0;
   for (let s = 0; s < planet.buildings.length; s++) if (planet.buildings[s].built) count++;
@@ -90,14 +139,16 @@ function sameOption(modeA, targetA, modeB, targetB) {
 
 /**
  * Propose un candidat : applique le bannissement, le bruit (±`scoreNoise`) et l'hystérésis, puis garde le meilleur.
- * L'option en cours reçoit `commitBonus`, et un score infini (verrou) pendant `minCommit` sauf pour IDLE.
+ * L'option en cours reçoit `commitBonus`, et un score de verrou pendant `minCommit` sauf pour IDLE ; `urgent`
+ * ajoute `PREEMPT`, qui passe devant ce verrou.
  */
-function offer(world, bot, mode, target, score) {
+function offer(world, bot, mode, target, score, urgent = false) {
   if (bot.banTimer > 0 && bot.banMode === mode && bot.banTarget === target) return;
   let s = score * (1 + range(world.aiRng, -P.scoreNoise, P.scoreNoise));
   if (sameOption(bot.mode, bot.target, mode, target)) {
-    s = mode !== IDLE && bot.modeTime < P.minCommit ? Infinity : s * P.commitBonus;
+    s = mode !== IDLE && bot.modeTime < P.minCommit ? COMMIT_LOCK : s * P.commitBonus;
   }
+  if (urgent) s = Math.max(s, 0) + PREEMPT;
   if (s > best.score) {
     best.mode = mode;
     best.target = target;
@@ -122,7 +173,7 @@ export function decide(world, bot, ship) {
   const faction = bot.faction;
   // Anti-blocage : une option offensive trop longue est abandonnée et sa cible bannie (un seul emplacement).
   if (
-    (bot.mode === CAPTURE || bot.mode === ASSAULT || bot.mode === HUNT) &&
+    (bot.mode === CAPTURE || bot.mode === ASSAULT || bot.mode === HUNT || bot.mode === DEFEND) &&
     bot.modeTime > P.giveUpTime
   ) {
     bot.banMode = bot.mode;
@@ -140,6 +191,19 @@ export function decide(world, bot, ship) {
   const wantRearm =
     factions[faction].hasMissiles &&
     (ship.missiles < P.rearmBelow || (bot.mode === REARM && ship.missiles < MISSILE_STOCK_MAX));
+  // Repli : PV bas et en danger (touché, ennemi proche, ou déjà en route vers l'abri : on ne renonce pas en
+  // vol). Une fois posé, on reste à l'abri tant que le bouclier se recharge (les PV, eux, ne reviennent pas :
+  // sans bouclier, le repli ne dure que le temps de la menace).
+  const recovering =
+    bot.mode === RETREAT && factions[faction].hasShield && ship.shield < SHIELD_MAX;
+  const fleeing = bot.mode === RETREAT && ship.landedOn !== bot.target;
+  const inDanger =
+    health < P.lowHealth &&
+    (bot.underFire || fleeing || enemyNearShip(ships, ship, P.retreatThreat));
+  const severity = Math.max(
+    1 - Math.min(health, P.lowHealth) / P.lowHealth,
+    recovering ? P.retreatHold : 0,
+  );
   let idleTarget = -1;
   let idleGap = Infinity;
   for (let i = 0; i < planets.length; i++) {
@@ -148,6 +212,19 @@ export function decide(world, bot, ship) {
       if (wantRearm && hasMissileFactory(p)) {
         const missing = (MISSILE_STOCK_MAX - ship.missiles) / MISSILE_STOCK_MAX;
         offer(world, bot, REARM, i, P.rearm * missing * proximity(ship, p));
+      }
+      const urgency = defendUrgency(world, p, i, faction);
+      if (urgency > 0) {
+        const score = P.defend * urgency * (1 + P.slotValue * builtSlots(p)) * healthFactor;
+        offer(world, bot, DEFEND, i, score * proximity(ship, p), urgency >= P.defendUrgent);
+      }
+      if (
+        (inDanger || recovering) &&
+        !enemyWithin(ships, p, faction, P.retreatSafe, true) &&
+        !isRecentlyHit(world, p)
+      ) {
+        const score = P.retreat * severity * (1 + P.slotValue * builtSlots(p));
+        offer(world, bot, RETREAT, i, score * proximity(ship, p), true);
       }
       const gap = Math.hypot(ship.pos.x - p.pos.x, ship.pos.y - p.pos.y) - p.radius;
       // Reste sur la planète d'attente actuelle tant qu'elle est possédée : pas d'aller-retour entre deux bases.
