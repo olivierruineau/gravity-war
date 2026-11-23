@@ -73,26 +73,52 @@ function timeToKill(world, maxSeconds) {
 }
 
 describe('tourelle : un vaisseau posé près d’une planète défendue', () => {
-  it('avec la tourelle de base seule, il faut au moins 5 s pour le tuer (en pratique ≥ 16 s)', () => {
+  it('avec la tourelle de base seule, il faut au moins 5 s pour le tuer (en pratique ≥ 9 s)', () => {
     const t = timeToKill(landedIntruder({ built: 1 }), 120);
     expect(t).not.toBeNull();
-    // ADR 0005 §4 : « 5 s au minimum pour 100 PV ». Borne réelle : 100 PV = 17 balles de 6, espacées d'au
-    // moins `cooldown` (1 s) → au moins 16 intervalles, soit ≥ 16 s même si aucun tir ne manque.
+    // ADR 0005 §4 : « 5 s au minimum » (écrit pour 100 PV ; vérifié ici pour SHIP_MAX_HP actuel). Borne réelle :
+    // SHIP_MAX_HP / damage balles (10 avec 60 PV et 6 de dégâts), espacées d'au moins `cooldown` (1 s) → au
+    // moins 9 intervalles, soit ≥ 9 s même si aucun tir ne manque. Mesure (seeds 1 à 10) : 9 à 13 s,
+    // les tirs ratés (dispersion ±0,1 rad) ajoutant des cycles de 1 s.
     expect(t).toBeGreaterThanOrEqual(5);
     const hitsNeeded = Math.ceil(SHIP_MAX_HP / TURRET.damage);
     expect(t).toBeGreaterThanOrEqual((hitsNeeded - 1) * TURRET.cooldown - 1e-9);
   });
 
-  it('avec les deux tourelles, il meurt plus vite qu’avec la seule tourelle de base, mais pas en moins de 4,5 s', () => {
-    // Cadence maximale théorique, tous les coups au but : base 6 à t = 0, 1, 2… et lourde 8 à t = 0, 0,6, 1,2…
-    // → 100 PV atteints à t = 4,8 s. On laisse 0,3 s de marge pour l'arrondi de pas (cooldown vu en pas de 1/60).
-    // Mesure : 5,017 s pour la seed 1 (quelques tirs de la tourelle de base passent à côté).
+  it('avec les deux tourelles, il meurt plus vite qu’avec la seule tourelle de base, mais pas plus vite que la cadence théorique', () => {
+    // Cadence maximale théorique, tous les coups au but : chaque tourelle tire à t = 0, cooldown, 2·cooldown…
+    // (base : 6 par 1 s ; lourde : 8 par 0,6 s). On accumule les dégâts dans l'ordre chronologique jusqu'à
+    // SHIP_MAX_HP : 3,0 s avec 60 PV (cumul : 14 à t=0, 22 à 0,6, 28 à 1,0, 36 à 1,2, 44 à 1,8, 50 à 2,0,
+    // 58 à 2,4, ≥ 64 à 3,0).
+    // Tolérance de 0,3 s sur la borne basse : le cooldown est décompté en pas de 1/60 (arrondi < 1 pas par tir).
+    // Mesure : 3,017 s pour les seeds 1 à 10 (la lourde, plus précise, fait l'essentiel des dégâts).
+    const shots = [];
+    for (const b of [
+      BUILDINGS.find((b) => b.id === 'turret'),
+      BUILDINGS.find((b) => b.id === 'heavyTurret'),
+    ].map((b) => b.turret)) {
+      for (let k = 0; k * b.cooldown <= 60; k++)
+        shots.push({ t: k * b.cooldown, damage: b.damage });
+    }
+    shots.sort((x, y) => x.t - y.t);
+    let total = 0;
+    let theoretical = null;
+    for (const shot of shots) {
+      total += shot.damage;
+      if (total >= SHIP_MAX_HP) {
+        theoretical = shot.t;
+        break;
+      }
+    }
+    expect(theoretical).not.toBeNull();
+    const MARGIN = 0.3;
+
     const baseOnly = timeToKill(landedIntruder({ built: 1 }), 120);
     for (let seed = 1; seed <= 10; seed++) {
       const both = timeToKill(landedIntruder({ built: 4, seed }), 120);
       expect(both).not.toBeNull();
       expect(both).toBeLessThan(baseOnly);
-      expect(both).toBeGreaterThanOrEqual(4.5);
+      expect(both).toBeGreaterThanOrEqual(theoretical - MARGIN);
     }
   });
 

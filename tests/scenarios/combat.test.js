@@ -28,7 +28,7 @@ const BASE_1 = 1;
 
 const BULLET_STEP = BULLET_SPEED * FIXED_DT; // px parcourus par pas par une balle (vaisseau immobile)
 const COOLDOWN_STEPS = Math.ceil(FIRE_COOLDOWN / FIXED_DT);
-const HITS_TO_KILL = Math.ceil(SHIP_MAX_HP / BULLET_DAMAGE); // 9
+const HITS_TO_KILL = Math.ceil(SHIP_MAX_HP / BULLET_DAMAGE); // 5 avec 60 PV et 12 de dégâts
 const R_HIT = SHIP_COLLISION_RADIUS; // une balle touche si elle passe à moins de ce rayon du centre
 
 function freeMap({ dist = DIST, extraPlanets = [] } = {}) {
@@ -112,12 +112,14 @@ describe('tir sur un vaisseau immobile en vol libre', () => {
     const log = fireUntilDead(world);
     const hits = hitsIn(log);
 
-    expect(HITS_TO_KILL).toBe(9);
+    // Cohérence du nombre de coups attendu : HITS_TO_KILL balles tuent, une de moins ne tue pas.
+    expect(HITS_TO_KILL * BULLET_DAMAGE).toBeGreaterThanOrEqual(SHIP_MAX_HP);
+    expect((HITS_TO_KILL - 1) * BULLET_DAMAGE).toBeLessThan(SHIP_MAX_HP);
     expect(hits).toHaveLength(HITS_TO_KILL);
     hits.forEach((h, k) => {
       expect(h.a).toBe(1);
       expect(h.b).toBe(BULLET_DAMAGE);
-      // Le coup est compté après le SHIP_HIT : les PV du pas valent 100 − 12·(k+1), plancher à 0 au dernier.
+      // Le coup est compté après le SHIP_HIT : les PV du pas valent SHIP_MAX_HP − BULLET_DAMAGE·(k+1), plancher à 0 au dernier.
       expect(h.hp).toBe(Math.max(0, SHIP_MAX_HP - BULLET_DAMAGE * (k + 1)));
       // Le point d'impact est celui de la balle : dans le disque de collision du vaisseau cible.
       expect(Math.hypot(h.x - (X0 + DIST), h.y - Y0)).toBeLessThan(R_HIT);
@@ -181,7 +183,7 @@ describe('tir sur un vaisseau immobile en vol libre', () => {
     expect(world.ships[0].alive).toBe(true);
   });
 
-  it('8 balles ne suffisent pas : le vaisseau survit avec 100 − 8·12 = 4 PV', () => {
+  it('une balle de moins que HITS_TO_KILL ne suffit pas : le vaisseau survit avec SHIP_MAX_HP − (HITS_TO_KILL − 1)·BULLET_DAMAGE PV', () => {
     const world = makeWorld();
     const log = [];
     while (hitsIn(log).length < HITS_TO_KILL - 1) log.push(...fireUntilDeadStep(world));

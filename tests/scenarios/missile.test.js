@@ -332,18 +332,25 @@ describe('missile : létalité', () => {
     return { world, hits, launches };
   }
 
-  it('2 missiles ne tuent pas un vaisseau neuf (80 < 100 PV)', () => {
-    const { world, hits, launches } = volley(2);
-    expect(launches).toBe(2);
-    expect(hits).toBe(2);
-    expect(MISSILE_DAMAGE * 2).toBeLessThan(SHIP_MAX_HP);
+  // Nombre de missiles qui tuent un vaisseau neuf, dérivé des constantes d'équilibrage (2 avec 60 PV et 40 de dégâts).
+  const MISSILES_TO_KILL = Math.ceil(SHIP_MAX_HP / MISSILE_DAMAGE);
+
+  it('MISSILES_TO_KILL − 1 missiles ne tuent pas un vaisseau neuf (dégâts cumulés < SHIP_MAX_HP)', () => {
+    const survivors = MISSILES_TO_KILL - 1;
+    expect(survivors).toBeGreaterThan(0); // garde-fou : si un seul missile tuait, ce test n'aurait plus de sens
+    const { world, hits, launches } = volley(survivors);
+    expect(launches).toBe(survivors);
+    expect(hits).toBe(survivors);
+    expect(MISSILE_DAMAGE * survivors).toBeLessThan(SHIP_MAX_HP);
     expect(world.ships[1].alive).toBe(true);
-    expect(world.ships[1].hp).toBe(SHIP_MAX_HP - 2 * MISSILE_DAMAGE);
+    expect(world.ships[1].hp).toBe(SHIP_MAX_HP - survivors * MISSILE_DAMAGE);
   });
 
-  it('3 missiles tuent un vaisseau neuf (120 ≥ 100 PV), avec un EXPLOSION', () => {
+  it('MISSILES_TO_KILL missiles tuent un vaisseau neuf (dégâts cumulés ≥ SHIP_MAX_HP), avec un EXPLOSION', () => {
+    expect(MISSILE_DAMAGE * MISSILES_TO_KILL).toBeGreaterThanOrEqual(SHIP_MAX_HP);
+    expect(MISSILES_TO_KILL).toBeLessThanOrEqual(MISSILE_STOCK_MAX); // le stock permet la salve
     const world = makeWorld({ target: { x: SX + 250, y: SY } });
-    world.ships[0].missiles = 3;
+    world.ships[0].missiles = MISSILES_TO_KILL;
     let explosions = 0;
     let hits = 0;
     for (let i = 0; i < 180; i++) {
@@ -351,13 +358,13 @@ describe('missile : létalité', () => {
       explosions += eventsOf(world, EVT.EXPLOSION).length;
       hits += eventsOf(world, EVT.SHIP_HIT).length;
     }
-    expect(hits).toBe(3);
+    expect(hits).toBe(MISSILES_TO_KILL);
     expect(explosions).toBe(1);
     expect(world.ships[1].alive).toBe(false);
     expect(world.ships[1].hp).toBe(0);
   });
 
-  it('un missile (40) + une balle (BULLET_DAMAGE) s’additionnent sur les PV', () => {
+  it('un missile (MISSILE_DAMAGE) + une balle (BULLET_DAMAGE) s’additionnent sur les PV', () => {
     const world = makeWorld({ target: { x: SX + 250, y: SY } });
     world.ships[0].intent.fire = true;
     stepFire(world, true);

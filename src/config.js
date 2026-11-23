@@ -17,7 +17,7 @@ export const EVENT_CAPACITY = 256;
 /** Vaisseau : rotation à vitesse angulaire constante, poussée illimitée (pas de carburant), aucun frein. */
 export const SHIP_ROTATION_SPEED = 3.2; // rad/s
 export const SHIP_THRUST = 140; // px/s², dans l'axe du nez
-export const SHIP_MAX_HP = 100;
+export const SHIP_MAX_HP = 60; // ~5 balles de 12 pour tuer un vaisseau sans bouclier ; le bouclier (50) pèse presque autant
 export const SHIP_SIZE = 8; // rayon du triangle dessiné, en px
 
 /** Tir principal : munitions illimitées, balles soumises à la gravité (trajectoires courbées près des planètes). */

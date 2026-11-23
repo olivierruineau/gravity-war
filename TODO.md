@@ -74,7 +74,7 @@ Spécification : [docs/SPEC.md](docs/SPEC.md). Architecture : [docs/ARCHITECTURE
 
 ### Ajustements demandés après playtest (phases 3-4)
 
-- [ ] **4.12** Équilibrage PV / bouclier / dégâts : les vaisseaux ont trop de PV par rapport au bouclier, il faut trop de tirs directs pour les tuer (9 balles aujourd'hui). Revoir `SHIP_MAX_HP`, `BULLET_DAMAGE`, `SHIELD_MAX`, dégâts de missile et de tourelle de façon cohérente (ex. ~4-5 balles pour tuer sans bouclier, le bouclier compte réellement) ; mettre à jour les tests qui figent les valeurs (tests de seuils, « 9 balles ») ; à refaire/valider en 7.2 (code, test-c)
+- [x] **4.12** Équilibrage PV / bouclier / dégâts : les vaisseaux ont trop de PV par rapport au bouclier, il faut trop de tirs directs pour les tuer (9 balles aujourd'hui). Revoir `SHIP_MAX_HP`, `BULLET_DAMAGE`, `SHIELD_MAX`, dégâts de missile et de tourelle de façon cohérente (ex. ~4-5 balles pour tuer sans bouclier, le bouclier compte réellement) ; mettre à jour les tests qui figent les valeurs (tests de seuils, « 9 balles ») ; à refaire/valider en 7.2 (code, test-c)
 - [ ] **4.13** Dégâts aux planètes habitées : tirer sur une planète possédée réduit d'abord ses défenses (tourelles, déjà fait) PUIS ses bâtiments (PV par bâtiment, un bâtiment détruit retombe en « à reconstruire » et fait perdre sa capacité : usine, générateur) ; décider dans un ADR (0007 ou amendement 0005) : PV des bâtiments, ordre des dégâts, effet sur la reconstruction et la capture, feedback visuel (arch, code, test-c) ; à prendre en compte dans l'IA (5.x)
 
 ## Phase 5 — IA des bots

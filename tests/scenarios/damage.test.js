@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { FIXED_DT, RESPAWN_DELAY, SHIP_COLLISION_RADIUS, SHIP_MAX_HP } from '../../src/config.js';
+import {
+  FIXED_DT,
+  LANDING_MAX_RADIAL_SPEED,
+  RESPAWN_DELAY,
+  SHIP_COLLISION_RADIUS,
+  SHIP_MAX_HP,
+} from '../../src/config.js';
 import { clearEvents, EVT } from '../../src/core/events.js';
 import { wrapAngle } from '../../src/core/math.js';
 import { int } from '../../src/core/rng.js';
@@ -7,10 +13,12 @@ import { createWorld, step } from '../../src/core/world.js';
 
 // Dégâts d'impact, PV et mort (ADR 0003 §4) sur la même mini-carte que landing.test.js : une planète
 // r = 60, g0 = 70, au centre d'une carte 4000×4000.
-// Le vaisseau est posé à la main à 0,5 px au-dessus du seuil de contact r + 6 : à 90–150 px/s il
-// franchit le seuil en un seul pas (1,5 à 2,5 px par pas). La vitesse d'approche au contact vaut alors
+// Le vaisseau est posé à la main à 0,5 px au-dessus du seuil de contact r + 6 : aux vitesses de lancer
+// utilisées ici (≥ ~60 px/s) il franchit le seuil en un seul pas (1,5 à 2,5 px par pas). La vitesse d'approche au contact vaut alors
 // la vitesse de lancer + g·dt ≈ +1 px/s (g ≈ 57 px/s² à la surface, dt = 1/60). Les dégâts valent
-// (approche − 45) pour un lancer radial, d'où des marges de ~1,2 px/s sur les seuils ci-dessous.
+// (approche − LANDING_MAX_RADIAL_SPEED) pour un lancer radial, d'où des marges de ~1,2 px/s sur les seuils
+// ci-dessous. Les vitesses de lancer sont DÉRIVÉES de SHIP_MAX_HP et du seuil d'atterrissage (plus aucune
+// vitesse en dur) : un rééquilibrage des PV déplace les vitesses, pas l'intention des tests.
 // IMPORTANT : la planète de cette mini-carte n'a pas d'`owner` (neutre). Aucune planète n'appartient à la
 // faction du vaisseau 0, donc un vaisseau mort ici ne réapparaît JAMAIS (mort définitive) : c'est ce qui
 // garde valides les tests « vaisseau mort figé » ci-dessous. Les scénarios de réapparition (planète
@@ -22,8 +30,18 @@ const RADIUS = 60;
 const CONTACT = RADIUS + SHIP_COLLISION_RADIUS;
 const UP = -Math.PI / 2; // normale sortante « au-dessus » de la planète
 const DEG = Math.PI / 180;
-const SEUIL_RADIAL = 45; // LANDING_MAX_RADIAL_SPEED
+const SEUIL_RADIAL = LANDING_MAX_RADIAL_SPEED;
 const GRAVITY_STEP = 1.2; // borne haute de g·dt pour un pas au contact (px/s)
+
+// Dégâts visés (hors g·dt) et vitesses de lancer radiales correspondantes. Fractions choisies pour garder la
+// logique « 2 impacts moyens survivent, 3 tuent » et « 2 impacts forts : survit au 1er, mort au 2e ».
+const DAMAGE_MODERATE = 0.4 * SHIP_MAX_HP; // 2 × 0,4 = 0,8 < 1 (survie) ; 3 × 0,4 = 1,2 ≥ 1 (mort)
+const SPEED_MODERATE = SEUIL_RADIAL + DAMAGE_MODERATE;
+const DAMAGE_HEAVY = 0.6 * SHIP_MAX_HP; // < 1 PV max : survit seul ; 2 × 0,6 = 1,2 ≥ 1 : mort
+const SPEED_HEAVY = SEUIL_RADIAL + DAMAGE_HEAVY;
+const NEAR_DEATH_MARGIN = 5; // PV restants visés juste sous le seuil de mort (> g·dt = 1,2 : jamais mort)
+const SPEED_NEAR_DEATH = SEUIL_RADIAL + SHIP_MAX_HP - NEAR_DEATH_MARGIN;
+const SPEED_LETHAL = SEUIL_RADIAL + SHIP_MAX_HP + 5; // dégâts ≥ SHIP_MAX_HP + 5 : mort certaine
 
 function makeWorld(seed = 1) {
   return createWorld(
@@ -91,62 +109,65 @@ function hit(world, radial) {
 }
 
 describe('dégâts : un impact retire des PV', () => {
-  it('impact radial à 90 px/s depuis un vaisseau neuf : hp ≈ 100 − 45, vivant, un IMPACT, pas d’EXPLOSION', () => {
+  it('impact radial modéré depuis un vaisseau neuf : hp ≈ SHIP_MAX_HP − dégâts, vivant, un IMPACT, pas d’EXPLOSION', () => {
     const world = makeWorld();
     const ship = world.ships[0];
     expect(ship.hp).toBe(SHIP_MAX_HP);
-    const events = hit(world, 90);
+    const events = hit(world, SPEED_MODERATE);
     const impacts = events.filter((e) => e.type === EVT.IMPACT);
     expect(impacts).toHaveLength(1);
     expect(events.filter((e) => e.type === EVT.EXPLOSION)).toHaveLength(0);
-    // Dégâts = approche − 45 avec approche = 90 + g·dt (≤ 1,2) : entre 45 et 46,2.
-    expect(impacts[0].b).toBeGreaterThanOrEqual(90 - SEUIL_RADIAL);
-    expect(impacts[0].b).toBeLessThanOrEqual(90 - SEUIL_RADIAL + GRAVITY_STEP);
-    // Les PV retirés sont exactement ceux annoncés par l'événement (100 − b) ; tolérance = arrondi flottant.
+    // Dégâts = approche − seuil avec approche = vitesse de lancer + g·dt (≤ 1,2) : DAMAGE_MODERATE … + 1,2.
+    expect(impacts[0].b).toBeGreaterThanOrEqual(DAMAGE_MODERATE);
+    expect(impacts[0].b).toBeLessThanOrEqual(DAMAGE_MODERATE + GRAVITY_STEP);
+    // Les PV retirés sont exactement ceux annoncés par l'événement (MAX − b) ; tolérance = arrondi flottant.
     expect(ship.hp).toBeCloseTo(SHIP_MAX_HP - impacts[0].b, 9);
-    expect(ship.hp).toBeGreaterThan(53);
-    expect(ship.hp).toBeLessThan(56);
+    expect(ship.hp).toBeGreaterThanOrEqual(SHIP_MAX_HP - DAMAGE_MODERATE - GRAVITY_STEP);
+    expect(ship.hp).toBeLessThanOrEqual(SHIP_MAX_HP - DAMAGE_MODERATE);
     expect(ship.alive).toBe(true);
     // Vivant : le rebond garanti s'applique (vitesse sortante).
     expect(outward(ship)).toBeGreaterThan(0);
   });
 
-  it('deux impacts de 90 px/s : les dégâts s’additionnent (≈ 92), le vaisseau survit avec ~8 PV', () => {
-    // Attention : 2 × (90 − 45) = 90 < 100 PV. Deux impacts à 90 ne suffisent pas à tuer.
+  it('deux impacts modérés : les dégâts s’additionnent, le vaisseau survit avec quelques PV', () => {
+    // Attention : 2 × DAMAGE_MODERATE = 0,8 × SHIP_MAX_HP < SHIP_MAX_HP. Deux impacts modérés ne suffisent pas à tuer.
     const world = makeWorld();
     const ship = world.ships[0];
-    const first = hit(world, 90).find((e) => e.type === EVT.IMPACT);
-    const second = hit(world, 90).find((e) => e.type === EVT.IMPACT);
+    const first = hit(world, SPEED_MODERATE).find((e) => e.type === EVT.IMPACT);
+    const second = hit(world, SPEED_MODERATE).find((e) => e.type === EVT.IMPACT);
     expect(ship.alive).toBe(true);
     expect(ship.hp).toBeCloseTo(SHIP_MAX_HP - first.b - second.b, 9); // arrondi flottant
-    expect(ship.hp).toBeGreaterThan(5);
-    expect(ship.hp).toBeLessThan(11); // 100 − 2 × (45 … 46,2) = 7,6 … 10
+    // MAX − 2 × (DAMAGE_MODERATE … + 1,2) : la marge de 1,2 par impact vient de g·dt.
+    expect(ship.hp).toBeGreaterThanOrEqual(SHIP_MAX_HP - 2 * (DAMAGE_MODERATE + GRAVITY_STEP));
+    expect(ship.hp).toBeLessThanOrEqual(SHIP_MAX_HP - 2 * DAMAGE_MODERATE);
+    expect(ship.hp).toBeGreaterThan(0);
   });
 
-  it('trois impacts de 90 px/s : mort au troisième, avec une seule EXPLOSION', () => {
+  it('trois impacts modérés : mort au troisième, avec une seule EXPLOSION', () => {
     const world = makeWorld();
     const ship = world.ships[0];
-    hit(world, 90);
-    hit(world, 90);
+    hit(world, SPEED_MODERATE);
+    hit(world, SPEED_MODERATE);
     expect(ship.alive).toBe(true);
-    const events = hit(world, 90);
+    const events = hit(world, SPEED_MODERATE);
     expect(events.filter((e) => e.type === EVT.IMPACT)).toHaveLength(1);
     expect(events.filter((e) => e.type === EVT.EXPLOSION)).toHaveLength(1);
     expect(ship.alive).toBe(false);
     expect(ship.hp).toBe(0);
   });
 
-  it('deux impacts de 100 px/s (relancés à la main) : vivant après le premier, mort au second, une seule EXPLOSION', () => {
-    // 2 × (100 − 45) = 110 ≥ 100 (marge ≥ 10 sur le seuil de mort).
+  it('deux impacts forts (relancés à la main) : vivant après le premier, mort au second, une seule EXPLOSION', () => {
+    // 2 × DAMAGE_HEAVY = 1,2 × SHIP_MAX_HP ≥ SHIP_MAX_HP (marge 0,2 × SHIP_MAX_HP sur le seuil de mort),
+    // et DAMAGE_HEAVY + 1,2 < SHIP_MAX_HP : le premier ne tue pas.
     const world = makeWorld();
     const ship = world.ships[0];
     let explosions = 0;
-    const firstEvents = hit(world, 100);
+    const firstEvents = hit(world, SPEED_HEAVY);
     explosions += firstEvents.filter((e) => e.type === EVT.EXPLOSION).length;
     expect(ship.alive).toBe(true);
-    expect(ship.hp).toBeGreaterThan(40);
-    expect(ship.hp).toBeLessThan(46);
-    const secondEvents = hit(world, 100);
+    expect(ship.hp).toBeGreaterThanOrEqual(SHIP_MAX_HP - DAMAGE_HEAVY - GRAVITY_STEP);
+    expect(ship.hp).toBeLessThanOrEqual(SHIP_MAX_HP - DAMAGE_HEAVY);
+    const secondEvents = hit(world, SPEED_HEAVY);
     explosions += secondEvents.filter((e) => e.type === EVT.EXPLOSION).length;
     expect(secondEvents.filter((e) => e.type === EVT.IMPACT)).toHaveLength(1);
     expect(ship.alive).toBe(false);
@@ -158,12 +179,12 @@ describe('dégâts : un impact retire des PV', () => {
     expect(world.events.count).toBe(0);
   });
 
-  it('impact naturel : le rebond d’un impact à 100 px/s retombe à ~30 px/s (≤ 45) : sans dégât, pas de seconde sanction', () => {
+  it('impact naturel : le rebond d’un impact fort retombe à ~30 px/s (≤ seuil d’atterrissage) : sans dégât, pas de seconde sanction', () => {
     const world = makeWorld();
     const ship = world.ships[0];
-    const first = hit(world, 100).find((e) => e.type === EVT.IMPACT);
+    const first = hit(world, SPEED_HEAVY).find((e) => e.type === EVT.IMPACT);
     const hpAfterFirst = ship.hp;
-    // Rebond de 0,3 × ~101 = 30,3 px/s ; retour au sol à ~30 px/s radial (< 45) : nez sur la normale
+    // Rebond de max(0,3 × approche, IMPACT_MIN_BOUNCE_SPEED = 30) ; retour au sol à ~30 px/s radial (< seuil) : nez sur la normale
     // (non touché) → posé, aucune perte de PV supplémentaire.
     let steps = 0;
     while (ship.landedOn < 0 && steps < 500) {
@@ -171,33 +192,33 @@ describe('dégâts : un impact retire des PV', () => {
       step(world, FIXED_DT);
       steps++;
     }
-    expect(first.b).toBeGreaterThan(54);
+    expect(first.b).toBeGreaterThanOrEqual(DAMAGE_HEAVY);
     expect(ship.landedOn).toBe(0);
     expect(ship.hp).toBe(hpAfterFirst);
     expect(ship.alive).toBe(true);
   });
 });
 
-describe('dégâts : seuil de mort (100 PV ↔ ≈ 145 px/s d’approche)', () => {
-  it('140 px/s : vivant avec très peu de PV (0 < hp < 10)', () => {
-    // Approche au contact = 140 … 141,2 → dégâts 95 … 96,2 → hp 3,8 … 5.
+describe(`dégâts : seuil de mort (${SHIP_MAX_HP} PV ↔ ≈ ${SHIP_MAX_HP + SEUIL_RADIAL} px/s d’approche)`, () => {
+  it('juste sous le seuil de mort : vivant avec très peu de PV (0 < hp < 10)', () => {
+    // Approche au contact = SPEED_NEAR_DEATH … + 1,2 → dégâts MAX − 5 … MAX − 3,8 → hp 3,8 … 5.
     const world = makeWorld();
     const ship = world.ships[0];
-    const events = hit(world, 140);
+    const events = hit(world, SPEED_NEAR_DEATH);
     expect(events.filter((e) => e.type === EVT.EXPLOSION)).toHaveLength(0);
     expect(ship.alive).toBe(true);
     expect(ship.hp).toBeGreaterThan(0);
     expect(ship.hp).toBeLessThan(10);
   });
 
-  it('150 px/s : mort (hp = 0, alive = false, landedOn = −1), IMPACT puis EXPLOSION dans cet ordre', () => {
+  it('bien au-dessus du seuil de mort : mort (hp = 0, alive = false, landedOn = −1), IMPACT puis EXPLOSION dans cet ordre', () => {
     const world = makeWorld();
     const ship = world.ships[0];
-    const events = hit(world, 150);
+    const events = hit(world, SPEED_LETHAL);
     // Un seul de chaque, IMPACT avant EXPLOSION (voir landing.js).
     expect(events.map((e) => e.type)).toEqual([EVT.IMPACT, EVT.EXPLOSION]);
     const [impact, explosion] = events;
-    expect(impact.b).toBeGreaterThanOrEqual(150 - SEUIL_RADIAL);
+    expect(impact.b).toBeGreaterThanOrEqual(SPEED_LETHAL - SEUIL_RADIAL);
     expect(ship.alive).toBe(false);
     expect(ship.hp).toBe(0); // clampé à 0 (jamais négatif), affectation directe → égalité exacte
     expect(ship.landedOn).toBe(-1);
@@ -216,11 +237,12 @@ describe('dégâts : seuil de mort (100 PV ↔ ≈ 145 px/s d’approche)', () =
     expect(distance(ship)).toBeCloseTo(CONTACT, 9); // arrondi flottant
   });
 
-  it('un impact mortel est aussi mortel à PV réduits : 90 px/s tue un vaisseau à 40 PV (dégâts ≈ 46 ≥ 40)', () => {
+  it('un impact modéré (non mortel à PV pleins) devient mortel à PV réduits (hp = 0,25 × SHIP_MAX_HP < dégâts)', () => {
     const world = makeWorld();
     const ship = world.ships[0];
-    ship.hp = 40;
-    const events = hit(world, 90);
+    ship.hp = 0.25 * SHIP_MAX_HP;
+    expect(ship.hp).toBeLessThan(DAMAGE_MODERATE);
+    const events = hit(world, SPEED_MODERATE);
     expect(events.map((e) => e.type)).toEqual([EVT.IMPACT, EVT.EXPLOSION]);
     expect(ship.alive).toBe(false);
     expect(ship.hp).toBe(0);
@@ -229,10 +251,10 @@ describe('dégâts : seuil de mort (100 PV ↔ ≈ 145 px/s d’approche)', () =
   it('dégâts exactement égaux aux PV restants : mort (hp ≤ 0)', () => {
     // Pose les PV juste sous les dégâts d'un impact observé, puis rejoue : hp = dégâts → mort.
     const probe = makeWorld();
-    const damage = hit(probe, 90).find((e) => e.type === EVT.IMPACT).b;
+    const damage = hit(probe, SPEED_MODERATE).find((e) => e.type === EVT.IMPACT).b;
     const world = makeWorld();
     world.ships[0].hp = damage; // même scénario, mêmes dégâts (calcul déterministe, bit à bit)
-    hit(world, 90);
+    hit(world, SPEED_MODERATE);
     expect(world.ships[0].alive).toBe(false);
     expect(world.ships[0].hp).toBe(0);
   });
@@ -288,7 +310,7 @@ describe('mort : vaisseau figé et muet', () => {
   function deadWorld() {
     const world = makeWorld();
     const ship = world.ships[0];
-    hit(world, 150);
+    hit(world, SPEED_LETHAL);
     expect(ship.alive).toBe(false);
     return { world, ship };
   }
@@ -340,7 +362,7 @@ describe('mort : vaisseau figé et muet', () => {
       1,
       { eventCapacity: 64 },
     );
-    const dead = launch(world, { radial: 150 });
+    const dead = launch(world, { radial: SPEED_LETHAL });
     const other = world.ships[1];
     other.vel.x = 10; // loin de toute planète (gravité nulle hors de portée 5·r = 300 px)
     other.vel.y = 0;
@@ -378,7 +400,7 @@ describe('invariants des PV sur un vol chaotique', () => {
   }
 
   it.each([1, 2, 3, 7, 42])(
-    'seed %i : hp ∈ [0, 100], jamais en hausse, alive ⇔ hp > 0, une seule EXPLOSION au plus',
+    'seed %i : hp ∈ [0, SHIP_MAX_HP], jamais en hausse, alive ⇔ hp > 0, une seule EXPLOSION au plus',
     (seed) => {
       let previous = SHIP_MAX_HP;
       let explosions = 0;
@@ -396,10 +418,10 @@ describe('invariants des PV sur un vol chaotique', () => {
 
   it('même script, vaisseau mort en cours de route : JSON identique à l’octet près', () => {
     // Vol vers la planète à haute vitesse puis 600 pas de commandes aléatoires : la mort a lieu au
-    // premier impact (≥ 150 px/s), le reste du script tourne sur un cadavre.
+    // premier impact (≥ SPEED_LETHAL), le reste du script tourne sur un cadavre.
     function run(seed) {
       const world = makeWorld(seed);
-      const ship = launch(world, { radial: 150 });
+      const ship = launch(world, { radial: SPEED_LETHAL });
       for (let i = 0; i < 600; i++) {
         ship.intent.rotate = int(world.rng, -1, 2);
         ship.intent.thrust = int(world.rng, 0, 2) === 1;

@@ -29,6 +29,9 @@ const COOLDOWN_STEPS = Math.ceil(FIRE_COOLDOWN / FIXED_DT); // 11 pas entre deux
 const DELAY_STEPS = Math.round(SHIELD_RECHARGE_DELAY / FIXED_DT); // 240
 const RECHARGE_STEPS = Math.round(SHIELD_MAX / SHIELD_RECHARGE_RATE / FIXED_DT); // 300
 const FULL_STEPS = DELAY_STEPS + RECHARGE_STEPS; // 540 = 9 s
+// Nombres de balles pour tuer, dérivés de l'équilibrage (10 et 5 avec 60 PV, 50 de bouclier, 12 de dégâts).
+const SHIELDED_HITS_TO_KILL = Math.ceil((SHIELD_MAX + SHIP_MAX_HP) / BULLET_DAMAGE);
+const BARE_HITS_TO_KILL = Math.ceil(SHIP_MAX_HP / BULLET_DAMAGE);
 const HIT_X = 0;
 const HIT_Y = 0;
 
@@ -101,21 +104,26 @@ describe('balles ennemies contre un bouclier plein', () => {
     world.ships[0].shield = SHIELD_MAX;
     const hits = fireUntilDead(world);
 
-    // 50 de bouclier / 12 par balle : 4 balles entièrement absorbées (50 → 38 → 26 → 14 → 2), PV intacts.
-    for (let n = 0; n < 4; n++) {
+    // SHIELD_MAX / BULLET_DAMAGE balles entièrement absorbées (4 avec 50 et 12 : 50 → 38 → 26 → 14 → 2), PV intacts.
+    const absorbed = Math.floor(SHIELD_MAX / BULLET_DAMAGE);
+    // La balle suivante déborde : il doit rester du bouclier non entier pour que le scénario ait un débordement.
+    const overflow = BULLET_DAMAGE * (absorbed + 1) - SHIELD_MAX;
+    expect(overflow).toBeGreaterThan(0);
+    expect(overflow).toBeLessThan(BULLET_DAMAGE);
+    for (let n = 0; n < absorbed; n++) {
       expect(hits[n].damage).toBe(BULLET_DAMAGE);
       expect(hits[n].shield).toBe(SHIELD_MAX - BULLET_DAMAGE * (n + 1));
       expect(hits[n].hp).toBe(SHIP_MAX_HP);
     }
-    // 5e balle : 2 absorbés, 10 de débordement → bouclier 0, PV 90.
-    expect(hits[4].shield).toBe(0);
-    expect(hits[4].hp).toBe(SHIP_MAX_HP - 10);
-    // Ensuite, les PV seuls : −12 par balle.
-    expect(hits[5].shield).toBe(0);
-    expect(hits[5].hp).toBe(SHIP_MAX_HP - 10 - BULLET_DAMAGE);
+    // Balle suivante : le reste du bouclier est absorbé, le débordement va aux PV → bouclier 0.
+    expect(hits[absorbed].shield).toBe(0);
+    expect(hits[absorbed].hp).toBe(SHIP_MAX_HP - overflow);
+    // Ensuite, les PV seuls : −BULLET_DAMAGE par balle.
+    expect(hits[absorbed + 1].shield).toBe(0);
+    expect(hits[absorbed + 1].hp).toBe(SHIP_MAX_HP - overflow - BULLET_DAMAGE);
   });
 
-  it('shield + hp décroît de 12 par balle tant que le vaisseau survit (conservation des points de vie totaux)', () => {
+  it('shield + hp décroît de BULLET_DAMAGE par balle tant que le vaisseau survit (conservation des points de vie totaux)', () => {
     const world = duelWorld();
     world.ships[0].shield = SHIELD_MAX;
     const hits = fireUntilDead(world);
@@ -125,26 +133,28 @@ describe('balles ennemies contre un bouclier plein', () => {
     });
   });
 
-  it('temps pour tuer : 100 PV + 50 de bouclier = 13 balles de 12 dégâts (le 13e coup tue, pas le 12e)', () => {
+  it('temps pour tuer : (SHIP_MAX_HP + SHIELD_MAX) / BULLET_DAMAGE balles (le dernier coup tue, pas l’avant-dernier)', () => {
     const world = duelWorld();
     world.ships[0].shield = SHIELD_MAX;
     const hits = fireUntilDead(world);
 
-    expect(hits).toHaveLength(13);
-    expect(hits.slice(0, 12).every((h) => h.alive)).toBe(true);
-    expect(hits[12].alive).toBe(false);
+    expect(hits).toHaveLength(SHIELDED_HITS_TO_KILL);
+    expect(hits.slice(0, -1).every((h) => h.alive)).toBe(true);
+    expect(hits[hits.length - 1].alive).toBe(false);
     expect(world.ships[0].alive).toBe(false);
-    // Le bouclier encaisse bien 4 balles de plus que sans lui (9 balles pour 100 PV, cf. test suivant).
-    expect(Math.ceil((SHIELD_MAX + SHIP_MAX_HP) / BULLET_DAMAGE)).toBe(13);
+    // Le bouclier fait encaisser des balles de plus que sans lui (cf. test suivant).
+    expect(SHIELDED_HITS_TO_KILL).toBeGreaterThan(BARE_HITS_TO_KILL);
     // Cadence : le décompte du cooldown est quantifié par le pas, donc l'écart entre deux impacts successifs
-    // vaut exactement COOLDOWN_STEPS pas (balles identiques, cible immobile) : 12 intervalles entre 13 impacts.
-    expect(hits[12].tick - hits[0].tick).toBe(12 * COOLDOWN_STEPS);
+    // vaut exactement COOLDOWN_STEPS pas (balles identiques, cible immobile) : N − 1 intervalles entre N impacts.
+    expect(hits[hits.length - 1].tick - hits[0].tick).toBe(
+      (SHIELDED_HITS_TO_KILL - 1) * COOLDOWN_STEPS,
+    );
   });
 
-  it('contrôle : sans bouclier (shield 0, pas de générateur) il faut 9 balles pour tuer 100 PV', () => {
+  it('contrôle : sans bouclier (shield 0, pas de générateur) il faut SHIP_MAX_HP / BULLET_DAMAGE balles (arrondi sup.)', () => {
     const world = duelWorld({ planets: [noGeneratorPlanet] });
     const hits = fireUntilDead(world);
-    expect(hits).toHaveLength(Math.ceil(SHIP_MAX_HP / BULLET_DAMAGE)); // 9
+    expect(hits).toHaveLength(BARE_HITS_TO_KILL);
     expect(world.ships[0].alive).toBe(false);
   });
 
@@ -160,7 +170,7 @@ describe('balles ennemies contre un bouclier plein', () => {
       if (explosions === 0) hitsBeforeExplosion += eventsOf(world, EVT.SHIP_HIT).length;
     }
     expect(explosions).toBe(1);
-    expect(hitsBeforeExplosion).toBe(12);
+    expect(hitsBeforeExplosion).toBe(SHIELDED_HITS_TO_KILL - 1);
   });
 });
 
@@ -318,34 +328,37 @@ describe('impact au sol et bouclier', () => {
   }
 
   it('un impact modéré est absorbé d’abord par le bouclier : IMPACT.b = dégâts, PV intacts', () => {
-    const { ship, damage, world } = crashWorld(LANDING_MAX_RADIAL_SPEED + 20);
-    // Dégâts = excès de vitesse d'approche (≈ 20) + l'accélération gravitationnelle du pas (≤ 70/60 ≈ 1,2).
-    expect(damage).toBeGreaterThanOrEqual(20);
-    expect(damage).toBeLessThan(21.5);
+    const moderate = 0.4 * SHIELD_MAX; // largement sous le bouclier plein
+    const { ship, damage, world } = crashWorld(LANDING_MAX_RADIAL_SPEED + moderate);
+    // Dégâts = excès de vitesse d'approche (moderate) + l'accélération gravitationnelle du pas (≤ 70/60 ≈ 1,2).
+    expect(damage).toBeGreaterThanOrEqual(moderate);
+    expect(damage).toBeLessThan(moderate + 1.5);
     expect(ship.hp).toBe(SHIP_MAX_HP);
     expect(ship.shield).toBeCloseTo(SHIELD_MAX - damage - 0, 9); // le même pas ne recharge pas (délai armé)
     expect(ship.alive).toBe(true);
     expect(eventsOf(world, EVT.EXPLOSION)).toHaveLength(0);
   });
 
-  it('un impact qui dépasse le bouclier déborde sur les PV : shield 0, hp = 100 − (dégâts − 50)', () => {
-    const { ship, damage } = crashWorld(LANDING_MAX_RADIAL_SPEED + 80);
+  it('un impact qui dépasse le bouclier déborde sur les PV : shield 0, hp = SHIP_MAX_HP − (dégâts − SHIELD_MAX)', () => {
+    // Dégâts visés = SHIELD_MAX + la moitié des PV : déborde sans tuer.
+    const { ship, damage } = crashWorld(LANDING_MAX_RADIAL_SPEED + SHIELD_MAX + SHIP_MAX_HP / 2);
     expect(damage).toBeGreaterThan(SHIELD_MAX);
     expect(ship.shield).toBe(0);
     expect(ship.hp).toBeCloseTo(SHIP_MAX_HP - (damage - SHIELD_MAX), 9);
     expect(ship.alive).toBe(true);
   });
 
-  it('un impact qui aurait tué sans bouclier (≥ 100 PV) est survécu avec un bouclier plein si dégâts < 150', () => {
-    const { ship, damage } = crashWorld(LANDING_MAX_RADIAL_SPEED + 120);
+  it('un impact qui aurait tué sans bouclier (≥ SHIP_MAX_HP) est survécu avec un bouclier plein si dégâts < SHIP_MAX_HP + SHIELD_MAX', () => {
+    // Dégâts visés = SHIP_MAX_HP + la moitié du bouclier : au-dessus des PV, sous PV + bouclier (marge ≥ g·dt).
+    const { ship, damage } = crashWorld(LANDING_MAX_RADIAL_SPEED + SHIP_MAX_HP + SHIELD_MAX / 2);
     expect(damage).toBeGreaterThan(SHIP_MAX_HP);
     expect(damage).toBeLessThan(SHIELD_MAX + SHIP_MAX_HP);
     expect(ship.alive).toBe(true);
     expect(ship.hp).toBeCloseTo(SHIP_MAX_HP + SHIELD_MAX - damage, 9);
   });
 
-  it('un impact ≥ 150 reste mortel malgré le bouclier plein', () => {
-    const { ship } = crashWorld(LANDING_MAX_RADIAL_SPEED + 160);
+  it('un impact ≥ SHIP_MAX_HP + SHIELD_MAX reste mortel malgré le bouclier plein', () => {
+    const { ship } = crashWorld(LANDING_MAX_RADIAL_SPEED + SHIP_MAX_HP + SHIELD_MAX + 10);
     expect(ship.alive).toBe(false);
     expect(ship.shield).toBe(0);
   });
@@ -401,7 +414,7 @@ describe('respawn et bouclier', () => {
     expect(ship.shield).toBe(0);
   });
 
-  it('le bouclier de respawn absorbe à nouveau : il faut encore 13 balles pour le tuer', () => {
+  it('le bouclier de respawn absorbe à nouveau : il faut encore autant de balles que la première fois pour le tuer', () => {
     const world = duelWorld();
     world.ships[0].shield = SHIELD_MAX;
     killAndRespawn(world);
@@ -417,7 +430,7 @@ describe('respawn et bouclier', () => {
     shooter.pos.y = Y0;
     shooter.angle = 0;
     const hits = fireUntilDead(world);
-    expect(hits).toHaveLength(13);
+    expect(hits).toHaveLength(SHIELDED_HITS_TO_KILL);
   });
 });
 

@@ -67,9 +67,12 @@ describe('damageShip : dégâts non mortels', () => {
 
   it('des dégâts cumulés s’additionnent sans mort tant que les PV restent positifs', () => {
     const world = ownedWorld();
-    damageShip(world, 0, 40, DEATH_X, DEATH_Y);
-    damageShip(world, 0, 40, DEATH_X, DEATH_Y);
-    expect(world.ships[0].hp).toBe(SHIP_MAX_HP - 80);
+    // Deux coups de 40 % des PV max : 80 % cumulés, il reste 20 % (toujours > 0, quel que soit SHIP_MAX_HP).
+    const hit = 0.4 * SHIP_MAX_HP;
+    damageShip(world, 0, hit, DEATH_X, DEATH_Y);
+    damageShip(world, 0, hit, DEATH_X, DEATH_Y);
+    expect(world.ships[0].hp).toBeCloseTo(SHIP_MAX_HP - 2 * hit, PRECISION); // arrondi flottant
+    expect(world.ships[0].hp).toBeGreaterThan(0);
     expect(world.ships[0].alive).toBe(true);
   });
 });
