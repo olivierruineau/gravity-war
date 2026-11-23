@@ -6,6 +6,7 @@ import { controlsLines } from '../data/controls.js';
 import { isMuted, toggleMute } from '../audio/mute.js';
 import { ASSIST_LABELS, cycleAssistMode, getAssistMode } from './assistSetting.js';
 import { toCss } from './color.js';
+import { isDebugOn, toggleDebug } from './debugSetting.js';
 import { DIFFICULTY_LABELS, cycleDifficultyMode, getDifficultyMode } from './difficultySetting.js';
 import { createNavigation, watchSource } from './navigation.js';
 import { createOptionsModel } from './optionsModel.js';
@@ -36,6 +37,11 @@ export function buildOptionRows(scene, { onControls }) {
     },
     { id: 'sound', label: () => `SON : ${isMuted() ? 'COUPE' : 'OUI'}`, change: toggleMute },
   ];
+  rows.push({
+    id: 'debug',
+    label: () => `DEBUG (FPS...) : ${isDebugOn() ? 'OUI' : 'NON'}`,
+    change: toggleDebug,
+  });
   if (canFullscreen(scene))
     rows.push({
       id: 'fullscreen',

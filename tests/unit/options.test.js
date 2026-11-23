@@ -10,6 +10,7 @@ import {
   resolveDifficulty,
 } from '../../src/systems/difficultySetting.js';
 import { SOURCE, resetInputSource, setSource } from '../../src/systems/inputSource.js';
+import { isDebugOn, resetDebug, toggleDebug } from '../../src/systems/debugSetting.js';
 import { createOptionsModel } from '../../src/systems/optionsModel.js';
 import { buildOptionRows } from '../../src/systems/optionsPanel.js';
 import {
@@ -107,7 +108,7 @@ describe('lignes réelles des options', () => {
 
   it('contient les réglages attendus, sans plein écran quand il est indisponible', () => {
     const ids = buildOptionRows(scene, { onControls() {} }).map((r) => r.id);
-    expect(ids).toEqual(['difficulty', 'assist', 'quality', 'sound', 'controls']);
+    expect(ids).toEqual(['difficulty', 'assist', 'quality', 'sound', 'debug', 'controls']);
     const withFs = { scale: { fullscreen: { available: true } } };
     expect(buildOptionRows(withFs, { onControls() {} }).map((r) => r.id)).toContain('fullscreen');
   });
@@ -128,5 +129,15 @@ describe('lignes réelles des options', () => {
     expect(model.labels()[3]).toContain('COUPE');
     cycleAssistMode(-1);
     cycleQualityMode(-1);
+  });
+});
+
+describe('mode debug', () => {
+  it('éteint par défaut, bascule', () => {
+    resetDebug();
+    expect(isDebugOn()).toBe(false);
+    expect(toggleDebug()).toBe(true);
+    expect(isDebugOn()).toBe(true);
+    resetDebug();
   });
 });
