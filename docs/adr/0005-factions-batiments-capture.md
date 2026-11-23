@@ -153,4 +153,4 @@ L'item 4.1 pose **toutes** les formes, constantes, entrées `EVT` et le catalogu
 
 ## Écart constaté en 6.4 (écran de fin)
 
-Le core continue de simuler après `GAME_OVER` (§ Issue), mais `GameScene` ffige les pas de simulation 1,5 s après l'issue (`END_SCREEN_DELAY`, pour laisser voir l'explosion finale) et affiche le bandeau VICTOIRE / DÉFAITE. `ESPACE` relance la partie (nouvelle graine, `scene.restart`), `ECHAP` revient au menu. Aucune règle du core n'a changé.
+Le core continue de simuler après `GAME_OVER` (§ Issue), mais `GameScene` fige les pas de simulation 1,5 s après l'issue (`END_SCREEN_DELAY`, pour laisser voir l'explosion finale) et affiche le bandeau VICTOIRE / DÉFAITE. `ESPACE` relance la partie (nouvelle graine, `scene.restart`), `ECHAP` revient au menu. Aucune règle du core n'a changé.
