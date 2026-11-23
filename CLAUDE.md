@@ -58,7 +58,7 @@ docs/            # ARCHITECTURE.md + adr/ (décisions)
 
 ## Esthétique rétro
 
-- Résolution interne basse (`GAME_WIDTH × GAME_HEIGHT`, 480×270), mise à l'échelle par entiers quand possible ; `pixelArt: true`, `roundPixels: true`. Ne jamais lisser.
+- Unités de jeu 480×270 (`GAME_WIDTH × GAME_HEIGHT`) ; le canvas est dessiné à `K` fois cette taille pour approcher les pixels de l'écran (traits fins, texte net, antialiasing : ADR 0011). Le style reste rétro : filaire, palette restreinte.
 - Palette restreinte centralisée (`PALETTE`). Sprites en pixel-art, polices bitmap/monospace.
 - Sons chiptune via ZzFX ; un son = une entrée de `SOUNDS` dans `src/audio/sfx.js`.
 - L'audio exige un geste utilisateur : appeler `resumeAudio()` après la première interaction.

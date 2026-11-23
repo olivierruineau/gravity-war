@@ -4,6 +4,9 @@ import { PALETTE } from '../config.js';
 import { planetColor } from '../entities/planetView.js';
 import { edgeIndicator } from './offscreenLayout.js';
 import { hypot } from '../core/math.js';
+import { viewRect } from './renderScale.js';
+
+const viewScratch = { x: 0, y: 0, width: 0, height: 0 };
 
 const DEPTH = 800;
 const INSET = 8; // px de marge entre la flèche et le bord de l'écran
@@ -41,7 +44,7 @@ export function createOffscreenIndicators(scene) {
     update(world, player) {
       g.clear();
       if (!player.alive) return;
-      const view = scene.cameras.main.worldView;
+      const view = viewRect(scene.cameras.main, viewScratch);
       const { ships, planets } = world;
       const px = player.pos.x;
       const py = player.pos.y;

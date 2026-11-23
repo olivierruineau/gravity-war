@@ -1,8 +1,11 @@
 // Constantes globales du jeu. Pas de "magic numbers" ailleurs : tout passe par ici.
 
-/** Résolution interne basse (16:9). Le canvas est ensuite mis à l'échelle (pixel-perfect). */
+/** Unités de jeu 480×270 (16:9) : cartes, vitesses, mises en page. Le canvas est dessiné à `K` fois cette taille (9.5). */
 export const GAME_WIDTH = 480;
 export const GAME_HEIGHT = 270;
+/** Netteté (9.5) : le canvas est dessiné à `K` fois la taille de jeu, `K` ≤ ce plafond (coût de remplissage sur mobile). */
+export const RENDER_SCALE_MAX = 2; // 960×540 : 3 coûtait trop au rendu logiciel (mesure 9.5)
+export const LINE_PX = 1; // épaisseur des traits, en pixels du canvas (≈ pixels de l'écran)
 export const TOUCH_POINTERS = 3; // doigts pris en charge en même temps (multi-touch : rotation, poussée, tir)
 
 /** Pas de temps fixe de la simulation (en secondes) : physique déterministe. */

@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH, PALETTE, SCENES } from '../config.js';
 import { toCss } from '../systems/color.js';
+import { applyRenderScale } from '../systems/renderScale.js';
 import { createMuteKey } from '../systems/muteKey.js';
 import { createNavigation, watchSource } from '../systems/navigation.js';
 import { createButton } from '../systems/uiButton.js';
@@ -15,6 +16,7 @@ export class MenuScene extends Phaser.Scene {
   }
 
   create() {
+    applyRenderScale(this);
     const cx = GAME_WIDTH / 2;
     this.add
       .text(cx, GAME_HEIGHT * 0.2, 'GRAVITY WAR', {

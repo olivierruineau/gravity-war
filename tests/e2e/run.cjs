@@ -63,11 +63,13 @@ function helpers(page) {
       page.evaluate(async () => (await import('/src/systems/inputSource.js')).getSource()),
     muted: () => page.evaluate(async () => (await import('/src/audio/mute.js')).isMuted()),
     worldId: () => scene('GameScene', 's => s.world.seed ?? s.world.tick'),
-    forceOutcome: (kind) =>
-      page.evaluate(async (k) => {
+    forceOutcome: async (kind) => {
+      await page.waitForFunction(() => window.__game.scene.getScene('GameScene')?.world);
+      return page.evaluate(async (k) => {
         const { OUTCOME } = await import('/src/core/faction.js');
         window.__game.scene.getScene('GameScene').world.outcome = OUTCOME[k];
-      }, kind),
+      }, kind);
+    },
   };
 }
 

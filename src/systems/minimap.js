@@ -4,6 +4,9 @@ import { PALETTE } from '../config.js';
 import { MINIMAP } from './hudLayout.js';
 import { planetColor } from '../entities/planetView.js';
 import { minimapSize } from './minimapLayout.js';
+import { viewRect } from './renderScale.js';
+
+const viewScratch = { x: 0, y: 0, width: 0, height: 0 };
 
 const DEPTH = 900;
 const MIN_PLANET_RADIUS = 1.5; // les petites planètes restent visibles
@@ -50,7 +53,7 @@ export function createMinimap(scene, world) {
         );
       }
 
-      const view = scene.cameras.main.worldView; // ce que le joueur voit
+      const view = viewRect(scene.cameras.main, viewScratch); // ce que le joueur voit
       g.lineStyle(1, PALETTE.text, 0.5);
       g.strokeRect(
         x0 + view.x * scale,

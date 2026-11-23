@@ -28,16 +28,16 @@ export function buttonAt(buttons, x, y) {
 }
 
 /**
- * Recalcule `pressed` depuis les pointeurs (`{ isDown, x, y }`, coordonnées du jeu).
+ * Recalcule `pressed` depuis les pointeurs (`{ isDown, x, y }`, coordonnées du canvas, soit `scale` fois les unités de jeu : 9.5).
  * @returns {boolean} vrai si l'état d'au moins un bouton a changé (pour ne redessiner que si besoin)
  */
-export function readPointers(buttons, pointers, pressed) {
+export function readPointers(buttons, pointers, pressed, scale = 1) {
   let changed = false;
   for (let i = 0; i < pressed.length; i++) {
     let held = false;
     for (let k = 0; k < pointers.length && !held; k++) {
       const p = pointers[k];
-      held = p.isDown && buttonAt(buttons, p.x, p.y) === i;
+      held = p.isDown && buttonAt(buttons, p.x / scale, p.y / scale) === i;
     }
     if (held !== pressed[i]) changed = true;
     pressed[i] = held;

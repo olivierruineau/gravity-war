@@ -35,6 +35,9 @@ export function cycleQualityMode(dir = 1) {
   return mode;
 }
 
+/** Le canvas est-il ramené à la taille de jeu (9.5) ? Même condition que la lueur coupée : appareil lent ou qualité BASSE. */
+export const isRenderLow = () => mode === 'low' || (mode === 'auto' && autoLow);
+
 /** Appelé par le moniteur quand la cadence est trop basse. */
 export function markAutoLow() {
   autoLow = true;

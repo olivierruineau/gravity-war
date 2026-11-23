@@ -29,6 +29,7 @@ import { createLandingAid } from '../systems/landingAid.js';
 import { createPlayerInput } from '../systems/playerInput.js';
 import { createFrameMonitor, markAutoLow } from '../systems/quality.js';
 import { resolveDifficulty } from '../systems/difficultySetting.js';
+import { applyRenderScale, placeCamera } from '../systems/renderScale.js';
 import { createStarfield } from '../systems/starfield.js';
 
 /** Délai (s) entre la fin de partie et l'écran de fin. */
@@ -47,6 +48,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   create() {
+    applyRenderScale(this);
     // Graine tirée ici (couche Phaser) : le core, lui, reste déterministe pour une graine donnée.
     const seed = Math.floor(Math.random() * 2 ** 32);
     this.world = createWorld(triad, seed, {
@@ -61,7 +63,6 @@ export class GameScene extends Phaser.Scene {
     });
     this.pilot = createPlayerInput(this);
     createStarfield(this, this.world.width, this.world.height);
-    this.cameras.main.setBounds(0, 0, this.world.width, this.world.height);
     this.gfx = this.add.graphics();
     this.debug = createDebugOverlay(this);
     this.mute = createMuteKey(this);
@@ -75,7 +76,10 @@ export class GameScene extends Phaser.Scene {
       this.mute.refresh,
     );
     this.endDelay = END_SCREEN_DELAY; // laisse voir l'explosion finale avant le bandeau
-    this.frameMonitor = createFrameMonitor(markAutoLow);
+    this.frameMonitor = createFrameMonitor(() => {
+      markAutoLow();
+      applyRenderScale(this);
+    });
     this.landingAid = createLandingAid(this);
     this.effects = createEffects(this);
     this.audio = createAudioEvents();
@@ -97,7 +101,7 @@ export class GameScene extends Phaser.Scene {
     if (!over || this.endDelay > 0) for (let i = 0; i < steps; i++) step(this.world, FIXED_DT);
 
     // Rendu immédiat : on efface et on redessine tout depuis l'état du core.
-    this.cameras.main.centerOn(player.pos.x, player.pos.y); // bornée à la carte (setBounds)
+    placeCamera(this.cameras.main, player.pos.x, player.pos.y, this.world.width, this.world.height); // bornée à la carte
     this.gfx.clear();
     this.gfx.lineStyle(1, PALETTE.border, 1);
     this.gfx.strokeRect(0, 0, this.world.width, this.world.height);

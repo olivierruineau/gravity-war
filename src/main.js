@@ -7,6 +7,7 @@ import { ZZFX } from 'zzfx';
 import { installAudioLifecycle } from './audio/lifecycle.js';
 import { initInputSource } from './systems/inputSource.js';
 import { hasCoarsePointer } from './systems/platform.js';
+import { currentRenderScale, installRenderPatches } from './systems/renderScale.js';
 
 initInputSource(hasCoarsePointer());
 
@@ -18,14 +19,17 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
 }
 installAudioLifecycle(ZZFX.audioContext, document);
 
+const scaleAtBoot = currentRenderScale();
+installRenderPatches(Phaser);
+
 const game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: 'game',
-  width: GAME_WIDTH,
-  height: GAME_HEIGHT,
+  width: GAME_WIDTH * scaleAtBoot,
+  height: GAME_HEIGHT * scaleAtBoot,
   backgroundColor: PALETTE.bg,
-  pixelArt: true, // filtrage "nearest" : pixels nets
-  roundPixels: true,
+  antialias: true, // traits lissés (9.5) : le canvas est déjà à la résolution de l'écran
+  roundPixels: false,
   input: { activePointers: TOUCH_POINTERS }, // + la souris : `manager.pointers[0]`
   scale: {
     mode: Phaser.Scale.FIT,

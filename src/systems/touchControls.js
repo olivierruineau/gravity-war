@@ -1,5 +1,6 @@
 // Commandes tactiles en jeu (8.4) : overlay filaire fixé à l'écran, lu à chaque frame (voir touchModel).
 // Affiché seulement quand la dernière source utilisée est le tactile ; sinon ignoré (le clavier a la main).
+import { getRenderScale } from './renderScale.js';
 import { PALETTE } from '../config.js';
 import { TOUCH_BUTTONS } from '../data/touchLayout.js';
 import { toCss } from './color.js';
@@ -55,7 +56,7 @@ export function createTouchControls(scene) {
     /** À appeler après le clavier : complète l'intention avec les doigts posés. */
     update(intent) {
       if (!visible) return;
-      if (readPointers(TOUCH_BUTTONS, pointers, pressed)) draw();
+      if (readPointers(TOUCH_BUTTONS, pointers, pressed, getRenderScale())) draw();
       mergeTouchIntent(TOUCH_BUTTONS, pressed, intent);
     },
   };

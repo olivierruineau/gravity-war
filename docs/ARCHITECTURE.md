@@ -74,7 +74,7 @@ Pas d'interpolation de rendu en v1 (à ajouter seulement si une saccade est cons
 
 ## Rendu rétro
 
-Résolution interne 480×270, `pixelArt` + `roundPixels`, mise à l'échelle `FIT` centrée, `image-rendering: pixelated` sur le canvas. Une lueur discrète (`entities/glow.js` : un halo de `GLOW_WIDTH` px à `GLOW_ALPHA` sous le trait net) habille vaisseaux, planètes, projectiles et explosions. Les couleurs viennent toutes de `PALETTE` (les textes passent par `systems/color.js`).
+Unités de jeu 480×270, canvas dessiné à `K` fois cette taille (`systems/renderScale.js`, [ADR 0011](adr/0011-nettete-rendu-haute-resolution.md)), antialiasing, mise à l'échelle `FIT` centrée. Une lueur discrète (`entities/glow.js` : un halo de `GLOW_WIDTH` px à `GLOW_ALPHA` sous le trait net) habille vaisseaux, planètes, projectiles et explosions. Les couleurs viennent toutes de `PALETTE` (les textes passent par `systems/color.js`).
 
 ## Interface (phase 6)
 
@@ -106,7 +106,7 @@ Aucune allocation dans la boucle de simulation. `Math.hypot` alloue à chaque ap
 
 ### Performance mobile (8.9)
 
-Le canevas reste à **480×270 pixels réels** quel que soit l'écran : Phaser (`Scale.FIT`) ne change que sa taille CSS, donc ni `devicePixelRatio` ni un redimensionnement ne coûtent de remplissage supplémentaire. Le coût vient des traits dessinés et de la simulation (rattrapage de pas quand la cadence baisse). Mesure : Chromium sans GPU, émulation Pixel 7 en paysage, CPU ralenti, trois doigts posés (poussée, tir, rotation), 10 s après 2 s de chauffe.
+Depuis 9.5 ([ADR 0011](adr/0011-nettete-rendu-haute-resolution.md)) le canevas est dessiné à `K` × 480×270 (`K` ≤ 2) pour des traits fins : le remplissage coûte jusqu'à 4× plus. Mesuré en rendu logiciel (sans GPU, donc pire cas) : avec `K` = 2 en permanence, ×4 tombe à 34 fps et ×6 à 25 fps (K = 3 : 24 et 18 fps, plafond abandonné). Le moniteur de cadence ramène donc **aussi** le canevas à `K` = 1 (`applyRenderScale`, avec la lueur coupée) quand il passe sous 40 fps, ce qui rend les chiffres ci-dessous (inchangés en ordre de grandeur : ×4 47,7 fps, ×6 34,6 fps, ×8 27,1 fps avec la qualité auto). La qualité BASSE force `K` = 1. Avant 9.5, le canevas restait à 480×270 pixels réels et le coût venait des traits dessinés et de la simulation (rattrapage de pas quand la cadence baisse). Mesure : Chromium sans GPU, émulation Pixel 7 en paysage, CPU ralenti, trois doigts posés (poussée, tir, rotation), 10 s après 2 s de chauffe.
 
 | CPU ralenti | Lueur | Cadence moyenne |
 | ----------- | ----- | --------------- |
@@ -118,19 +118,20 @@ Le canevas reste à **480×270 pixels réels** quel que soit l'écran : Phaser (
 | ×8          | non   | 27,6 fps        |
 | ×8          | oui   | 22,3 fps        |
 
-Le budget de 30 images par seconde tient donc jusqu'à ×6 grâce à la qualité basse. La **lueur** (halo sous chaque trait, `entities/glow.js`) est le seul degré de dégradation : en mode `auto`, `systems/quality.js` la coupe pour la session si la cadence moyenne d'une fenêtre de 3 s passe sous 40 fps (après 2 s de chauffe). Réglage manuel au menu (`Q` ou bouton) : AUTO, HAUTE, BASSE, mémorisé. À confirmer sur un vrai appareil (checklist de `docs/CHECKLIST-MOBILE.md`).
+Le budget de 30 images par seconde tient donc jusqu'à ×6 grâce à la qualité basse. La **lueur** (halo sous chaque trait, `entities/glow.js`) est le seul degré de dégradation : en mode `auto`, `systems/quality.js` la coupe pour la session si la cadence moyenne d'une fenêtre de 3 s passe sous 40 fps (après 2 s de chauffe). Réglage manuel dans les Options : AUTO, HAUTE, BASSE, mémorisé. À confirmer sur un vrai appareil (checklist de `docs/CHECKLIST-MOBILE.md`).
 
 ## Décisions
 
-| ADR                                            | Sujet                                                       | Statut                                      |
-| ---------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------- |
-| [0001](adr/0001-stack-technique.md)            | Stack technique                                             | Accepté                                     |
-| [0002](adr/0002-architecture-core.md)          | Architecture de `core/` et pont rendu                       | Accepté                                     |
-| [0003](adr/0003-gravite-et-atterrissage.md)    | Gravité, collision et atterrissage                          | Accepté (§2 « sommation » amendé par 0004)  |
-| [0004](adr/0004-zone-gravite-dominante.md)     | Zone de gravité dominante (chevauchements)                  | Accepté                                     |
-| [0005](adr/0005-factions-batiments-capture.md) | Factions, capture, bâtiments, tourelles, missiles, bouclier | Accepté (précise 0002 ; amendé par 0007)    |
-| [0006](adr/0006-ia-des-bots.md)                | IA des bots : décision par utilité, pilote, prédiction      | Accepté (précise 0002 §2, §5, §6 ; 0005 §8) |
-| [0007](adr/0007-degats-aux-batiments.md)       | Dégâts aux bâtiments : défenses, puis bâtiments             | Accepté (amende 0005 §3, §4)                |
-| [0008](adr/0008-entree-multi-sources.md)       | Entrée multi-sources (clavier, tactile)                     | Accepté                                     |
-| [0009](adr/0009-pwa-hors-ligne.md)             | PWA : installation et hors ligne sans dépendance            | Accepté                                     |
-| [0010](adr/0010-niveaux-de-difficulte.md)      | Niveaux de difficulté des bots (surcharges de profil)       | Accepté                                     |
+| ADR                                                | Sujet                                                               | Statut                                      |
+| -------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------- |
+| [0001](adr/0001-stack-technique.md)                | Stack technique                                                     | Accepté                                     |
+| [0002](adr/0002-architecture-core.md)              | Architecture de `core/` et pont rendu                               | Accepté                                     |
+| [0003](adr/0003-gravite-et-atterrissage.md)        | Gravité, collision et atterrissage                                  | Accepté (§2 « sommation » amendé par 0004)  |
+| [0004](adr/0004-zone-gravite-dominante.md)         | Zone de gravité dominante (chevauchements)                          | Accepté                                     |
+| [0005](adr/0005-factions-batiments-capture.md)     | Factions, capture, bâtiments, tourelles, missiles, bouclier         | Accepté (précise 0002 ; amendé par 0007)    |
+| [0006](adr/0006-ia-des-bots.md)                    | IA des bots : décision par utilité, pilote, prédiction              | Accepté (précise 0002 §2, §5, §6 ; 0005 §8) |
+| [0007](adr/0007-degats-aux-batiments.md)           | Dégâts aux bâtiments : défenses, puis bâtiments                     | Accepté (amende 0005 §3, §4)                |
+| [0008](adr/0008-entree-multi-sources.md)           | Entrée multi-sources (clavier, tactile)                             | Accepté                                     |
+| [0009](adr/0009-pwa-hors-ligne.md)                 | PWA : installation et hors ligne sans dépendance                    | Accepté                                     |
+| [0010](adr/0010-niveaux-de-difficulte.md)          | Niveaux de difficulté des bots (surcharges de profil)               | Accepté                                     |
+| [0011](adr/0011-nettete-rendu-haute-resolution.md) | Netteté : canvas à la résolution de l'écran, monde en unités de jeu | Accepté                                     |
