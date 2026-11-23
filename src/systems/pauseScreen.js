@@ -1,7 +1,8 @@
-// Pause (6.5) : touche P. Fige la scène (GameScene ne simule plus tant que `paused`), affiche l'aide des commandes ;
+// Pause (6.5) : action `pause` (touche P). Fige la scène (GameScene ne simule plus tant que `paused`), affiche l'aide des commandes ;
 // ECHAP revient au menu. Inactive une fois la partie décidée (l'écran de fin a ses propres touches).
 import { toCss } from './color.js';
 import { watchAway } from './platform.js';
+import { createNavigation } from './navigation.js';
 import { controlsLines } from '../data/controls.js';
 import { GAME_HEIGHT, GAME_WIDTH, PALETTE, SCENES } from '../config.js';
 
@@ -53,13 +54,9 @@ export function createPauseScreen(scene, canPause) {
   const toMenu = () => {
     if (state.paused) scene.scene.start(SCENES.MENU);
   };
-  const { keyboard } = scene.input;
-  keyboard.on('keydown-P', state.toggle);
-  keyboard.on('keydown-ESC', toMenu);
-  scene.events.once('shutdown', () => {
-    stopWatching();
-    keyboard.off('keydown-P', state.toggle);
-    keyboard.off('keydown-ESC', toMenu);
-  });
+  const nav = createNavigation(scene);
+  nav.on('pause', state.toggle);
+  nav.on('back', toMenu);
+  scene.events.once('shutdown', stopWatching);
   return state;
 }

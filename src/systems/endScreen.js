@@ -3,6 +3,7 @@
 import { GAME_HEIGHT, GAME_WIDTH, PALETTE, SCENES } from '../config.js';
 import { toCss } from './color.js';
 import { endScreenModel } from './endScreenModel.js';
+import { createNavigation } from './navigation.js';
 
 const DEPTH = 1100;
 
@@ -30,9 +31,25 @@ export function createEndScreen(scene) {
     .setDepth(DEPTH + 1)
     .setVisible(false);
   let shown = false;
+  const nav = createNavigation(scene);
+  // Les actions ne comptent qu'une fois l'écran affiché ; la première suffit (pas de double redémarrage).
+  let chosen = false;
+  const choose = (go) => () => {
+    if (!shown || chosen) return;
+    chosen = true;
+    go();
+  };
+  nav.on(
+    'confirm',
+    choose(() => scene.scene.restart()),
+  );
+  nav.on(
+    'back',
+    choose(() => scene.scene.start(SCENES.MENU)),
+  );
 
   return {
-    /** Affiche l'écran (une fois) et arme les touches. */
+    /** Affiche l'écran (une fois). */
     show(outcome) {
       const model = endScreenModel(outcome);
       if (shown || model === null) return;
@@ -40,15 +57,6 @@ export function createEndScreen(scene) {
       veil.setVisible(true);
       title.setText(model.title).setColor(toCss(model.color)).setVisible(true);
       hint.setText(model.hint).setVisible(true);
-      const { keyboard } = scene.input;
-      const replay = () => scene.scene.restart();
-      const toMenu = () => scene.scene.start(SCENES.MENU);
-      keyboard.once('keydown-SPACE', replay);
-      keyboard.once('keydown-ESC', toMenu);
-      scene.events.once('shutdown', () => {
-        keyboard.off('keydown-SPACE', replay);
-        keyboard.off('keydown-ESC', toMenu);
-      });
     },
   };
 }

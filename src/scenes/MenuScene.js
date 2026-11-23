@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH, PALETTE, SCENES } from '../config.js';
 import { toCss } from '../systems/color.js';
 import { createMuteKey } from '../systems/muteKey.js';
+import { createNavigation } from '../systems/navigation.js';
 import { playSfx, resumeAudio } from '../audio/sfx.js';
 import { controlsLines } from '../data/controls.js';
 import { createButton } from '../systems/uiButton.js';
@@ -61,11 +62,12 @@ export class MenuScene extends Phaser.Scene {
         onTap: () => enterFullscreen(this),
       });
     }
-    const toggleHelp = () => help.setVisible(!help.visible);
-    this.input.keyboard.on('keydown-H', toggleHelp);
-    this.events.once('shutdown', () => this.input.keyboard.off('keydown-H', toggleHelp));
-
-    this.input.keyboard.once('keydown-SPACE', () => {
+    const nav = createNavigation(this);
+    nav.on('help', () => help.setVisible(!help.visible));
+    let started = false;
+    nav.on('confirm', () => {
+      if (started) return;
+      started = true;
       resumeAudio();
       playSfx('select');
       this.scene.start(SCENES.GAME);
