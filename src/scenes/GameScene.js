@@ -22,6 +22,7 @@ import { createEffects } from '../systems/effects.js';
 import { createGravityArrow } from '../systems/gravityArrow.js';
 import { createHud } from '../systems/hud.js';
 import { createMinimap } from '../systems/minimap.js';
+import { createPauseScreen } from '../systems/pauseScreen.js';
 import { createOffscreenIndicators } from '../systems/offscreenIndicators.js';
 import { createLandingAid } from '../systems/landingAid.js';
 import { createKeyboardInput } from '../systems/keyboardInput.js';
@@ -60,6 +61,7 @@ export class GameScene extends Phaser.Scene {
     this.minimap = createMinimap(this, this.world);
     this.offscreen = createOffscreenIndicators(this);
     this.endScreen = createEndScreen(this);
+    this.pause = createPauseScreen(this, () => this.world.outcome === OUTCOME.PLAYING);
     this.endDelay = END_SCREEN_DELAY; // laisse voir l'explosion finale avant le bandeau
     this.landingAid = createLandingAid(this);
     this.effects = createEffects(this);
@@ -68,6 +70,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(_time, delta) {
+    if (this.pause.paused) return; // tout est figé : ni simulation, ni entrées, ni effets
     const player = this.world.ships[0];
     this.pilot.update(player.intent);
     const steps = consumeSteps(this.clock, delta / 1000);

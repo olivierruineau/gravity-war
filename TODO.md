@@ -101,7 +101,7 @@ Spécification : [docs/SPEC.md](docs/SPEC.md). Architecture : [docs/ARCHITECTURE
 - [x] **6.2** Minimap filaire (planètes colorées, vaisseaux) (code)
 - [x] **6.3** Indicateurs de cibles hors écran (flèches aux bords) (code)
 - [x] **6.4** Conditions de victoire/défaite + écran de fin + rejouer (code, test-c)
-- [ ] **6.5** Menu principal (jouer, aide commandes) + pause (code)
+- [x] **6.5** Menu principal (jouer, aide commandes) + pause (code)
 
 ## Phase 7 — Carte finale, équilibrage, finition
 
