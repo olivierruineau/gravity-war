@@ -1,33 +1,28 @@
-// HUD (6.1), fixé à l'écran : vie, bouclier et missiles en bas à gauche, vitesse en bas à droite.
-// Lecture seule ; la logique vit dans `hudModel` (testée), ici on ne fait que dessiner.
-import { GAME_HEIGHT, GAME_WIDTH, MISSILE_STOCK_MAX, PALETTE } from '../config.js';
+// HUD (6.1, 8.6), fixé à l'écran en haut : barres de vie, bouclier et missiles à gauche, vitesse à droite.
+// Le bas est laissé aux pouces (commandes tactiles). Lecture seule ; la logique vit dans `hudModel` (testée).
+import { MISSILE_STOCK_MAX, PALETTE } from '../config.js';
 import { toCss } from './color.js';
 import { hudModel } from './hudModel.js';
+import { BARS, MIN_FONT, READOUT } from './hudLayout.js';
 
-const MARGIN = 6; // distance au bord de l'écran
-const X = MARGIN;
-const WIDTH = 60;
-const HEIGHT = 5;
 const DEPTH = 900;
-const SHIELD_HEIGHT = 3;
-const SHIELD_GAP = 2; // écart entre les barres
-const TICK_SIZE = 4; // côté d'un carré de stock de missiles
-const TICK_GAP = 2;
 const LOW_RATIO = 0.3; // sous ce seuil, la barre de vie passe au rouge
 
 export function createHud(scene) {
   const g = scene.add.graphics().setScrollFactor(0).setDepth(DEPTH);
   const speedText = scene.add
-    .text(GAME_WIDTH - MARGIN, GAME_HEIGHT - MARGIN, '', {
+    .text(READOUT.right, READOUT.y, '', {
       fontFamily: 'monospace',
-      fontSize: '8px',
-      color: toCss(PALETTE.star),
+      fontSize: `${MIN_FONT}px`,
+      color: toCss(PALETTE.text),
     })
-    .setOrigin(1, 1)
+    .setOrigin(1, 0)
     .setScrollFactor(0)
     .setDepth(DEPTH);
   let shownSpeed = -1; // ne réécrit le texte que s'il change (pas d'allocation par frame)
-  const y = GAME_HEIGHT - HEIGHT - MARGIN;
+  const { x, y, width: w } = BARS;
+  const shieldY = y + BARS.hpHeight + BARS.gap;
+  const ticksY = shieldY + BARS.shieldHeight + BARS.gap;
 
   return {
     update(ship, faction) {
@@ -38,28 +33,25 @@ export function createHud(scene) {
       }
       g.clear();
       g.lineStyle(1, PALETTE.text, 0.6);
-      g.strokeRect(X, y, WIDTH, HEIGHT);
+      g.strokeRect(x, y, w, BARS.hpHeight);
       g.fillStyle(m.hpRatio > LOW_RATIO ? PALETTE.ok : PALETTE.danger, 1);
-      g.fillRect(X + 1, y + 1, Math.round((WIDTH - 2) * m.hpRatio), HEIGHT - 2);
-      let top = y; // ordonnée du haut de la pile
-      if (m.showMissiles) {
-        top -= SHIELD_GAP + TICK_SIZE;
-        for (let i = 0; i < MISSILE_STOCK_MAX; i++) {
-          const tx = X + i * (TICK_SIZE + TICK_GAP);
-          g.lineStyle(1, PALETTE.text, 0.6);
-          g.strokeRect(tx, top, TICK_SIZE, TICK_SIZE);
-          if (i < m.missiles) {
-            g.fillStyle(PALETTE.text, 1);
-            g.fillRect(tx + 1, top + 1, TICK_SIZE - 2, TICK_SIZE - 2);
-          }
+      g.fillRect(x + 1, y + 1, Math.round((w - 2) * m.hpRatio), BARS.hpHeight - 2);
+      if (m.showShield) {
+        g.lineStyle(1, PALETTE.text, 0.6);
+        g.strokeRect(x, shieldY, w, BARS.shieldHeight);
+        g.fillStyle(PALETTE.text, 1);
+        g.fillRect(x + 1, shieldY + 1, Math.round((w - 2) * m.shieldRatio), BARS.shieldHeight - 2);
+      }
+      if (!m.showMissiles) return;
+      for (let i = 0; i < MISSILE_STOCK_MAX; i++) {
+        const tx = x + i * (BARS.tick + BARS.tickGap);
+        g.lineStyle(1, PALETTE.text, 0.6);
+        g.strokeRect(tx, ticksY, BARS.tick, BARS.tick);
+        if (i < m.missiles) {
+          g.fillStyle(PALETTE.text, 1);
+          g.fillRect(tx + 1, ticksY + 1, BARS.tick - 2, BARS.tick - 2);
         }
       }
-      if (!m.showShield) return;
-      const sy = top - SHIELD_GAP - SHIELD_HEIGHT;
-      g.lineStyle(1, PALETTE.text, 0.6);
-      g.strokeRect(X, sy, WIDTH, SHIELD_HEIGHT);
-      g.fillStyle(PALETTE.text, 1);
-      g.fillRect(X + 1, sy + 1, Math.round((WIDTH - 2) * m.shieldRatio), SHIELD_HEIGHT - 2);
     },
   };
 }

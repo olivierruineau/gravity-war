@@ -1,21 +1,24 @@
 // Minimap filaire (6.2), fixée à l'écran en haut à droite : carte entière, planètes à la couleur de leur
 // propriétaire, vaisseaux vivants, cadre de la caméra. Lecture seule de `world`.
-import { GAME_WIDTH, PALETTE } from '../config.js';
+import { PALETTE } from '../config.js';
+import { MINIMAP } from './hudLayout.js';
 import { planetColor } from '../entities/planetView.js';
 import { minimapSize } from './minimapLayout.js';
 
-const MARGIN = 6;
-const MAX_W = 96;
-const MAX_H = 64;
 const DEPTH = 900;
 const MIN_PLANET_RADIUS = 1.5; // les petites planètes restent visibles
 const SHIP_RADIUS = 1.5;
 const PLAYER_RADIUS = 2.5; // le joueur ressort davantage que les bots
 
 export function createMinimap(scene, world) {
-  const { scale, width, height } = minimapSize(world.width, world.height, MAX_W, MAX_H);
-  const x0 = GAME_WIDTH - MARGIN - width;
-  const y0 = MARGIN;
+  const { scale, width, height } = minimapSize(
+    world.width,
+    world.height,
+    MINIMAP.maxW,
+    MINIMAP.maxH,
+  );
+  const x0 = MINIMAP.x + MINIMAP.maxW - width;
+  const y0 = MINIMAP.y;
   const g = scene.add.graphics().setScrollFactor(0).setDepth(DEPTH);
 
   return {

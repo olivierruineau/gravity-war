@@ -4,6 +4,9 @@
 
 export const HIT_MARGIN = 4;
 
+/** Côté d'un bouton d'interface carré, en pixels du jeu (≥ 44 px CSS dès que l'écran fait 297 px de haut). */
+export const TOUCH_TARGET = 40;
+
 /** `action` : champ de l'`Intent` piloté ; `sign` : sens pour `rotate`. */
 export const TOUCH_BUTTONS = [
   { id: 'left', action: 'rotate', sign: -1, x: 34, y: 232, r: 22, label: '◄' },

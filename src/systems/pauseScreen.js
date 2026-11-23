@@ -4,6 +4,7 @@ import { toCss } from './color.js';
 import { watchAway } from './platform.js';
 import { createNavigation, watchSource } from './navigation.js';
 import { createButton } from './uiButton.js';
+import { TOP_BUTTONS } from './hudLayout.js';
 import { controlsLines } from '../data/controls.js';
 import { GAME_HEIGHT, GAME_WIDTH, PALETTE, SCENES } from '../config.js';
 
@@ -59,8 +60,7 @@ export function createPauseScreen(scene, canPause) {
   });
   // Bouton pause en haut à gauche, visible seulement au doigt (le sien est sous le voile : on bascule par ce bouton).
   const pauseButton = createButton(scene, {
-    x: 26,
-    y: 26,
+    ...TOP_BUTTONS.pause,
     label: 'II',
     depth: DEPTH - 100,
     onTap: () => state.toggle(),

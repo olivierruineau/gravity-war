@@ -1,25 +1,23 @@
 // Action `mute` (touche M ou bouton) : coupe / rétablit le son, avec un indicateur discret en bas à droite
 // tant que le son est coupé. À créer dans chaque scène qui doit réagir (menu, jeu) ; l'état vit dans `audio/mute.js`.
-import { GAME_HEIGHT, GAME_WIDTH, PALETTE } from '../config.js';
+import { PALETTE } from '../config.js';
 import { isMuted, toggleMute } from '../audio/mute.js';
 import { toCss } from './color.js';
 import { createNavigation, watchSource } from './navigation.js';
 import { createButton } from './uiButton.js';
+import { MIN_FONT, READOUT, TOP_BUTTONS } from './hudLayout.js';
 
-const MARGIN = 6;
 const DEPTH = 950;
-const BUTTON_X = 72; // bouton tactile en haut à gauche, à droite du bouton pause (voir pauseScreen)
-const BUTTON_Y = 26;
 
 /** Un bouton `SON` s'affiche en plus au doigt, sauf si `button` est faux. */
 export function createMuteKey(scene, { button = true } = {}) {
   const label = scene.add
-    .text(GAME_WIDTH - MARGIN, GAME_HEIGHT - MARGIN - 12, 'SON COUPE', {
+    .text(READOUT.right, READOUT.y + READOUT.lineHeight, 'SON COUPE', {
       fontFamily: 'monospace',
-      fontSize: '8px',
+      fontSize: `${MIN_FONT}px`,
       color: toCss(PALETTE.danger),
     })
-    .setOrigin(1, 1)
+    .setOrigin(1, 0)
     .setScrollFactor(0)
     .setDepth(DEPTH)
     .setVisible(isMuted());
@@ -30,8 +28,7 @@ export function createMuteKey(scene, { button = true } = {}) {
   };
   const soundButton = button
     ? createButton(scene, {
-        x: BUTTON_X,
-        y: BUTTON_Y,
+        ...TOP_BUTTONS.sound,
         label: buttonLabel(),
         onTap: toggle,
         depth: DEPTH,
