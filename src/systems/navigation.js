@@ -1,7 +1,7 @@
 // Navigation (8.3) : traduit les entrées (clavier, tactile) en actions logiques `confirm`, `back`, `pause`, `mute`, `help`.
 // Les scènes s'abonnent aux actions, jamais aux touches. Met aussi à jour la dernière source utilisée.
 import { NAV_ACTIONS, NAV_KEYS } from '../data/inputBindings.js';
-import { SOURCE, setSource } from './inputSource.js';
+import { SOURCE, isTouch, onSourceChange, setSource } from './inputSource.js';
 
 /**
  * @param {Phaser.Scene} scene
@@ -32,4 +32,14 @@ export function createNavigation(scene) {
       for (const key of NAV_KEYS[action]) bind(keyboard, `keydown-${key}`, handler);
     },
   };
+}
+
+/**
+ * Appelle `apply(touch)` tout de suite puis à chaque changement de dernière source utilisée
+ * (vrai = tactile). Retiré à l'arrêt de la scène.
+ */
+export function watchSource(scene, apply) {
+  apply(isTouch());
+  const off = onSourceChange(() => apply(isTouch()));
+  scene.events.once('shutdown', off);
 }

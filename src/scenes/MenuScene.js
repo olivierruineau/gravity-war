@@ -2,11 +2,11 @@ import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH, PALETTE, SCENES } from '../config.js';
 import { toCss } from '../systems/color.js';
 import { createMuteKey } from '../systems/muteKey.js';
-import { createNavigation } from '../systems/navigation.js';
-import { playSfx, resumeAudio } from '../audio/sfx.js';
-import { controlsLines } from '../data/controls.js';
+import { createNavigation, watchSource } from '../systems/navigation.js';
 import { createButton } from '../systems/uiButton.js';
 import { canFullscreen, enterFullscreen } from '../systems/platform.js';
+import { playSfx, resumeAudio } from '../audio/sfx.js';
+import { controlsLines } from '../data/controls.js';
 
 export class MenuScene extends Phaser.Scene {
   constructor() {
@@ -22,6 +22,9 @@ export class MenuScene extends Phaser.Scene {
         color: toCss(PALETTE.accent),
       })
       .setOrigin(0.5);
+    this.cameras.main.setBackgroundColor(PALETTE.bg);
+
+    // Clavier : invites textuelles (ESPACE, H). Tactile : boutons JOUER / COMMANDES. Un seul jeu s'affiche à la fois.
     const prompt = this.add
       .text(cx, GAME_HEIGHT * 0.78, 'ESPACE : JOUER', {
         fontFamily: 'monospace',
@@ -30,10 +33,7 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
     this.tweens.add({ targets: prompt, alpha: 0, duration: 500, yoyo: true, repeat: -1 });
-    this.cameras.main.setBackgroundColor(PALETTE.bg);
-
-    // Aide des commandes : H affiche / masque le panneau.
-    this.add
+    const helpHint = this.add
       .text(cx, GAME_HEIGHT * 0.88, 'H : COMMANDES', {
         fontFamily: 'monospace',
         fontSize: '8px',
@@ -50,6 +50,42 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setVisible(false);
+    const toggleHelp = () => help.setVisible(!help.visible);
+
+    let started = false;
+    const play = () => {
+      if (started) return;
+      started = true;
+      resumeAudio();
+      playSfx('select');
+      this.scene.start(SCENES.GAME);
+    };
+    const playButton = createButton(this, {
+      x: cx - 70,
+      y: GAME_HEIGHT * 0.82,
+      w: 120,
+      h: 40,
+      label: 'JOUER',
+      fontSize: 14,
+      color: PALETTE.accent,
+      onTap: play,
+    });
+    const helpButton = createButton(this, {
+      x: cx + 70,
+      y: GAME_HEIGHT * 0.82,
+      w: 120,
+      h: 40,
+      label: 'COMMANDES',
+      onTap: toggleHelp,
+    });
+    watchSource(this, (touch) => {
+      prompt.setVisible(!touch);
+      helpHint.setVisible(!touch);
+      playButton.setVisible(touch);
+      helpButton.setVisible(touch);
+      help.setText(controlsLines(touch));
+    });
+
     createMuteKey(this);
     if (canFullscreen(this)) {
       createButton(this, {
@@ -62,15 +98,9 @@ export class MenuScene extends Phaser.Scene {
         onTap: () => enterFullscreen(this),
       });
     }
+
     const nav = createNavigation(this);
-    nav.on('help', () => help.setVisible(!help.visible));
-    let started = false;
-    nav.on('confirm', () => {
-      if (started) return;
-      started = true;
-      resumeAudio();
-      playSfx('select');
-      this.scene.start(SCENES.GAME);
-    });
+    nav.on('help', toggleHelp);
+    nav.on('confirm', play);
   }
 }

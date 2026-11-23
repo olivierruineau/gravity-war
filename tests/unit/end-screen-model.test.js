@@ -21,4 +21,9 @@ describe('endScreenModel', () => {
     expect(m.title).toBe('DEFAITE');
     expect(m.color).toBe(PALETTE.danger);
   });
+
+  it('au doigt : pas de ligne de touches, les boutons la remplacent', () => {
+    expect(endScreenModel(OUTCOME.VICTORY, true).hint).toBe('');
+    expect(endScreenModel(OUTCOME.DEFEAT, true).title).toBe('DEFAITE');
+  });
 });

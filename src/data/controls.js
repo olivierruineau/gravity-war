@@ -10,8 +10,19 @@ export const CONTROLS = [
   { keys: 'F3', action: 'Debug' },
 ];
 
-/** Lignes d'aide alignées en colonnes : « ESPACE   Tir principal ». */
-export function controlsLines() {
-  const width = Math.max(...CONTROLS.map((c) => c.keys.length));
-  return CONTROLS.map((c) => `${c.keys.padEnd(width)}  ${c.action}`);
+// Au doigt : les libellés des boutons de l'overlay (`data/touchLayout.js`, `systems/pauseButtons`).
+export const CONTROLS_TOUCH = [
+  { keys: '◄ ►', action: 'Tourner' },
+  { keys: '▲', action: 'Poussée' },
+  { keys: 'TIR', action: 'Tir principal' },
+  { keys: 'MIS', action: 'Missile' },
+  { keys: 'II', action: 'Pause' },
+  { keys: 'SON', action: 'Son on/off' },
+];
+
+/** Lignes d'aide alignées en colonnes : « ESPACE   Tir principal ». `touch` : la liste des gestes au doigt. */
+export function controlsLines(touch = false) {
+  const list = touch ? CONTROLS_TOUCH : CONTROLS;
+  const width = Math.max(...list.map((c) => c.keys.length));
+  return list.map((c) => `${c.keys.padEnd(width)}  ${c.action}`);
 }

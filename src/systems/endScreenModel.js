@@ -2,11 +2,13 @@
 import { PALETTE } from '../config.js';
 import { OUTCOME } from '../core/faction.js';
 
-/** @returns {{ title: string, color: string, hint: string } | null} `null` tant que la partie continue */
-export function endScreenModel(outcome) {
-  if (outcome === OUTCOME.VICTORY)
-    return { title: 'VICTOIRE', color: PALETTE.ok, hint: 'ESPACE : rejouer · ECHAP : menu' };
-  if (outcome === OUTCOME.DEFEAT)
-    return { title: 'DEFAITE', color: PALETTE.danger, hint: 'ESPACE : rejouer · ECHAP : menu' };
+/**
+ * @param {boolean} touch vrai au doigt : les boutons remplacent la ligne de touches (`hint` vide)
+ * @returns {{ title: string, color: string, hint: string } | null} `null` tant que la partie continue
+ */
+export function endScreenModel(outcome, touch = false) {
+  const hint = touch ? '' : 'ESPACE : rejouer · ECHAP : menu';
+  if (outcome === OUTCOME.VICTORY) return { title: 'VICTOIRE', color: PALETTE.ok, hint };
+  if (outcome === OUTCOME.DEFEAT) return { title: 'DEFAITE', color: PALETTE.danger, hint };
   return null;
 }

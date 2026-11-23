@@ -4,6 +4,8 @@ import { GAME_HEIGHT, GAME_WIDTH, PALETTE, SCENES } from '../config.js';
 import { toCss } from './color.js';
 import { endScreenModel } from './endScreenModel.js';
 import { createNavigation } from './navigation.js';
+import { isTouch } from './inputSource.js';
+import { createButton } from './uiButton.js';
 
 const DEPTH = 1100;
 
@@ -39,24 +41,42 @@ export function createEndScreen(scene) {
     chosen = true;
     go();
   };
-  nav.on(
-    'confirm',
-    choose(() => scene.scene.restart()),
-  );
-  nav.on(
-    'back',
-    choose(() => scene.scene.start(SCENES.MENU)),
-  );
+  const replay = choose(() => scene.scene.restart());
+  const toMenu = choose(() => scene.scene.start(SCENES.MENU));
+  nav.on('confirm', replay);
+  nav.on('back', toMenu);
 
   return {
     /** Affiche l'écran (une fois). */
     show(outcome) {
-      const model = endScreenModel(outcome);
+      const touch = isTouch();
+      const model = endScreenModel(outcome, touch);
       if (shown || model === null) return;
       shown = true;
       veil.setVisible(true);
       title.setText(model.title).setColor(toCss(model.color)).setVisible(true);
       hint.setText(model.hint).setVisible(true);
+      if (touch) {
+        createButton(scene, {
+          x: cx - 70,
+          y: GAME_HEIGHT * 0.72,
+          w: 120,
+          h: 40,
+          label: 'REJOUER',
+          depth: DEPTH + 2,
+          color: PALETTE.accent,
+          onTap: replay,
+        });
+        createButton(scene, {
+          x: cx + 70,
+          y: GAME_HEIGHT * 0.72,
+          w: 120,
+          h: 40,
+          label: 'MENU',
+          depth: DEPTH + 2,
+          onTap: toMenu,
+        });
+      }
     },
   };
 }

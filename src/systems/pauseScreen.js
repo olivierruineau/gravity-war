@@ -2,7 +2,8 @@
 // ECHAP revient au menu. Inactive une fois la partie décidée (l'écran de fin a ses propres touches).
 import { toCss } from './color.js';
 import { watchAway } from './platform.js';
-import { createNavigation } from './navigation.js';
+import { createNavigation, watchSource } from './navigation.js';
+import { createButton } from './uiButton.js';
 import { controlsLines } from '../data/controls.js';
 import { GAME_HEIGHT, GAME_WIDTH, PALETTE, SCENES } from '../config.js';
 
@@ -26,7 +27,7 @@ export function createPauseScreen(scene, canPause) {
     .setDepth(DEPTH + 1)
     .setVisible(false);
   const help = scene.add
-    .text(cx, GAME_HEIGHT * 0.5, [...controlsLines(), '', 'P : reprendre   ECHAP : menu'], {
+    .text(cx, GAME_HEIGHT * 0.5, '', {
       fontFamily: 'monospace',
       fontSize: '10px',
       color: toCss(PALETTE.text),
@@ -37,6 +38,43 @@ export function createPauseScreen(scene, canPause) {
     .setDepth(DEPTH + 1)
     .setVisible(false);
 
+  const resumeButton = createButton(scene, {
+    x: cx - 70,
+    y: GAME_HEIGHT * 0.72, // au-dessus des boutons de jeu (poussée, rotation)
+    w: 120,
+    h: 40,
+    label: 'REPRENDRE',
+    depth: DEPTH + 2,
+    color: PALETTE.accent,
+    onTap: () => state.toggle(),
+  });
+  const menuButton = createButton(scene, {
+    x: cx + 70,
+    y: GAME_HEIGHT * 0.72, // au-dessus des boutons de jeu (poussée, rotation)
+    w: 120,
+    h: 40,
+    label: 'MENU',
+    depth: DEPTH + 2,
+    onTap: () => toMenu(),
+  });
+  // Bouton pause en haut à gauche, visible seulement au doigt (le sien est sous le voile : on bascule par ce bouton).
+  const pauseButton = createButton(scene, {
+    x: 26,
+    y: 26,
+    label: 'II',
+    depth: DEPTH - 100,
+    onTap: () => state.toggle(),
+  });
+
+  let touch = false;
+  const render = () => {
+    const hint = touch ? [] : ['', 'P : reprendre   ECHAP : menu'];
+    help.setText([...controlsLines(touch), ...hint]);
+    help.setY(GAME_HEIGHT * (touch ? 0.42 : 0.5)).setVisible(state.paused);
+    resumeButton.setVisible(state.paused && touch);
+    menuButton.setVisible(state.paused && touch);
+    pauseButton.setVisible(!state.paused && touch && canPause());
+  };
   const state = {
     paused: false,
     toggle() {
@@ -44,9 +82,13 @@ export function createPauseScreen(scene, canPause) {
       state.paused = !state.paused;
       veil.setVisible(state.paused);
       title.setVisible(state.paused);
-      help.setVisible(state.paused);
+      render();
     },
   };
+  watchSource(scene, (isTouch) => {
+    touch = isTouch;
+    render();
+  });
   // Pause automatique : onglet masqué, appli en arrière-plan, passage en portrait sur tactile.
   const stopWatching = watchAway(() => {
     if (!state.paused) state.toggle();
