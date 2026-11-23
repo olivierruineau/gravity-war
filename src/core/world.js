@@ -1,6 +1,8 @@
 // Orchestrateur de la simulation : seul module qui connaît tous les autres (ADR 0002).
 // `world` est un objet de données pur (JSON-sérialisable), sans fonctions ni références croisées.
 import { BOUNDS_RESTITUTION, PROJECTILE_CAPACITY, SHIP_SIZE } from '../config.js';
+import { updateBuildings } from './building.js';
+import { updateCapture } from './capture.js';
 import { collideProjectilesPlanets, collideProjectilesShips } from './collision.js';
 import { applyBounds } from './bounds.js';
 import { createEvents } from './events.js';
@@ -8,6 +10,7 @@ import { createFactions, OUTCOME, updateFactions } from './faction.js';
 import { applyGravity } from './gravity.js';
 import { collideShipPlanets, updateLanded } from './landing.js';
 import { updateRespawn } from './lifecycle.js';
+import { updateShield } from './shield.js';
 import { createPlanet } from './planet.js';
 import { createProjectiles, updateProjectiles } from './projectile.js';
 import { createRng } from './rng.js';
@@ -66,6 +69,9 @@ export function step(world, dt) {
   updateProjectiles(world, dt);
   collideProjectilesPlanets(world);
   collideProjectilesShips(world);
+  for (let i = 0; i < world.ships.length; i++) if (world.ships[i].alive) updateShield(world, i, dt);
+  updateBuildings(world, dt);
+  updateCapture(world, dt);
   updateFactions(world);
   world.tick++;
 }

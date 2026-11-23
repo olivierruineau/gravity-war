@@ -73,7 +73,7 @@ export class GameScene extends Phaser.Scene {
 
     this.gravityArrow.update(this.world, player);
     this.landingAid.update(this.world, player);
-    this.healthBar.update(player);
+    this.healthBar.update(player, this.world.factions[player.faction].hasShield);
     this.debug.update(this.world, player);
 
     this.audio.handle(this.world.events, player.pos);

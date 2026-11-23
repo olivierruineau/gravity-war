@@ -61,14 +61,14 @@ Spécification : [docs/SPEC.md](docs/SPEC.md). Architecture : [docs/ARCHITECTURE
 **Fin de phase :** on capture des planètes neutres, elles se développent seules ; la planète change de couleur.
 
 - [x] **4.1** Modèle de faction + propriétaire de planète ; départ : une planète de base par faction ; couleurs (blanc/vert/autres) (code, test-s)
-- [ ] **4.2** Capture d'une planète neutre : 3 s posé, compteur remis à zéro si décollage/éjection, anneau de progression ; tests (code, test-c)
-- [ ] **4.3** Bâtiments en données (catalogue, ordre de développement, durées) + développement automatique dans le temps ; tests (code, test-c)
+- [x] **4.2** Capture d'une planète neutre : 3 s posé, compteur remis à zéro si décollage/éjection, anneau de progression ; tests (code, test-c)
+- [x] **4.3** Bâtiments en données (catalogue, ordre de développement, durées) + développement automatique dans le temps ; tests (code, test-c)
 - [ ] **4.4** Rendu des bâtiments (carrés/rectangles dans le cercle) (code)
 - [ ] **4.5** Tourelles de défense : détection, tir auto sur ennemis, PV, destruction ; pas de tir ami ; tests (code, test-c)
 - [ ] **4.6** Capture d'une planète ennemie : défenses détruites puis 3 s posé ; bâtiments réinitialisés ; tests (code, test-c)
 - [ ] **4.7** Missiles : stock limité, touche `Ctrl`, autoguidage léger, dégâts ; déblocage via bâtiment ; tests (code, test-c)
 - [ ] **4.8** Réarmement en missiles posé sur planète possédée avec usine ; stock minimum au respawn (code, test-c)
-- [ ] **4.9** Bouclier passif : déblocage par bâtiment, absorbe avant la vie, recharge en vol hors combat ; tests (code, test-c)
+- [x] **4.9** Bouclier passif : déblocage par bâtiment, absorbe avant la vie, recharge en vol hors combat ; tests (code, test-c)
 - [ ] **4.10** Respawn à la planète possédée la plus proche ; règles d'élimination (plus de planète + vaisseau détruit) ; tests (code, test-c)
 - [ ] **4.11** Revue de la phase : règles de capture/combat (rev)
 
