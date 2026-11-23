@@ -24,7 +24,7 @@ Revue faite à la main sur la branche `on-going` (phases 5 à 7.4), complétée 
 ## Points relevés, non bloquants pour la v1
 
 1. **Tir involontaire au démarrage** : le joueur appuie sur `ESPACE` dans le menu et la touche (aussi « tir principal ») peut rester enfoncée à l'entrée dans la partie. À regarder en jeu.
-2. **Pas de commande de sourdine** : le son ne peut pas être coupé en jeu. Une touche `M` serait simple à ajouter (le module audio n'a plus l'état nécessaire, à recréer).
+2. **Sourdine** : résolue après la revue, touche `M` (`audio/mute.js`, `systems/muteKey.js`).
 3. **Debug F3** : le texte est reconstruit à chaque image tant qu'il est visible (allocations de chaînes). Sans effet hors debug.
 4. **Bundle** : ≈ 1,4 Mo (373 Ko compressés), dominé par Phaser. Acceptable pour un jeu navigateur ; un découpage en deux fichiers n'apporterait que du cache.
 5. **IA** (rappel de la revue 5.8) : `findDetour` ignore la vitesse et les tourelles hors cible ; esquive des balles peu efficace. Acceptable au niveau de difficulté actuel.

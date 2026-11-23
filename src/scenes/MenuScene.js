@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH, PALETTE, SCENES } from '../config.js';
 import { toCss } from '../systems/color.js';
+import { createMuteKey } from '../systems/muteKey.js';
 import { playSfx, resumeAudio } from '../audio/sfx.js';
 import { controlsLines } from '../data/controls.js';
 
@@ -46,6 +47,7 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setVisible(false);
+    createMuteKey(this);
     const toggleHelp = () => help.setVisible(!help.visible);
     this.input.keyboard.on('keydown-H', toggleHelp);
     this.events.once('shutdown', () => this.input.keyboard.off('keydown-H', toggleHelp));

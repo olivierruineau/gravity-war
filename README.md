@@ -22,6 +22,7 @@ Une version de production se construit avec `npm run build` (dossier `dist/`, ch
 | `Espace`   | Tir principal                                  |
 | `Ctrl`     | Missile (déblocage par bâtiment, stock limité) |
 | `P`        | Pause (`Echap` : retour au menu)               |
+| `M`        | Couper / rétablir le son                       |
 | `F3`       | Overlay de debug (FPS, mode des bots)          |
 | `H` (menu) | Aide des commandes                             |
 

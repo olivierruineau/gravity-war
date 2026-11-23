@@ -1,6 +1,7 @@
 // Effets sonores synthétisés avec ZzFX (~1 Ko, esprit chiptune, zéro fichier audio).
 // Générateur de paramètres : https://killedbyapixel.github.io/ZzFX/
 import { zzfx, ZZFX } from 'zzfx';
+import { isMuted } from './mute.js';
 
 /** Les navigateurs exigent un geste utilisateur avant de jouer du son : appeler après un clic/touche. */
 export function resumeAudio() {
@@ -55,6 +56,6 @@ for (const name of Object.keys(SOUNDS)) {
 /** `volume` ∈ [0, 1] multiplie le volume de base du son (atténuation par la distance, voir audioEvents). */
 export function playSfx(name, volume = 1) {
   const rest = REST[name];
-  if (!rest || volume <= 0) return;
+  if (!rest || volume <= 0 || isMuted()) return;
   zzfx(BASE_VOLUME[name] * volume, ...rest);
 }

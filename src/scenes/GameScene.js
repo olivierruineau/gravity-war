@@ -17,6 +17,7 @@ import { drawProjectiles } from '../entities/projectileView.js';
 import { drawShip } from '../entities/shipView.js';
 import { createAudioEvents } from '../systems/audioEvents.js';
 import { createEndScreen } from '../systems/endScreen.js';
+import { createMuteKey } from '../systems/muteKey.js';
 import { createDebugOverlay } from '../systems/debugOverlay.js';
 import { createEffects } from '../systems/effects.js';
 import { createGravityArrow } from '../systems/gravityArrow.js';
@@ -57,6 +58,7 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, this.world.width, this.world.height);
     this.gfx = this.add.graphics();
     this.debug = createDebugOverlay(this);
+    createMuteKey(this);
     this.hud = createHud(this);
     this.minimap = createMinimap(this, this.world);
     this.offscreen = createOffscreenIndicators(this);

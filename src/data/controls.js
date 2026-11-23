@@ -6,6 +6,7 @@ export const CONTROLS = [
   { keys: 'ESPACE', action: 'Tir principal' },
   { keys: 'CTRL', action: 'Missile' },
   { keys: 'P', action: 'Pause' },
+  { keys: 'M', action: 'Son on/off' },
   { keys: 'F3', action: 'Debug' },
 ];
 
