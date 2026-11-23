@@ -88,7 +88,7 @@ Spécification : [docs/SPEC.md](docs/SPEC.md). Architecture : [docs/ARCHITECTURE
 - [x] **5.3** Contrôleur d'atterrissage : approche, alignement, vitesse radiale sous le seuil ; tests (code, test-c)
 - [x] **5.4** Comportement « capturer une planète neutre » (choix de cible, trajet, capture) (code, test-c)
 - [x] **5.5** Comportement combat : viser et tirer, esquiver, missiles ; attaquer les planètes ennemies (tourelles puis capture) (code, test-c)
-- [ ] **5.6** Comportement défense/repli : réagir aux attaques sur ses planètes, repli si vie basse (code, test-c)
+- [x] **5.6** Comportement défense/repli : réagir aux attaques sur ses planètes, repli si vie basse (code, test-c)
 - [ ] **5.7** Déploiement de 2 bots (2 couleurs) sur la carte ; réglage de l'agressivité (code)
 - [ ] **5.8** Revue de l'IA et de la performance (rev)
       À vérifier en revue : findDetour ignore la vitesse et les tourelles hors cible (seed 14 : 6 PV perdus après décollage) ; esquive des balles peu efficace (14 morts sur 20 face à un tireur parfait) ; écarts 5.5 à consigner dans l'ADR (assaultMinHealth 30, esquive ajoutée) ; ping-pong de captures sur planètes sans tourelle ; constantes slotValue/enemyCaptureFactor/occupiedFactor à lister dans l'ADR 0006.

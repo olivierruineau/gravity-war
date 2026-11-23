@@ -2,7 +2,7 @@ name: Test & Deploy Game
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 
 # Permissions requises pour déployer sur GitHub Pages
 permissions:
