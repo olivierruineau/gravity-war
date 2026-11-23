@@ -1,14 +1,7 @@
 // Réarmement des missiles (ADR 0005 §5) : posé sur une planète alliée dotée d'une usine à missiles.
 import { MISSILE_REARM_TIME, MISSILE_STOCK_MAX } from '../config.js';
-import { BUILDINGS } from '../data/buildings.js';
+import { hasMissileFactory } from './building.js';
 import { EVT, pushEvent } from './events.js';
-
-function hasMissileFactory(planet) {
-  for (let s = 0; s < planet.buildings.length; s++) {
-    if (planet.buildings[s].built && BUILDINGS[s].grants === 'missiles') return true;
-  }
-  return false;
-}
 
 /** Fait avancer le réarmement d'un vaisseau vivant ; la progression est perdue dès que les conditions cessent. */
 export function updateRearm(world, shipIndex, dt) {

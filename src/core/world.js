@@ -1,6 +1,13 @@
 // Orchestrateur de la simulation : seul module qui connaît tous les autres (ADR 0002).
 // `world` est un objet de données pur (JSON-sérialisable), sans fonctions ni références croisées.
-import { BOUNDS_RESTITUTION, FACTION_COUNT, PROJECTILE_CAPACITY, SHIP_SIZE } from '../config.js';
+import {
+  AI_RNG_SALT,
+  BOUNDS_RESTITUTION,
+  FACTION_COUNT,
+  PROJECTILE_CAPACITY,
+  SHIP_SIZE,
+} from '../config.js';
+import { createBotState, updateAi } from './ai/bot.js';
 import { updateBuildings } from './building.js';
 import { updateCapture } from './capture.js';
 import { collideProjectilesPlanets, collideProjectilesShips } from './collision.js';
@@ -24,24 +31,31 @@ import { applyIntent, createShip, integrate } from './ship.js';
  * @param {{ width: number, height: number, planets?: { x: number, y: number, radius: number, gravity?: number, owner?: number, built?: number }[], spawns?: { x?: number, y?: number, angle?: number, planet?: number }[] }} map
  *   carte injectée (permet des mini-cartes en test) ; `spawns[i]` = point de départ du vaisseau de la faction i
  * @param {number} seed                            graine de l'aléa de simulation
- * @param {{ eventCapacity: number }} options
+ * @param {{ eventCapacity: number, bots?: number[] }} options
+ *   `bots` = factions pilotées par l'IA (ADR 0006), chacune avec un spawn ; aucune par défaut
  * @returns le monde ; `world.inGame` (FACTION_COUNT booléens) = factions avec au moins une planète au départ
  *   (les autres sont « hors jeu » : jamais éliminées, ni victoire ni défaite ne dépend d'elles).
- * @throws {Error} si la carte a plus de spawns que de factions ou un `owner` de planète >= FACTION_COUNT
+ * @throws {Error} si la carte a plus de spawns que de factions, un `owner` de planète >= FACTION_COUNT,
+ *   ou une faction de `bots` sans spawn
  */
-export function createWorld(map, seed, { eventCapacity }) {
+export function createWorld(map, seed, { eventCapacity, bots = [] }) {
   const spawns = map.spawns ?? [];
   if (spawns.length > FACTION_COUNT)
     throw new Error(`Invalid map: ${spawns.length} spawns for ${FACTION_COUNT} factions`);
   for (const def of map.planets ?? [])
     if (def.owner !== undefined && def.owner >= FACTION_COUNT)
       throw new Error(`Invalid map: planet owner ${def.owner} >= ${FACTION_COUNT} factions`);
+  for (const faction of bots)
+    if (spawns[faction] === undefined)
+      throw new Error(`Invalid bots: faction ${faction} has no spawn`);
   const planets = (map.planets ?? []).map(createPlanet);
   const world = {
     tick: 0,
     width: map.width,
     height: map.height,
     rng: createRng(seed),
+    aiRng: createRng((seed ^ AI_RNG_SALT) >>> 0), // flux séparé : l'IA ne décale pas les tirages des tourelles
+    ai: bots.map(createBotState),
     ships: [],
     planets,
     projectiles: createProjectiles(PROJECTILE_CAPACITY),
@@ -64,6 +78,8 @@ export function createWorld(map, seed, { eventCapacity }) {
 
 /** Avance la simulation d'un pas. Ordre des étapes : ADR 0002 §5, précisé par l'ADR 0003 §4. */
 export function step(world, dt) {
+  // (1) IA des bots : n'écrit que des intentions (et son propre état).
+  updateAi(world, dt);
   // (2) intentions → rotation/poussée, (3) gravité puis intégration, (4) bornes de carte, (5) contact avec les planètes.
   for (let i = 0; i < world.ships.length; i++) {
     const ship = world.ships[i];

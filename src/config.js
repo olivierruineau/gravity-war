@@ -73,6 +73,9 @@ export const SHIELD_MAX = 50;
 export const SHIELD_RECHARGE_DELAY = 4; // secondes sans dégâts avant la recharge
 export const SHIELD_RECHARGE_RATE = 10; // points/s
 
+/** IA des bots (ADR 0006) : sel du flux d'aléa `world.aiRng`, distinct de `world.rng` (tourelles). */
+export const AI_RNG_SALT = 0x9e3779b9;
+
 /** Effets visuels (cosmétiques, hors simulation) : taille du pool d'effets simultanés. */
 export const EFFECT_CAPACITY = 64;
 

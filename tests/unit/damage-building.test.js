@@ -13,6 +13,11 @@ const GENERATOR = 2;
 const HEAVY = 3;
 const TARGET_ORDER = [TURRET, HEAVY, FACTORY, GENERATOR];
 
+/** État de la planète hors `lastHitTick`, écrit en entrée de `damageBuilding` même quand rien d'autre ne change (ADR 0006). */
+function stateOf(planet) {
+  return JSON.stringify({ ...planet, lastHitTick: 0 });
+}
+
 // Les dégâts sont des entiers et les PV aussi : toutes les comparaisons de PV sont exactes (toBe), sans tolérance.
 
 /** Planète(s) réelle(s) via `createWorld` : `damageBuilding` ne lit que `planets` et `events`. */
@@ -227,17 +232,17 @@ describe('damageBuilding : cas où rien ne se passe', () => {
   it('planète possédée sans aucun bâtiment : état strictement inchangé, aucun événement', () => {
     const world = makeWorld({ built: 0 });
     world.planets[0].buildProgress = 6;
-    const before = JSON.stringify(world.planets[0]);
+    const before = stateOf(world.planets[0]);
     damageBuilding(world, 0, 1e6, 0, 0);
-    expect(JSON.stringify(world.planets[0])).toBe(before);
+    expect(stateOf(world.planets[0])).toBe(before);
     expect(world.events.count).toBe(0);
   });
 
   it('planète neutre : rien (elle n’a jamais de bâtiment, même si la carte en demande)', () => {
     const world = makeWorld({ owner: -1, built: 4 });
-    const before = JSON.stringify(world.planets[0]);
+    const before = stateOf(world.planets[0]);
     damageBuilding(world, 0, 1e6, 0, 0);
-    expect(JSON.stringify(world.planets[0])).toBe(before);
+    expect(stateOf(world.planets[0])).toBe(before);
     expect(world.events.count).toBe(0);
   });
 
@@ -245,9 +250,9 @@ describe('damageBuilding : cas où rien ne se passe', () => {
     const world = makeWorld();
     destroyNext(world, 4);
     clearEvents(world.events);
-    const before = JSON.stringify(world.planets[0]);
+    const before = stateOf(world.planets[0]);
     damageBuilding(world, 0, 1e6, 0, 0);
-    expect(JSON.stringify(world.planets[0])).toBe(before);
+    expect(stateOf(world.planets[0])).toBe(before);
     expect(world.events.count).toBe(0);
   });
 });
@@ -286,10 +291,10 @@ describe('damageBuilding : dégâts et PV limites', () => {
 
   it('dégâts nuls : aucune perte de PV et aucun événement', () => {
     const world = makeWorld();
-    const before = JSON.stringify(world.planets[0]);
+    const before = stateOf(world.planets[0]);
     damageBuilding(world, 0, 0, 0, 0);
     // 0 dégât : hp − 0 > 0, aucun changement (le slot n'est pas détruit).
-    expect(JSON.stringify(world.planets[0])).toBe(before);
+    expect(stateOf(world.planets[0])).toBe(before);
     expect(world.events.count).toBe(0);
   });
 });

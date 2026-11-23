@@ -315,6 +315,11 @@ function makeOwnedWorld({ owner = 0, built = 1, seed = 1 } = {}) {
   );
 }
 
+/** État de la planète hors `lastHitTick`, écrit en entrée de `damageBuilding` même quand rien d'autre ne change (ADR 0006). */
+function stateOf(planet) {
+  return JSON.stringify({ ...planet, lastHitTick: 0 });
+}
+
 describe('damageBuilding', () => {
   const HP = BUILDINGS[0].hp; // 80
 
@@ -402,9 +407,9 @@ describe('damageBuilding', () => {
   it('sans tourelle construite : rien (ni PV, ni événement, ni chantier touché)', () => {
     const world = makeOwnedWorld({ built: 0 });
     world.planets[0].buildProgress = 7;
-    const before = JSON.stringify(world.planets[0]);
+    const before = stateOf(world.planets[0]);
     damageBuilding(world, 0, 50, 0, 0);
-    expect(JSON.stringify(world.planets[0])).toBe(before);
+    expect(stateOf(world.planets[0])).toBe(before);
     expect(world.events.count).toBe(0);
   });
 

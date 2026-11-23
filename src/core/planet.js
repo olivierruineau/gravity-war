@@ -35,6 +35,7 @@ export function createPlanet({
     buildProgress: 0, // secondes écoulées sur le chantier en cours
     captureBy: -1, // faction en train de capturer, -1 = personne
     captureTime: 0,
+    lastHitTick: -1, // tick du dernier tir ennemi absorbé (−1 = jamais) ; lu par l'IA (ADR 0006)
   };
 }
 

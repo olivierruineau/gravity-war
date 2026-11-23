@@ -10,6 +10,24 @@ export function hasDefenses(planet) {
   return false;
 }
 
+/** Vrai si une usine à missiles est construite (débloque le tir et le réarmement de missiles). */
+export function hasMissileFactory(planet) {
+  for (let s = 0; s < planet.buildings.length; s++) {
+    if (planet.buildings[s].built && BUILDINGS[s].grants === 'missiles') return true;
+  }
+  return false;
+}
+
+/** Portée max (px, depuis la surface) des tourelles construites ; 0 sans tourelle. */
+export function defenseRange(planet) {
+  let range = 0;
+  for (let s = 0; s < BUILDINGS.length; s++) {
+    if (BUILDINGS[s].turret !== undefined && planet.buildings[s].built)
+      range = Math.max(range, BUILDINGS[s].turret.range);
+  }
+  return range;
+}
+
 /** Remet tous les slots à zéro (capture, SPEC §5.2). */
 export function resetBuildings(planet) {
   for (let s = 0; s < planet.buildings.length; s++) {
@@ -27,6 +45,7 @@ export function resetBuildings(planet) {
  */
 export function damageBuilding(world, planetIndex, damage, x, y) {
   const planet = world.planets[planetIndex];
+  planet.lastHitTick = world.tick; // même sur une planète nue : l'IA la défend (ADR 0006)
   let target = -1;
   for (let s = 0; s < BUILDINGS.length && target < 0; s++) {
     if (BUILDINGS[s].turret !== undefined && planet.buildings[s].built) target = s;
