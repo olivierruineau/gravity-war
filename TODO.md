@@ -136,7 +136,7 @@ Spécification : [docs/SPEC.md](docs/SPEC.md). Architecture : [docs/ARCHITECTURE
 - [x] **8.8** Audio mobile : débloquer l'`AudioContext` au premier toucher (aujourd'hui sur `Espace`), le reprendre au retour au premier plan, le suspendre en arrière-plan ; conserver la sourdine entre deux parties (code)
 - [x] **8.9** Performance mobile : mesurer avec CPU ralenti ×4 (Playwright / CDP) puis sur un vrai appareil ; budget 30 images par seconde au minimum ; réglages de qualité (lueur coupée, rendu allégé) choisis automatiquement ou au menu ; vérifier la facture de `devicePixelRatio` et du redimensionnement (code)
 - [x] **8.10** PWA : manifeste, icônes, cache hors ligne par service worker, installable plein écran, mise à jour propre. Une nouvelle dépendance (par exemple un plugin Vite) passe d'abord par `architect` (arch, code)
-- [ ] **8.11** Tests d'appareils : émulation Playwright (téléphone Android et iPhone en paysage, tactile multi-touch), scénario de bout en bout menu → jeu → pause → fin, au toucher **et** au clavier (non-régression PC), puis les deux mélangés ; checklist manuelle iOS Safari et Android Chrome dans `docs/` (test-c, doc)
+- [x] **8.11** Tests d'appareils : émulation Playwright (téléphone Android et iPhone en paysage, tactile multi-touch), scénario de bout en bout menu → jeu → pause → fin, au toucher **et** au clavier (non-régression PC), puis les deux mélangés ; checklist manuelle iOS Safari et Android Chrome dans `docs/` (test-c, doc)
 - [ ] **8.12** Revue mobile et documentation : README et `docs/HOW-TO-PLAY.md` (commandes tactiles, installation), `docs/ARCHITECTURE.md` (couche d'entrée), déploiement (rev, doc)
 
 ---

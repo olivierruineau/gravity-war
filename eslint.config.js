@@ -47,6 +47,10 @@ export default [
     languageOptions: { globals: globals.node },
   },
   {
+    files: ['tests/e2e/*.cjs'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser }, sourceType: 'commonjs' },
+  },
+  {
     // Le service worker tourne hors page : ses globales sont celles d'un worker, pas du navigateur.
     files: ['build/sw.template.js'],
     languageOptions: { globals: globals.serviceworker },

@@ -18,7 +18,7 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
 }
 installAudioLifecycle(ZZFX.audioContext, document);
 
-new Phaser.Game({
+const game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: 'game',
   width: GAME_WIDTH,
@@ -32,3 +32,6 @@ new Phaser.Game({
   },
   scene: [BootScene, MenuScene, GameScene],
 });
+
+// Crochet de test (tests/e2e), absent du build de production.
+if (import.meta.env.DEV) window.__game = game;
