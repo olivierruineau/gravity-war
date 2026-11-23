@@ -117,6 +117,28 @@ Spécification : [docs/SPEC.md](docs/SPEC.md). Architecture : [docs/ARCHITECTURE
 
 ---
 
+## Phase 8 — Mobile (tactile)
+
+**Fin de phase :** le jeu se joue au doigt sur téléphone en paysage, du menu à l'écran de fin, sans clavier ; il est installable et tient 30 images par seconde au minimum sur un appareil milieu de gamme.
+**Revue Opus** en fin de phase (entrée, performance).
+
+État de départ (v1) : une seule porte d'entrée, `systems/keyboardInput.js`, qui écrit `ships[0].intent` ; des touches en dur dans le menu (`Espace`, `H`), la pause (`P`, `Echap`), l'écran de fin (`Espace`, `Echap`) et la sourdine (`M`) ; la page a un `viewport` mais aucun réglage tactile (pas de `touch-action`, pas de plein écran, pas de gestion d'orientation) ; l'audio est débloqué sur `Espace` ; le HUD occupe les deux coins du bas, là où se poseront les pouces.
+
+- [ ] **8.1** ADR 0008 : entrée multi-sources (clavier, tactile, plus tard manette). Actions logiques de jeu (`rotate`, `thrust`, `fire`, `missile`) et de navigation (`confirm`, `back`, `pause`, `mute`, `help`), plusieurs sources actives en même temps, détection d'un appareil tactile. Disposition des commandes tactiles (rotation et poussée sous le pouce gauche, tir et missile sous le droit : boutons ou joystick, `intent.rotate` reste discret), multi-touch (au moins 3 doigts), cibles d'au moins 44 px CSS, zones de sécurité. Trancher l'aide à la maniabilité tactile (voir 8.7) et les limites de iOS (pas de plein écran sur iPhone hors installation) (arch)
+- [ ] **8.2** Page et plateforme : `viewport-fit=cover` et zoom désactivé, `touch-action: none`, pas de sélection de texte, de menu contextuel ni de tirer-pour-rafraîchir, marges de zone sûre (encoche), `theme-color` ; bouton plein écran ; invite « tournez l'appareil » en portrait ; pause automatique quand la page passe en arrière-plan (`visibilitychange`) (code)
+- [ ] **8.3** Refactor de l'entrée : extraire les actions de navigation (menu, pause, fin de partie, sourdine, aide) des touches en dur vers une table de correspondance par source ; `keyboardInput.js` devient une source parmi d'autres. Comportement inchangé au clavier ; tests de la table (code, test-s)
+- [ ] **8.4** Commandes tactiles en jeu : overlay Phaser (rotation gauche/droite, poussée, tir, missile) en multi-touch, retour visuel à l'appui, affiché seulement sur appareil tactile, écrit `intent` comme le clavier ; modèle pur testable (zones, appui → intention, doigts relâchés ou perdus, `pointercancel`) (code, test-c)
+- [ ] **8.5** Menus et écrans au doigt : bouton JOUER, aide des commandes adaptée au tactile (plus de « ESPACE » ni de « H »), boutons visibles pause, son et menu, écran de fin avec rejouer et menu au toucher (code)
+- [ ] **8.6** HUD et lisibilité sur petit écran : déplacer vie, missiles, bouclier et vitesse hors de portée des pouces, taille minimale des textes (aujourd'hui 8 px sur 480×270), contraste, minimap et flèches hors écran toujours lisibles ; vérifier sur plusieurs formats (360×640 en paysage, 19,5:9, tablette) (code)
+- [ ] **8.7** Maniabilité tactile : selon l'ADR 8.1, assistances optionnelles (par exemple stabilisation de la rotation, aide à l'atterrissage plus indulgente), réglables, sans toucher aux règles du `core` partagées avec les bots (arch, code, test-c)
+- [ ] **8.8** Audio mobile : débloquer l'`AudioContext` au premier toucher (aujourd'hui sur `Espace`), le reprendre au retour au premier plan, le suspendre en arrière-plan ; conserver la sourdine entre deux parties (code)
+- [ ] **8.9** Performance mobile : mesurer avec CPU ralenti ×4 (Playwright / CDP) puis sur un vrai appareil ; budget 30 images par seconde au minimum ; réglages de qualité (lueur coupée, rendu allégé) choisis automatiquement ou au menu ; vérifier la facture de `devicePixelRatio` et du redimensionnement (code)
+- [ ] **8.10** PWA : manifeste, icônes, cache hors ligne par service worker, installable plein écran, mise à jour propre. Une nouvelle dépendance (par exemple un plugin Vite) passe d'abord par `architect` (arch, code)
+- [ ] **8.11** Tests d'appareils : émulation Playwright (téléphone Android et iPhone en paysage, tactile multi-touch), scénario de bout en bout menu → jeu → pause → fin ; checklist manuelle iOS Safari et Android Chrome dans `docs/` (test-c, doc)
+- [ ] **8.12** Revue mobile et documentation : README et `docs/HOW-TO-PLAY.md` (commandes tactiles, installation), `docs/ARCHITECTURE.md` (couche d'entrée), déploiement (rev, doc)
+
+---
+
 ## Backlog (hors v1)
 
-Carte procédurale seedée · campagne de niveaux · nombre de bots et difficulté réglables au menu · planètes en orbite · carte torique · monnaie et menu de construction · manette/mobile · musique.
+Carte procédurale seedée · campagne de niveaux · nombre de bots et difficulté réglables au menu · planètes en orbite · carte torique · monnaie et menu de construction · manette (réutilisera l'entrée multi-sources de la phase 8) · musique.
