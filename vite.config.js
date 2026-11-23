@@ -10,5 +10,7 @@ export default defineConfig({
   test: {
     include: ['tests/**/*.test.js'],
     environment: 'node', // la logique testée est pure : aucun import de Phaser dans les tests
+    testTimeout: 20000, // 20 s au lieu de 5 s pour absorbed les ralentissements CPU en CI
+    isolate: false,     // Évite de spawner 60 processus Node séparés sur un runner 2 vCPU
   },
 });
