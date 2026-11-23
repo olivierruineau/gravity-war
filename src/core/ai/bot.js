@@ -26,6 +26,7 @@ export function createBotState(faction, rank) {
     lastHealth: SHIP_MAX_HP,
     underFire: false,
     evadeTimer: 0,
+    evadeAngle: 0, // direction de l'esquive en cours
     banMode: AI_MODE.NONE,
     banTarget: -1,
     banTimer: 0,
@@ -48,11 +49,14 @@ export function updateAi(world, dt) {
     if (!ship.alive) {
       bot.mode = AI_MODE.NONE;
       bot.decisionTimer = 0;
+      bot.evadeTimer = 0;
       continue;
     }
     bot.modeTime += dt;
     bot.decisionTimer -= dt;
     if (bot.banTimer > 0) bot.banTimer -= dt;
+    if (bot.fireDelay > 0) bot.fireDelay -= dt;
+    if (bot.evadeTimer > 0) bot.evadeTimer -= dt;
     if (bot.decisionTimer <= 0) {
       decide(world, bot, ship);
       bot.decisionTimer = BOT_PROFILE.decisionPeriod;

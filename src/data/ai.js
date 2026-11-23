@@ -24,13 +24,17 @@ export const BOT_PROFILE = {
   giveUpTime: 45,
   banTime: 30,
   slotValue: 0.2, // bonus de score par bâtiment construit sur la cible
-  enemyCaptureFactor: 0.8, // capturer une planète ennemie sans défense vaut plus qu'une neutre
+  enemyCaptureFactor: 1.3, // capturer une planète ennemie sans défense vaut plus qu'une neutre (ADR 0006 §3)
   occupiedFactor: 0.3, // un autre vaisseau est posé sur la cible : la capture est contestée
+  assaultFactor: 1.3, // une planète ennemie vaut plus qu'une neutre (comme enemyCaptureFactor)
+  turretHpScale: 160, // PV de tourelles qui divisent par 2 l'envie d'assaut
+  healthFloor: 0.3, // plancher du facteur de santé (hp + bouclier) des modes offensifs
+  shelterFactor: 0.3, // HUNT : la cible est sous la portée des tourelles d'une planète adverse
 
   // Seuils
   huntRange: 700,
   lowHealth: 40,
-  assaultMinHealth: 60, // hp + bouclier
+  assaultMinHealth: 30, // hp + bouclier (la moitié de SHIP_MAX_HP : à 60 la moindre égratignure interdisait l'assaut)
   rearmBelow: 2,
   defendMemory: 5,
 
@@ -72,4 +76,11 @@ export const BOT_PROFILE = {
   missileRange: 300,
   missileReserve: 1,
   standoffMargin: 50,
+  assaultSlack: 30, // écart au point d'attente sous lequel le nez sert à viser plutôt qu'à naviguer
+  aimLookahead: 1, // s : on ne vise que si, à ce délai, la dérive laisserait encore dans la zone de visée
+  evadeTime: 1, // durée d'une esquive (s) : poussée dans une direction fixée au départ
+  dodgeBullets: true, // écart à l'ADR 0006 (qui n'esquive que les missiles) : esquive des balles proches
+  bulletNotice: 120, // rayon de perception des balles
+  bulletHorizon: 0.4, // s : une balle qui frôlerait le vaisseau plus tard n'est pas esquivée
+  dodgeRadius: 16, // distance d'approche minimale prévue sous laquelle une balle est une menace
 };

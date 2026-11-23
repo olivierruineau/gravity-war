@@ -1,13 +1,14 @@
 // Couche « pilote » de l'IA (ADR 0006 §4), appelée à chaque pas : traduit le but du bot en intentions discrètes,
 // les mêmes que celles du joueur. Réflexe anti-crash (§4.3) et aiguillage par mode ; navigation dans navigate.js,
-// atterrissage/décollage dans touchdown.js ; le combat viendra s'y ajouter.
+// atterrissage/décollage dans touchdown.js, combat (esquive, tir, HUNT, ASSAULT) dans combat.js.
 import { SHIP_COLLISION_RADIUS, SHIP_THRUST } from '../../config.js';
 import { BOT_PROFILE as P } from '../../data/ai.js';
 import { resetIntent } from '../intent.js';
 import { predictPath } from '../predict.js';
+import { assault, evade, fireControl, hunt } from './combat.js';
 import { AI_MODE, isLanding } from './mode.js';
 import { flyTo, thrustToward } from './navigate.js';
-import { land, takeoff } from './touchdown.js';
+import { land, takeoff, TOUCHDOWN_PHASE } from './touchdown.js';
 
 const CRASH_MARGIN = SHIP_COLLISION_RADIUS + P.clearance; // même marge que le contournement
 
@@ -36,15 +37,28 @@ function avoidCrash(world, ship, intent, exempt) {
   return true;
 }
 
-/** Réécrit tout `ships[f].intent` du bot : réflexe anti-crash d'abord, puis manœuvre du mode. */
+/**
+ * Manœuvre du mode, par priorité : décollage, réflexe anti-crash, esquive (sauf en finale d'atterrissage, où
+ * pousser de côté serait un crash), puis but du mode.
+ */
+function maneuver(world, bot, ship, intent) {
+  const landing = isLanding(bot);
+  // Le décollage passe avant le réflexe : c'est lui qui s'écarte de la planète que l'on quitte.
+  if (takeoff(world, bot, ship, intent)) return;
+  // Pendant une esquive, la cible d'atterrissage n'est plus exemptée : pousser de côté ne doit pas l'écraser.
+  if (avoidCrash(world, ship, intent, landing && bot.evadeTimer <= 0 ? bot.target : -1)) return;
+  if (!(landing && bot.phase >= TOUCHDOWN_PHASE.DESCENT) && evade(world, bot, ship, intent)) return;
+  if (landing) land(world, bot, ship, intent);
+  else if (bot.mode === AI_MODE.HUNT) hunt(world, bot, ship, intent);
+  else if (bot.mode === AI_MODE.ASSAULT) assault(world, bot, ship, intent);
+  else flyTo(world, ship, intent, bot.goalX, bot.goalY, ship.landedOn); // GOTO, ou IDLE sans planète
+}
+
+/** Réécrit tout `ships[f].intent` du bot : manœuvre du mode, puis tir (indépendant du mouvement). */
 export function pilot(world, bot, ship) {
   const intent = ship.intent;
   resetIntent(intent);
   if (bot.mode === AI_MODE.NONE) return;
-  const landing = isLanding(bot);
-  // Le décollage passe avant le réflexe : c'est lui qui s'écarte de la planète que l'on quitte.
-  if (takeoff(world, bot, ship, intent)) return;
-  if (avoidCrash(world, ship, intent, landing ? bot.target : -1)) return;
-  if (landing) land(world, bot, ship, intent);
-  else flyTo(world, ship, intent, bot.goalX, bot.goalY, ship.landedOn); // GOTO, ou IDLE sans planète
+  maneuver(world, bot, ship, intent);
+  fireControl(world, bot, ship, intent);
 }

@@ -98,7 +98,33 @@ function expectRate(results, predicate, min) {
   expect(rate, `seeds en échec : [${failed.join(', ')}]`).toBeGreaterThanOrEqual(min);
 }
 
+/**
+ * Joue `fn` avec le profil de bot donné. BOT_PROFILE est un objet mutable partagé : les scénarios sont calculés à la
+ * collecte (corps des describe), donc la valeur est toujours restaurée dans `finally`, avant le test suivant.
+ */
+function withProfile(overrides, fn) {
+  const saved = {};
+  for (const key of Object.keys(overrides)) saved[key] = P[key];
+  Object.assign(P, overrides);
+  try {
+    return fn();
+  } finally {
+    Object.assign(P, saved);
+  }
+}
+
+/**
+ * Les scénarios « décision » testent CAPTURE / REARM / IDLE / hystérésis, pas le combat (couvert par
+ * ai-combat.test.js) : `aggression = 0` annule les scores d'ASSAULT et de HUNT, donc la base humaine défendue ou un
+ * vaisseau ennemi posé en décor n'attirent plus le bot (qui tirerait dessus et fausserait « sans dégât », la riposte
+ * des tourelles et les temporisations).
+ */
 const runSeeds = (fn, seeds = SEEDS) =>
+  withProfile({ aggression: 0 }, () =>
+    seeds.map((seed) => ({ seed, ...fn(seed, createRng(seed)) })),
+  );
+/** Idem, mais avec le profil réel (bout en bout : les bots se combattent). */
+const runSeedsLive = (fn, seeds = SEEDS) =>
   seeds.map((seed) => ({ seed, ...fn(seed, createRng(seed)) }));
 const clean = (r) => r.harmful === 0 && !r.died && !r.nan;
 
@@ -650,34 +676,57 @@ describe('IA décision : buts posés à la main et faction hors jeu', () => {
 const ARENA_SPAWNS = [{ planet: 0 }, { planet: 1 }, { planet: 2 }];
 const ARENA = { ...arena, spawns: ARENA_SPAWNS };
 const NEUTRALS = [3, 4, 5, 6, 7, 8];
-const ownedByBots = (world) =>
-  NEUTRALS.filter((i) => [1, 2].includes(world.planets[i].owner)).length;
 const arenaWorld = (seed) => createWorld(ARENA, seed, { eventCapacity: 256, bots: [1, 2] });
 
 describe('IA décision : bout en bout sur l arène (2 bots, 120 s)', () => {
+  // Depuis le combat (5.5), les deux bots s'attaquent : des neutres capturées sont reperdues (ASSAULT/CAPTURE de
+  // l'ennemi) et un bot peut mourir. On compte donc les captures de neutres CUMULÉES (neutre -> bot) plutôt que
+  // la possession à 120 s. Mesuré sur les seeds 1 à 20 : 3 à 6 captures (min 3), 0 ou 1 mort de bot par seed.
+  const MIN_CAPTURES = 3; // minimum mesuré (seeds 9, 10, 16) : la boucle de capture tourne bien malgré le combat
+  const MAX_BOT_DEATHS = 2; // maximum mesuré : 1 ; marge d'une mort pour un duel malheureux
   const E2E_SEEDS = Array.from({ length: 12 }, (_, i) => i + 1);
-  const results = runSeeds((seed) => {
+  const results = runSeedsLive((seed) => {
     const world = arenaWorld(seed);
     const rec = newRecord();
-    play(world, 120, rec);
+    const owners = world.planets.map((p) => p.owner);
+    let captures = 0;
+    let deaths = 0;
+    const wasAlive = [true, true, true];
+    play(world, 120, rec, (w) => {
+      for (const i of NEUTRALS) {
+        const owner = w.planets[i].owner;
+        if (owners[i] === -1 && (owner === 1 || owner === 2)) captures++;
+        owners[i] = owner;
+      }
+      for (const f of [1, 2]) {
+        if (wasAlive[f] && !w.ships[f].alive) deaths++;
+        wasAlive[f] = w.ships[f].alive;
+      }
+    });
     return {
-      owned: ownedByBots(world),
+      captures,
+      deaths,
       rec,
       humanAlive: world.ships[0].alive,
+      humanHp: world.ships[0].hp,
       humanPlanets: world.planets.filter((p) => p.owner === 0).length,
     };
   }, E2E_SEEDS);
 
-  it('au moins 5 des 6 neutres appartiennent aux bots après 120 s (>= 90 % des seeds)', () => {
-    expectRate(results, (r) => r.owned >= 5, RATE_E2E);
+  it(`les bots capturent au moins ${MIN_CAPTURES} neutres en cumulé en 120 s (>= 90 % des seeds)`, () => {
+    expectRate(results, (r) => r.captures >= MIN_CAPTURES, RATE_E2E);
   });
 
-  it('aucune mort de bot, aucun NaN (>= 90 % des seeds)', () => {
-    expectRate(results, (r) => !r.rec.died && !r.rec.nan, RATE_E2E);
+  it(`aucun NaN, au plus ${MAX_BOT_DEATHS} morts de bot en cumul (>= 90 % des seeds)`, () => {
+    expectRate(results, (r) => !r.rec.nan && r.deaths <= MAX_BOT_DEATHS, RATE_E2E);
   });
 
   it('le joueur immobile et sa base défendue ne sont pas touchés', () => {
-    expectRate(results, (r) => r.humanAlive && r.humanPlanets === 1, RATE_E2E);
+    expectRate(
+      results,
+      (r) => r.humanAlive && r.humanHp === SHIP_MAX_HP && r.humanPlanets === 1,
+      RATE_E2E,
+    );
   });
 });
 

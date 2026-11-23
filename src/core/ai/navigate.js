@@ -95,8 +95,9 @@ function findDetour(world, ship, gx, gy, ignore) {
 /**
  * Navigation vers (gx, gy) : « arrive » avec temps de demi-tour, gravité compensée, contournement des planètes
  * (sauf `ignore`) et but borné à la carte. `ignore` = −1 pour traiter toutes les planètes comme obstacles.
+ * (refVx, refVy) = vitesse du but (poursuite d'un vaisseau) : la vitesse désirée s'y ajoute, 0 par défaut.
  */
-export function flyTo(world, ship, intent, gx, gy, ignore) {
+export function flyTo(world, ship, intent, gx, gy, ignore, refVx = 0, refVy = 0) {
   const goalX = clamp(gx, P.wallMargin, world.width - P.wallMargin);
   const goalY = clamp(gy, P.wallMargin, world.height - P.wallMargin);
   let steerX = goalX;
@@ -118,8 +119,8 @@ export function flyTo(world, ship, intent, gx, gy, ignore) {
     toLen === 0
       ? 0
       : Math.min(P.cruiseSpeed, -braking + Math.sqrt(braking * braking + 2 * BRAKE_ACCEL * dist));
-  const desiredVx = toLen === 0 ? 0 : (toX / toLen) * speed;
-  const desiredVy = toLen === 0 ? 0 : (toY / toLen) * speed;
+  const desiredVx = refVx + (toLen === 0 ? 0 : (toX / toLen) * speed);
+  const desiredVy = refVy + (toLen === 0 ? 0 : (toY / toLen) * speed);
   gravityAt(gravity, ship.pos, world.planets);
   thrustToward(
     intent,

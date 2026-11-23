@@ -1,18 +1,25 @@
 // Couche « décision » de l'IA (ADR 0006 §3), appelée toutes les `decisionPeriod` secondes : score d'utilité de
 // chaque couple (mode, cible), hystérésis (bonus d'engagement et verrou `minCommit`), bannissement des cibles
-// bloquées, bruit tiré dans `world.aiRng`. Modes décidés : CAPTURE, REARM, IDLE. Les buts posés de l'extérieur
+// bloquées, bruit tiré dans `world.aiRng`. Modes décidés : CAPTURE, ASSAULT, HUNT, REARM, IDLE. Les buts posés de l'extérieur
 // (GOTO, LAND : tests et debug) ne sont jamais remplacés. Aucune allocation : le meilleur candidat est gardé dans
 // `best`, un scratch de module.
-import { MISSILE_STOCK_MAX } from '../../config.js';
+import { MISSILE_STOCK_MAX, SHIP_MAX_HP } from '../../config.js';
 import { BOT_PROFILE as P } from '../../data/ai.js';
-import { hasDefenses, hasMissileFactory } from '../building.js';
+import { BUILDINGS } from '../../data/buildings.js';
+import { defenseRange, hasDefenses, hasMissileFactory } from '../building.js';
+import { clamp } from '../math.js';
 import { range } from '../rng.js';
 import { AI_MODE } from './mode.js';
 import { TOUCHDOWN_PHASE } from './touchdown.js';
 
-const { NONE, IDLE, CAPTURE, REARM, GOTO, LAND } = AI_MODE;
+const { NONE, IDLE, CAPTURE, ASSAULT, HUNT, REARM, GOTO, LAND } = AI_MODE;
 
 const best = { mode: NONE, target: -1, score: -Infinity };
+
+/** 1 / (1 + trajet / travelScale), le trajet étant `gap` parcouru à `cruiseSpeed`. */
+function closeness(gap) {
+  return 1 / (1 + gap / P.cruiseSpeed / P.travelScale);
+}
 
 /** Distance de la surface de la planète au vaisseau (jamais négative), en trajet à `cruiseSpeed`. */
 function proximity(ship, planet) {
@@ -20,7 +27,28 @@ function proximity(ship, planet) {
     0,
     Math.hypot(planet.pos.x - ship.pos.x, planet.pos.y - ship.pos.y) - planet.radius,
   );
-  return 1 / (1 + gap / P.cruiseSpeed / P.travelScale);
+  return closeness(gap);
+}
+
+/** PV cumulés des tourelles construites : plus elles tiennent, moins l'assaut est tentant. */
+function turretHp(planet) {
+  let hp = 0;
+  for (let s = 0; s < BUILDINGS.length; s++) {
+    if (BUILDINGS[s].turret !== undefined && planet.buildings[s].built)
+      hp += planet.buildings[s].hp;
+  }
+  return hp;
+}
+
+/** Vrai si (x, y) est dans la portée des tourelles d'une planète qui n'est pas à `faction`. */
+function underEnemyTurrets(planets, x, y, faction) {
+  for (let i = 0; i < planets.length; i++) {
+    const p = planets[i];
+    if (p.owner === faction) continue;
+    const reach = defenseRange(p);
+    if (reach > 0 && Math.hypot(x - p.pos.x, y - p.pos.y) - p.radius < reach) return true;
+  }
+  return false;
 }
 
 /** Vrai si un autre vaisseau vivant, d'une autre faction, est posé sur la planète `index`. */
@@ -50,6 +78,16 @@ function leaderOf(factions, faction) {
   return leader;
 }
 
+/** Même option : même couple, ou ASSAULT puis CAPTURE de la même planète (la tourelle tombée, on enchaîne). */
+function sameOption(modeA, targetA, modeB, targetB) {
+  if (targetA !== targetB) return false;
+  return (
+    modeA === modeB ||
+    (modeA === ASSAULT && modeB === CAPTURE) ||
+    (modeA === CAPTURE && modeB === ASSAULT)
+  );
+}
+
 /**
  * Propose un candidat : applique le bannissement, le bruit (±`scoreNoise`) et l'hystérésis, puis garde le meilleur.
  * L'option en cours reçoit `commitBonus`, et un score infini (verrou) pendant `minCommit` sauf pour IDLE.
@@ -57,7 +95,7 @@ function leaderOf(factions, faction) {
 function offer(world, bot, mode, target, score) {
   if (bot.banTimer > 0 && bot.banMode === mode && bot.banTarget === target) return;
   let s = score * (1 + range(world.aiRng, -P.scoreNoise, P.scoreNoise));
-  if (bot.mode === mode && bot.target === target) {
+  if (sameOption(bot.mode, bot.target, mode, target)) {
     s = mode !== IDLE && bot.modeTime < P.minCommit ? Infinity : s * P.commitBonus;
   }
   if (s > best.score) {
@@ -82,17 +120,23 @@ export function decide(world, bot, ship) {
 
   const { planets, ships, factions } = world;
   const faction = bot.faction;
-  // Anti-blocage : une capture trop longue est abandonnée et sa cible bannie (un seul emplacement).
-  if (bot.mode === CAPTURE && bot.modeTime > P.giveUpTime) {
-    bot.banMode = CAPTURE;
+  // Anti-blocage : une option offensive trop longue est abandonnée et sa cible bannie (un seul emplacement).
+  if (
+    (bot.mode === CAPTURE || bot.mode === ASSAULT || bot.mode === HUNT) &&
+    bot.modeTime > P.giveUpTime
+  ) {
+    bot.banMode = bot.mode;
     bot.banTarget = bot.target;
     bot.banTimer = P.banTime;
   }
 
+  bot.aimBias = range(world.aiRng, -P.aimError, P.aimError); // biais de visée : retiré à chaque décision
   best.mode = NONE;
   best.target = -1;
   best.score = -Infinity;
   const leader = leaderOf(factions, faction);
+  const healthFactor = clamp(health / SHIP_MAX_HP, P.healthFloor, 1);
+  const canAssault = health >= P.assaultMinHealth;
   const wantRearm =
     factions[faction].hasMissiles &&
     (ship.missiles < P.rearmBelow || (bot.mode === REARM && ship.missiles < MISSILE_STOCK_MAX));
@@ -120,14 +164,35 @@ export function decide(world, bot, ship) {
       if (p.owner === leader) score *= P.leaderBonus;
       if (occupiedByOther(ships, i, faction)) score *= P.occupiedFactor;
       offer(world, bot, CAPTURE, i, score);
+    } else if (canAssault) {
+      // Planète ennemie défendue : tourelles d'abord (ADR 0007), la capture suivra.
+      let score = P.assault * P.aggression * P.assaultFactor * (1 + P.slotValue * builtSlots(p));
+      score *= (healthFactor * proximity(ship, p)) / (1 + turretHp(p) / P.turretHpScale);
+      if (p.owner === leader) score *= P.leaderBonus;
+      offer(world, bot, ASSAULT, i, score);
     }
+  }
+  for (let k = 0; k < ships.length; k++) {
+    const other = ships[k];
+    if (!other.alive || other.faction === faction) continue;
+    const gap = Math.hypot(other.pos.x - ship.pos.x, other.pos.y - ship.pos.y);
+    if (gap >= P.huntRange) continue;
+    let score = P.hunt * P.aggression * healthFactor * closeness(gap);
+    if (underEnemyTurrets(planets, other.pos.x, other.pos.y, faction)) score *= P.shelterFactor;
+    if (other.faction === leader) score *= P.leaderBonus;
+    offer(world, bot, HUNT, k, score);
   }
   offer(world, bot, IDLE, idleTarget, P.idle);
 
   if (best.mode === bot.mode && best.target === bot.target) return;
+  // ASSAULT → CAPTURE de la même planète ne repart pas de zéro (engagement, délai anti-blocage conservés).
+  const continued = sameOption(bot.mode, bot.target, best.mode, best.target);
   bot.mode = best.mode;
   bot.target = best.target;
-  bot.modeTime = 0;
+  if (!continued) {
+    bot.modeTime = 0;
+    bot.fireDelay = P.reactionTime;
+  }
   if (bot.phase !== TOUCHDOWN_PHASE.TAKEOFF) bot.phase = 0;
   // Sans planète où se poser, IDLE attend sur place : point d'attente = position au moment du choix.
   bot.goalX = ship.pos.x;
