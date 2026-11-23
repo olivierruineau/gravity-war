@@ -20,6 +20,7 @@ import { createEffects } from '../systems/effects.js';
 import { createGravityArrow } from '../systems/gravityArrow.js';
 import { createHud } from '../systems/hud.js';
 import { createMinimap } from '../systems/minimap.js';
+import { createOffscreenIndicators } from '../systems/offscreenIndicators.js';
 import { createLandingAid } from '../systems/landingAid.js';
 import { createKeyboardInput } from '../systems/keyboardInput.js';
 import { createStarfield } from '../systems/starfield.js';
@@ -52,6 +53,7 @@ export class GameScene extends Phaser.Scene {
     this.debug = createDebugOverlay(this);
     this.hud = createHud(this);
     this.minimap = createMinimap(this, this.world);
+    this.offscreen = createOffscreenIndicators(this);
     this.landingAid = createLandingAid(this);
     this.effects = createEffects(this);
     this.audio = createAudioEvents();
@@ -81,6 +83,7 @@ export class GameScene extends Phaser.Scene {
     const faction = this.world.factions[player.faction];
     this.hud.update(player, faction);
     this.minimap.update();
+    this.offscreen.update(this.world, player);
     this.debug.update(this.world, player);
 
     this.audio.handle(this.world.events, player.pos);
