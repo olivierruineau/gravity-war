@@ -4,6 +4,7 @@ import { BUILDINGS } from '../data/buildings.js';
 import { EVT, pushEvent } from './events.js';
 import { KIND, spawnProjectile } from './projectile.js';
 import { range } from './rng.js';
+import { hypot } from './math.js';
 
 /** Vaisseau vivant d'une autre faction le plus proche de la surface de `planet` ; −1 si aucun dans `maxRange`. */
 function findTarget(world, planet, maxRange) {
@@ -12,7 +13,7 @@ function findTarget(world, planet, maxRange) {
   for (let k = 0; k < world.ships.length; k++) {
     const ship = world.ships[k];
     if (!ship.alive || ship.faction === planet.owner) continue;
-    const gap = Math.hypot(ship.pos.x - planet.pos.x, ship.pos.y - planet.pos.y) - planet.radius;
+    const gap = hypot(ship.pos.x - planet.pos.x, ship.pos.y - planet.pos.y) - planet.radius;
     if (gap > bestGap) continue;
     bestGap = gap;
     best = k;

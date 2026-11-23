@@ -2,6 +2,7 @@
 import { AUDIO_RANGE, THRUST_SOUND_INTERVAL } from '../config.js';
 import { EVT } from '../core/events.js';
 import { playSfx } from '../audio/sfx.js';
+import { hypot } from '../core/math.js';
 
 // Événement → son (les types absents restent muets).
 const SOUND_BY_EVENT = {
@@ -40,7 +41,7 @@ export function createAudioEvents() {
           playSfx(sound);
           continue;
         }
-        const closeness = 1 - Math.hypot(ev.x - listener.x, ev.y - listener.y) / AUDIO_RANGE;
+        const closeness = 1 - hypot(ev.x - listener.x, ev.y - listener.y) / AUDIO_RANGE;
         if (closeness <= MIN_AUDIBLE) continue;
         playSfx(sound, closeness * closeness);
       }

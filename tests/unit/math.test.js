@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clamp, lerp, wrapAngle } from '../../src/core/math.js';
+import { clamp, hypot, lerp, wrapAngle } from '../../src/core/math.js';
 
 describe('clamp', () => {
   it('borne la valeur', () => {
@@ -40,5 +40,24 @@ describe('wrapAngle', () => {
 
   it('laisse -π inchangé (borne basse incluse)', () => {
     expect(wrapAngle(-Math.PI)).toBeCloseTo(-Math.PI);
+  });
+});
+
+describe('hypot', () => {
+  it('norme euclidienne : 3-4-5, zéro, signes indifférents', () => {
+    expect(hypot(3, 4)).toBe(5);
+    expect(hypot(0, 0)).toBe(0);
+    expect(hypot(-3, 4)).toBe(5);
+    expect(hypot(3, -4)).toBe(5);
+  });
+
+  it('même résultat que Math.hypot à 1e-12 près sur des valeurs de jeu', () => {
+    for (const [x, y] of [
+      [123.456, -789.01],
+      [0.001, 2400],
+      [-1350.5, 0.25],
+    ]) {
+      expect(hypot(x, y)).toBeCloseTo(Math.hypot(x, y), 12);
+    }
   });
 });

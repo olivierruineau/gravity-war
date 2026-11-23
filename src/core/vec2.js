@@ -2,6 +2,8 @@
 // Chaque fonction écrit dans `out` et le retourne ; `out` peut être le même objet que `a` ou `b`.
 // Les vecteurs temporaires doivent être des `const` locaux au module appelant (voir ADR 0002).
 
+import { hypot } from './math.js';
+
 /** @typedef {{ x: number, y: number }} Vec2 */
 
 /** Crée un vecteur (à appeler au chargement, jamais dans la boucle de simulation). */
@@ -55,7 +57,7 @@ export function fromAngle(out, angle, length = 1) {
 
 /** Normalise `a` ; un vecteur nul reste nul (jamais de NaN). */
 export function normalize(out, a) {
-  const l = Math.hypot(a.x, a.y);
+  const l = hypot(a.x, a.y);
   if (l === 0) {
     out.x = 0;
     out.y = 0;
@@ -75,7 +77,7 @@ export function len2(a) {
 }
 
 export function len(a) {
-  return Math.hypot(a.x, a.y);
+  return hypot(a.x, a.y);
 }
 
 export function dist2(a, b) {

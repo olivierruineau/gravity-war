@@ -5,7 +5,7 @@ import { SHIP_COLLISION_RADIUS, SHIP_THRUST } from '../../config.js';
 import { BOT_PROFILE as P } from '../../data/ai.js';
 import { gravityAt } from '../gravity.js';
 import { evaluateLanding } from '../landing.js';
-import { clamp, wrapAngle } from '../math.js';
+import { clamp, hypot, wrapAngle } from '../math.js';
 import { nearestPlanet } from '../planet.js';
 import { predictPath } from '../predict.js';
 import { isLanding } from './mode.js';
@@ -30,7 +30,7 @@ const then = { approachSpeed: 0, tangentialSpeed: 0, angleError: 0, ok: false };
 function altitudeAbove(ship, planet, n) {
   const dx = ship.pos.x - planet.pos.x;
   const dy = ship.pos.y - planet.pos.y;
-  const d = Math.hypot(dx, dy);
+  const d = hypot(dx, dy);
   n.x = d === 0 ? 0 : dx / d; // centre exact : même normale arbitraire (0, −1) que les collisions
   n.y = d === 0 ? -1 : dy / d;
   return d - planet.radius - SHIP_COLLISION_RADIUS;
@@ -91,7 +91,7 @@ export function land(world, bot, ship, intent) {
   }
   if (bot.phase === DESCENT && h > P.landEntryAltitude * P.landAbortAltitude) bot.phase = APPROACH;
   if (bot.phase !== DESCENT) {
-    const speed = Math.hypot(ship.vel.x, ship.vel.y);
+    const speed = hypot(ship.vel.x, ship.vel.y);
     if (h > P.landEntryAltitude + P.landEntryTolerance || speed > P.landEntrySpeed) {
       const reach = planet.radius + SHIP_COLLISION_RADIUS + P.landEntryAltitude;
       flyTo(
@@ -138,7 +138,7 @@ function descend(world, bot, ship, intent, planet, h, normalAngle) {
   virtual.vel.y = path.vy;
   virtual.angle = ship.angle;
   const contact = evaluateLanding(virtual, planet, then);
-  const remaining = Math.hypot(path.x - ship.pos.x, path.y - ship.pos.y);
+  const remaining = hypot(path.x - ship.pos.x, path.y - ship.pos.y);
 
   const flare = h < P.landFlareAltitude;
   if (

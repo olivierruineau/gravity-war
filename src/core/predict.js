@@ -1,6 +1,7 @@
 // Prédiction balistique (ADR 0006 §5) : même intégrateur que `step` (gravité puis position, Euler semi-implicite),
 // donc bit à bit identique au vol libre réel pour un même pas. Ne gère ni poussée, ni murs, ni missiles (guidés).
 import { gravityAt } from './gravity.js';
+import { hypot } from './math.js';
 
 const gravity = { x: 0, y: 0 };
 const at = { x: 0, y: 0 }; // position courante, au format attendu par gravityAt
@@ -51,7 +52,7 @@ function contactAt(planets, x, y, margin) {
     const reach = p.radius + margin;
     const dx = x - p.pos.x;
     const dy = y - p.pos.y;
-    if (Math.hypot(dx, dy) < reach) return i;
+    if (hypot(dx, dy) < reach) return i;
   }
   return -1;
 }

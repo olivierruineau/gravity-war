@@ -1,5 +1,6 @@
 // Modèle du HUD (6.1) : ce que le joueur doit voir, calculé en pur depuis l'état du core. Testé sans Phaser.
 import { SHIELD_MAX, SHIP_MAX_HP } from '../config.js';
+import { hypot } from '../core/math.js';
 
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 
@@ -17,6 +18,6 @@ export function hudModel(ship, faction) {
     // Le bouclier reste affiché tant qu'il en reste, même si le bâtiment qui le débloque a été perdu.
     showShield: faction.hasShield || ship.shield > 0,
     showMissiles: faction.hasMissiles,
-    speed: ship.alive ? Math.round(Math.hypot(ship.vel.x, ship.vel.y)) : 0,
+    speed: ship.alive ? Math.round(hypot(ship.vel.x, ship.vel.y)) : 0,
   };
 }

@@ -40,8 +40,15 @@ export function createEndScreen(scene) {
       veil.setVisible(true);
       title.setText(model.title).setColor(toCss(model.color)).setVisible(true);
       hint.setText(model.hint).setVisible(true);
-      scene.input.keyboard.once('keydown-SPACE', () => scene.scene.restart());
-      scene.input.keyboard.once('keydown-ESC', () => scene.scene.start(SCENES.MENU));
+      const { keyboard } = scene.input;
+      const replay = () => scene.scene.restart();
+      const toMenu = () => scene.scene.start(SCENES.MENU);
+      keyboard.once('keydown-SPACE', replay);
+      keyboard.once('keydown-ESC', toMenu);
+      scene.events.once('shutdown', () => {
+        keyboard.off('keydown-SPACE', replay);
+        keyboard.off('keydown-ESC', toMenu);
+      });
     },
   };
 }

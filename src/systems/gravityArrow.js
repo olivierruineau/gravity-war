@@ -2,6 +2,7 @@
 // Appelle `gravityAt` (lecture seule) : elle reflète donc automatiquement la règle de zone dominante.
 import { PALETTE, PLANET_MAX_GRAVITY } from '../config.js';
 import { gravityAt } from '../core/gravity.js';
+import { hypot } from '../core/math.js';
 
 const DEPTH = 49;
 const ALPHA = 0.9;
@@ -20,7 +21,7 @@ export function createGravityArrow(scene) {
       g.clear();
       if (!ship.alive || ship.landedOn >= 0) return;
       gravityAt(scratch, ship.pos, world.planets);
-      const a = Math.hypot(scratch.x, scratch.y);
+      const a = hypot(scratch.x, scratch.y);
       if (a < MIN_ACCEL) return;
       const dirX = scratch.x / a;
       const dirY = scratch.y / a;

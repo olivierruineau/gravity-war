@@ -9,6 +9,7 @@ import {
 } from '../config.js';
 import { evaluateLanding } from '../core/landing.js';
 import { nearestPlanet } from '../core/planet.js';
+import { hypot } from '../core/math.js';
 
 const DEPTH = 50;
 const ALPHA = 0.8;
@@ -54,7 +55,7 @@ export function createLandingAid(scene) {
       const planet = world.planets[index];
       const dx = ship.pos.x - planet.pos.x;
       const dy = ship.pos.y - planet.pos.y;
-      const d = Math.hypot(dx, dy) || 1;
+      const d = hypot(dx, dy) || 1;
       if (d - planet.radius > LANDING_AID_ALTITUDE) return;
 
       evaluateLanding(ship, planet, scratch);

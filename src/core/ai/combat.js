@@ -10,7 +10,7 @@ import {
 } from '../../config.js';
 import { BOT_PROFILE as P } from '../../data/ai.js';
 import { defenseRange, hasDefenses } from '../building.js';
-import { clamp, wrapAngle } from '../math.js';
+import { clamp, hypot, wrapAngle } from '../math.js';
 import { findMissileTarget } from '../missile.js';
 import { predictPath } from '../predict.js';
 import { KIND } from '../projectile.js';
@@ -90,7 +90,7 @@ function predictBullet(world, ship, horizon) {
 /** Tir (balles, missile) sur le vaisseau `index`. `missileFloor` = stock de missiles à ne pas entamer. */
 function shootShip(world, bot, ship, intent, index, missileFloor) {
   const target = world.ships[index];
-  const dist = Math.hypot(target.pos.x - ship.pos.x, target.pos.y - ship.pos.y);
+  const dist = hypot(target.pos.x - ship.pos.x, target.pos.y - ship.pos.y);
   if (dist < P.fireRange && leadAim(bot, ship, target)) {
     if (Math.abs(wrapAngle(aim.angle - ship.angle)) <= P.fireCone) {
       // Ligne de tir libre : la balle ne doit toucher aucune planète (ni le sol sous le nez) avant l'interception.
@@ -119,7 +119,7 @@ function shootPlanet(world, bot, ship, intent) {
   if (planet.owner < 0 || planet.owner === bot.faction || !hasDefenses(planet)) return;
   const dx = planet.pos.x - ship.pos.x;
   const dy = planet.pos.y - ship.pos.y;
-  const dist = Math.hypot(dx, dy);
+  const dist = hypot(dx, dy);
   const gap = dist - planet.radius;
   if (gap <= 0 || gap > P.fireRange) return;
   if (Math.abs(wrapAngle(Math.atan2(dy, dx) - ship.angle)) > Math.asin(planet.radius / dist))
@@ -178,8 +178,8 @@ export function fireControl(world, bot, ship, intent) {
 function missileThreat(m, ship) {
   const sx = ship.pos.x - m.pos.x;
   const sy = ship.pos.y - m.pos.y;
-  const speed = Math.hypot(m.vel.x, m.vel.y);
-  const dist = Math.hypot(sx, sy);
+  const speed = hypot(m.vel.x, m.vel.y);
+  const dist = hypot(sx, sy);
   if (speed < MIN_SPEED || dist > P.missileNotice || dist / speed >= threat.time) return;
   if (Math.abs(wrapAngle(Math.atan2(sy, sx) - Math.atan2(m.vel.y, m.vel.x))) > MISSILE_SEEK_ANGLE)
     return;
@@ -203,7 +203,7 @@ function bulletThreat(b, ship) {
   if (t <= 0 || t > P.bulletHorizon || t >= threat.time) return;
   const mx = rx + ux * t; // position relative à l'approche la plus proche
   const my = ry + uy * t;
-  const miss = Math.hypot(mx, my);
+  const miss = hypot(mx, my);
   if (miss >= P.dodgeRadius) return;
   threat.time = t;
   if (miss < MIN_SPEED) {
@@ -278,7 +278,7 @@ export function hunt(world, bot, ship, intent) {
 function engage(world, bot, ship, intent, target) {
   const dx = ship.pos.x - target.pos.x;
   const dy = ship.pos.y - target.pos.y;
-  const dist = Math.hypot(dx, dy);
+  const dist = hypot(dx, dy);
   const ux = dist === 0 ? 0 : dx / dist;
   const uy = dist === 0 ? -1 : dy / dist; // même normale arbitraire que les collisions
   flyTo(
@@ -292,7 +292,7 @@ function engage(world, bot, ship, intent, target) {
     target.vel.y,
   );
   // Distance dans une seconde (vitesse relative constante) : une dérive qui sortirait de la bande ne laisse pas viser.
-  const ahead = Math.hypot(
+  const ahead = hypot(
     dx + (ship.vel.x - target.vel.x) * P.aimLookahead,
     dy + (ship.vel.y - target.vel.y) * P.aimLookahead,
   );
@@ -316,7 +316,7 @@ export function findAttacker(world, bot) {
     const other = world.ships[k];
     if (!other.alive || other.faction === bot.faction) continue;
     if (other.landedOn >= 0 && other.landedOn !== bot.target) continue; // posé ailleurs : ne menace pas cette planète
-    const gap = Math.hypot(other.pos.x - planet.pos.x, other.pos.y - planet.pos.y) - planet.radius;
+    const gap = hypot(other.pos.x - planet.pos.x, other.pos.y - planet.pos.y) - planet.radius;
     if (gap >= bestGap) continue;
     bestGap = gap;
     best = k;
@@ -340,7 +340,7 @@ export function assault(world, bot, ship, intent) {
     bot.decisionTimer = 0;
   const dx = ship.pos.x - planet.pos.x;
   const dy = ship.pos.y - planet.pos.y;
-  const dist = Math.hypot(dx, dy);
+  const dist = hypot(dx, dy);
   const ux = dist === 0 ? 0 : dx / dist;
   const uy = dist === 0 ? -1 : dy / dist;
   const standoff = planet.radius + defenseRange(planet) + P.standoffMargin;
@@ -349,6 +349,6 @@ export function assault(world, bot, ship, intent) {
   flyTo(world, ship, intent, goalX, goalY, -1);
   const driftX = goalX - ship.pos.x - ship.vel.x * P.aimLookahead;
   const driftY = goalY - ship.pos.y - ship.vel.y * P.aimLookahead;
-  if (Math.hypot(driftX, driftY) > P.assaultSlack) return;
+  if (hypot(driftX, driftY) > P.assaultSlack) return;
   aimInstead(intent, ship, Math.atan2(-dy, -dx));
 }

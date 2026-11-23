@@ -45,9 +45,15 @@ export function createPauseScreen(scene, canPause) {
       help.setVisible(state.paused);
     },
   };
-  scene.input.keyboard.on('keydown-P', state.toggle);
-  scene.input.keyboard.on('keydown-ESC', () => {
+  const toMenu = () => {
     if (state.paused) scene.scene.start(SCENES.MENU);
+  };
+  const { keyboard } = scene.input;
+  keyboard.on('keydown-P', state.toggle);
+  keyboard.on('keydown-ESC', toMenu);
+  scene.events.once('shutdown', () => {
+    keyboard.off('keydown-P', state.toggle);
+    keyboard.off('keydown-ESC', toMenu);
   });
   return state;
 }

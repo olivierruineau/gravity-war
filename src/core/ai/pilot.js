@@ -9,6 +9,7 @@ import { assault, defend, evade, findAttacker, fireControl, hunt } from './comba
 import { AI_MODE, isLanding } from './mode.js';
 import { flyTo, thrustToward } from './navigate.js';
 import { land, takeoff, TOUCHDOWN_PHASE } from './touchdown.js';
+import { hypot } from '../math.js';
 
 const CRASH_MARGIN = SHIP_COLLISION_RADIUS + P.clearance; // même marge que le contournement
 
@@ -27,7 +28,7 @@ function avoidCrash(world, ship, intent, exempt) {
   const planet = world.planets[path.hit];
   const dx = path.x - planet.pos.x;
   const dy = path.y - planet.pos.y;
-  const d = Math.hypot(dx, dy);
+  const d = hypot(dx, dy);
   const nx = d === 0 ? 0 : dx / d; // centre exact : même normale arbitraire (0, −1) que les collisions
   const ny = d === 0 ? -1 : dy / d;
   const normalSpeed = ship.vel.x * nx + ship.vel.y * ny;

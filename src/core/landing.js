@@ -14,7 +14,7 @@ import {
 import { EVT, pushEvent } from './events.js';
 import { gravityAt } from './gravity.js';
 import { damageShip } from './lifecycle.js';
-import { wrapAngle } from './math.js';
+import { hypot, wrapAngle } from './math.js';
 
 /**
  * Mesures d'approche d'un vaisseau vers une planète, écrites dans `out` (aucune allocation) :
@@ -23,7 +23,7 @@ import { wrapAngle } from './math.js';
 export function evaluateLanding(ship, planet, out) {
   const dx = ship.pos.x - planet.pos.x;
   const dy = ship.pos.y - planet.pos.y;
-  const d = Math.hypot(dx, dy);
+  const d = hypot(dx, dy);
   const nx = d === 0 ? 0 : dx / d; // centre exact : même normale arbitraire (0, −1) que dans collideShipPlanets
   const ny = d === 0 ? -1 : dy / d;
   out.approachSpeed = -(ship.vel.x * nx + ship.vel.y * ny);
@@ -57,7 +57,7 @@ export function updateLanded(ship, planets, dt) {
   const planet = planets[ship.landedOn];
   const dx = ship.pos.x - planet.pos.x;
   const dy = ship.pos.y - planet.pos.y;
-  const d = Math.hypot(dx, dy);
+  const d = hypot(dx, dy);
   const nx = d === 0 ? 0 : dx / d;
   const ny = d === 0 ? -1 : dy / d;
   gravityAt(gravityScratch, ship.pos, planets);
@@ -87,7 +87,7 @@ export function collideShipPlanets(world, shipIndex) {
     const contactDistance = planet.radius + SHIP_COLLISION_RADIUS;
     const dx = ship.pos.x - planet.pos.x;
     const dy = ship.pos.y - planet.pos.y;
-    const d = Math.hypot(dx, dy);
+    const d = hypot(dx, dy);
     if (d >= contactDistance) continue;
 
     // Toujours ressortir le vaisseau de la planète (planètes disjointes : un seul contact possible).

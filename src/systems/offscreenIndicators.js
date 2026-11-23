@@ -3,6 +3,7 @@
 import { PALETTE } from '../config.js';
 import { planetColor } from '../entities/planetView.js';
 import { edgeIndicator } from './offscreenLayout.js';
+import { hypot } from '../core/math.js';
 
 const DEPTH = 800;
 const INSET = 8; // px de marge entre la flèche et le bord de l'écran
@@ -16,7 +17,7 @@ const spot = { x: 0, y: 0, angle: 0 };
 
 function drawArrow(g, view, tx, ty, px, py, color) {
   if (!edgeIndicator(view, tx, ty, INSET, VISIBLE_MARGIN, spot)) return;
-  const dist = Math.hypot(tx - px, ty - py);
+  const dist = hypot(tx - px, ty - py);
   const alpha = ALPHA_NEAR + (ALPHA_FAR - ALPHA_NEAR) * Math.min(1, dist / FAR_DISTANCE);
   // `view` est en coordonnées monde ; la flèche est fixée à l'écran : on ramène le point dans l'écran.
   const x = spot.x - view.x;

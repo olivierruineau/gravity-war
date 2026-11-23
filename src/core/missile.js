@@ -1,6 +1,6 @@
 // Guidage des missiles : cible réacquise à chaque pas (aucun état), virage borné (ADR 0005 §5).
 import { MISSILE_SEEK_ANGLE, MISSILE_SEEK_RANGE, MISSILE_TURN_RATE } from '../config.js';
-import { wrapAngle } from './math.js';
+import { hypot, wrapAngle } from './math.js';
 import { KIND } from './projectile.js';
 
 /**
@@ -38,7 +38,7 @@ export function steerMissiles(world, dt) {
     const ship = ships[target];
     const diff = wrapAngle(Math.atan2(ship.pos.y - m.pos.y, ship.pos.x - m.pos.x) - heading);
     const turn = Math.max(-maxTurn, Math.min(maxTurn, diff));
-    const speed = Math.hypot(m.vel.x, m.vel.y);
+    const speed = hypot(m.vel.x, m.vel.y);
     m.vel.x = Math.cos(heading + turn) * speed;
     m.vel.y = Math.sin(heading + turn) * speed;
   }

@@ -46,7 +46,9 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setVisible(false);
-    this.input.keyboard.on('keydown-H', () => help.setVisible(!help.visible));
+    const toggleHelp = () => help.setVisible(!help.visible);
+    this.input.keyboard.on('keydown-H', toggleHelp);
+    this.events.once('shutdown', () => this.input.keyboard.off('keydown-H', toggleHelp));
 
     this.input.keyboard.once('keydown-SPACE', () => {
       resumeAudio();

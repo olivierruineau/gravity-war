@@ -1,6 +1,7 @@
 // Planète fixe : cercle qui attire en 1/d² (voir gravity.js, ADR 0003) et que l'on peut capturer.
 import { BUILDINGS } from '../data/buildings.js';
 import { GRAVITY_RANGE_FACTOR, PLANET_GRAVITY } from '../config.js';
+import { hypot } from './math.js';
 
 export const NEUTRAL = -1;
 
@@ -49,7 +50,7 @@ export function nearestPlanet(planets, pos, owner) {
   for (let i = 0; i < planets.length; i++) {
     const p = planets[i];
     if (owner !== undefined && p.owner !== owner) continue;
-    const gap = Math.hypot(pos.x - p.pos.x, pos.y - p.pos.y) - p.radius;
+    const gap = hypot(pos.x - p.pos.x, pos.y - p.pos.y) - p.radius;
     if (gap < bestGap) {
       bestGap = gap;
       best = i;

@@ -11,6 +11,14 @@ export default [
       'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       eqeqeq: 'error',
       'prefer-const': 'error',
+      'no-restricted-properties': [
+        'error',
+        {
+          object: 'Math',
+          property: 'hypot',
+          message: 'Utiliser hypot de core/math.js : Math.hypot alloue à chaque appel (7.4).',
+        },
+      ],
     },
   },
   {
@@ -26,6 +34,11 @@ export default [
       'no-restricted-properties': [
         'error',
         { object: 'Math', property: 'random', message: 'Utiliser core/rng.js (aléa seedé).' },
+        {
+          object: 'Math',
+          property: 'hypot',
+          message: 'Utiliser hypot de core/math.js : Math.hypot alloue à chaque appel (7.4).',
+        },
       ],
     },
   },

@@ -12,6 +12,7 @@ import {
 } from '../config.js';
 import { EVT, pushEvent } from './events.js';
 import { KIND, spawnProjectile } from './projectile.js';
+import { hypot } from './math.js';
 
 /** À appeler pour un vaisseau vivant, une fois par pas : décompte les cooldowns et tire si demandé. */
 export function updateWeapons(world, shipIndex, dt) {
@@ -33,7 +34,7 @@ export function updateWeapons(world, shipIndex, dt) {
 function insideAnyPlanet(planets, x, y) {
   for (let i = 0; i < planets.length; i++) {
     const p = planets[i];
-    if (Math.hypot(x - p.pos.x, y - p.pos.y) < p.radius) return true;
+    if (hypot(x - p.pos.x, y - p.pos.y) < p.radius) return true;
   }
   return false;
 }

@@ -4,7 +4,7 @@ import { FIXED_DT, SHIP_COLLISION_RADIUS, SHIP_ROTATION_SPEED, SHIP_THRUST } fro
 import { BOT_PROFILE as P } from '../../data/ai.js';
 import { defenseRange } from '../building.js';
 import { gravityAt } from '../gravity.js';
-import { clamp, wrapAngle } from '../math.js';
+import { clamp, hypot, wrapAngle } from '../math.js';
 
 // Rotation sans inertie : sous la moitié d'un pas de rotation, tourner ferait osciller le nez.
 const ROTATION_DEAD_ZONE = (SHIP_ROTATION_SPEED * FIXED_DT) / 2;
@@ -28,7 +28,7 @@ export function steerToAngle(intent, ship, angle) {
  * l'accélération dépasse le seuil : le contrôle est bang-bang, la tolérance tient lieu de modulation.
  */
 export function thrustToward(intent, ship, ax, ay) {
-  if (Math.hypot(ax, ay) < MIN_THRUST_ACCEL) {
+  if (hypot(ax, ay) < MIN_THRUST_ACCEL) {
     intent.rotate = 0;
     intent.thrust = false;
     return;
@@ -48,7 +48,7 @@ export function thrustToward(intent, ship, ax, ay) {
 function findDetour(world, ship, gx, gy, ignore) {
   const px = ship.pos.x;
   const py = ship.pos.y;
-  const len = Math.hypot(gx - px, gy - py);
+  const len = hypot(gx - px, gy - py);
   if (len === 0) return false;
   const ex = (gx - px) / len;
   const ey = (gy - py) / len;
@@ -80,7 +80,7 @@ function findDetour(world, ship, gx, gy, ignore) {
   // rogne le disque, et le vaisseau, attiré, s'y écrase. Le point de tangence est toujours extérieur au cercle.
   const center = planets[bestPlanet].pos;
   const ring = DETOUR_FACTOR * bestReach;
-  const dist = Math.hypot(px - center.x, py - center.y);
+  const dist = hypot(px - center.x, py - center.y);
   const ux = (px - center.x) / dist; // du centre vers le vaisseau
   const uy = (py - center.y) / dist;
   const cosBeta = Math.min(1, ring / dist);
@@ -102,18 +102,16 @@ export function flyTo(world, ship, intent, gx, gy, ignore, refVx = 0, refVy = 0)
   const goalY = clamp(gy, P.wallMargin, world.height - P.wallMargin);
   let steerX = goalX;
   let steerY = goalY;
-  let dist = Math.hypot(goalX - ship.pos.x, goalY - ship.pos.y);
+  let dist = hypot(goalX - ship.pos.x, goalY - ship.pos.y);
   if (findDetour(world, ship, goalX, goalY, ignore)) {
     steerX = clamp(waypoint.x, P.wallMargin, world.width - P.wallMargin);
     steerY = clamp(waypoint.y, P.wallMargin, world.height - P.wallMargin);
     // Vitesse réglée sur le trajet restant, pas sur le waypoint : on ne ralentit pas pour un point de passage.
-    dist =
-      Math.hypot(steerX - ship.pos.x, steerY - ship.pos.y) +
-      Math.hypot(goalX - steerX, goalY - steerY);
+    dist = hypot(steerX - ship.pos.x, steerY - ship.pos.y) + hypot(goalX - steerX, goalY - steerY);
   }
   const toX = steerX - ship.pos.x;
   const toY = steerY - ship.pos.y;
-  const toLen = Math.hypot(toX, toY);
+  const toLen = hypot(toX, toY);
   const braking = BRAKE_ACCEL * TURN_AROUND_TIME;
   const speed =
     toLen === 0

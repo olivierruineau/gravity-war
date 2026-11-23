@@ -4,6 +4,7 @@ import Phaser from 'phaser';
 import { PALETTE } from '../config.js';
 import { toCss } from './color.js';
 import { AI_MODE } from '../core/ai/mode.js';
+import { hypot } from '../core/math.js';
 
 const MODE_NAMES = Object.fromEntries(Object.entries(AI_MODE).map(([name, id]) => [id, name]));
 
@@ -23,7 +24,7 @@ export function createDebugOverlay(scene) {
   return {
     update(world, ship) {
       if (!text.visible) return;
-      const speed = Math.hypot(ship.vel.x, ship.vel.y);
+      const speed = hypot(ship.vel.x, ship.vel.y);
       text.setText(
         [
           `FPS ${Math.round(scene.game.loop.actualFps)}  tick ${world.tick}`,

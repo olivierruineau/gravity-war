@@ -7,7 +7,7 @@ import { FIXED_DT, MISSILE_STOCK_MAX, SHIELD_MAX, SHIP_MAX_HP } from '../../conf
 import { BOT_PROFILE as P } from '../../data/ai.js';
 import { BUILDINGS } from '../../data/buildings.js';
 import { defenseRange, hasDefenses, hasMissileFactory } from '../building.js';
-import { clamp } from '../math.js';
+import { clamp, hypot } from '../math.js';
 import { range } from '../rng.js';
 import { AI_MODE } from './mode.js';
 import { TOUCHDOWN_PHASE } from './touchdown.js';
@@ -30,7 +30,7 @@ function closeness(gap) {
 function proximity(ship, planet) {
   const gap = Math.max(
     0,
-    Math.hypot(planet.pos.x - ship.pos.x, planet.pos.y - ship.pos.y) - planet.radius,
+    hypot(planet.pos.x - ship.pos.x, planet.pos.y - ship.pos.y) - planet.radius,
   );
   return closeness(gap);
 }
@@ -51,7 +51,7 @@ function underEnemyTurrets(planets, x, y, faction) {
     const p = planets[i];
     if (p.owner === faction) continue;
     const reach = defenseRange(p);
-    if (reach > 0 && Math.hypot(x - p.pos.x, y - p.pos.y) - p.radius < reach) return true;
+    if (reach > 0 && hypot(x - p.pos.x, y - p.pos.y) - p.radius < reach) return true;
   }
   return false;
 }
@@ -73,8 +73,7 @@ function enemyWithin(ships, planet, faction, reach, landed) {
   for (let k = 0; k < ships.length; k++) {
     const s = ships[k];
     if (!s.alive || s.faction === faction || (!landed && s.landedOn >= 0)) continue;
-    if (Math.hypot(s.pos.x - planet.pos.x, s.pos.y - planet.pos.y) - planet.radius < reach)
-      return true;
+    if (hypot(s.pos.x - planet.pos.x, s.pos.y - planet.pos.y) - planet.radius < reach) return true;
   }
   return false;
 }
@@ -84,7 +83,7 @@ function enemyNearShip(ships, ship, reach) {
   for (let k = 0; k < ships.length; k++) {
     const s = ships[k];
     if (!s.alive || s.faction === ship.faction) continue;
-    if (Math.hypot(s.pos.x - ship.pos.x, s.pos.y - ship.pos.y) < reach) return true;
+    if (hypot(s.pos.x - ship.pos.x, s.pos.y - ship.pos.y) < reach) return true;
   }
   return false;
 }
@@ -233,7 +232,7 @@ export function decide(world, bot, ship) {
         const score = P.retreat * severity * (1 + P.slotValue * builtSlots(p));
         offer(world, bot, RETREAT, i, score * proximity(ship, p), true);
       }
-      const gap = Math.hypot(ship.pos.x - p.pos.x, ship.pos.y - p.pos.y) - p.radius;
+      const gap = hypot(ship.pos.x - p.pos.x, ship.pos.y - p.pos.y) - p.radius;
       // Reste sur la planète d'attente actuelle tant qu'elle est possédée : pas d'aller-retour entre deux bases.
       if (bot.mode === IDLE && bot.target === i) {
         idleTarget = i;
@@ -259,7 +258,7 @@ export function decide(world, bot, ship) {
   for (let k = 0; k < ships.length; k++) {
     const other = ships[k];
     if (!other.alive || other.faction === faction) continue;
-    const gap = Math.hypot(other.pos.x - ship.pos.x, other.pos.y - ship.pos.y);
+    const gap = hypot(other.pos.x - ship.pos.x, other.pos.y - ship.pos.y);
     if (gap >= P.huntRange) continue;
     let score = P.hunt * P.aggression * healthFactor * closeness(gap);
     if (underEnemyTurrets(planets, other.pos.x, other.pos.y, faction)) score *= P.shelterFactor;
