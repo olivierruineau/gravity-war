@@ -55,6 +55,9 @@ describe('collideProjectilesPlanets : dégâts aux tourelles', () => {
 
   it('planète neutre : seulement BULLET_HIT, aucun PV touché (même avec un slot marqué construit)', () => {
     const world = worldWith({ owner: -1, built: 1 });
+    expect(world.planets[0].buildings[0].built).toBe(false); // createPlanet ignore `built` pour une neutre
+    // État incohérent forcé à la main (aucun chemin du jeu ne le produit) : la collision ne doit pas s'y fier.
+    world.planets[0].buildings[0] = { built: true, hp: BASE_HP, cooldown: 0 };
     shoot(world, { owner: 1, damage: 12 });
     collideProjectilesPlanets(world);
     expect(world.planets[0].buildings[0]).toMatchObject({ built: true, hp: BASE_HP });

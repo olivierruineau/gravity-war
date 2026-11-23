@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { EVENT_CAPACITY, SHIP_COLLISION_RADIUS, SHIP_MAX_HP } from '../../src/config.js';
+import {
+  EVENT_CAPACITY,
+  SHIELD_MAX,
+  SHIP_COLLISION_RADIUS,
+  SHIP_MAX_HP,
+} from '../../src/config.js';
 import { createWorld } from '../../src/core/world.js';
 
 const PRECISION = 9;
@@ -132,5 +137,50 @@ describe('createWorld : faction = index du spawn', () => {
 
   it.each([0, 1, 2])('le vaisseau %i a pour faction %i', (i) => {
     expect(world.ships[i].faction).toBe(i);
+  });
+});
+
+describe('createWorld : bouclier d’un spawn { planet } (même règle que le respawn)', () => {
+  // built: 3 = tourelle + usine + générateur de bouclier ; built: 2 = sans générateur.
+  const planetWith = (built, owner = 0) => ({
+    x: PLANET_X,
+    y: PLANET_Y,
+    radius: PLANET_R,
+    owner,
+    built,
+  });
+
+  it('générateur construit : le vaisseau démarre avec le bouclier plein', () => {
+    const world = worldWith([{ planet: 0 }], [planetWith(3)]);
+    expect(world.factions[0].hasShield).toBe(true);
+    expect(world.ships[0].shield).toBe(SHIELD_MAX);
+  });
+
+  it('pas de générateur (built: 2) : bouclier à 0', () => {
+    const world = worldWith([{ planet: 0 }], [planetWith(2)]);
+    expect(world.factions[0].hasShield).toBe(false);
+    expect(world.ships[0].shield).toBe(0);
+  });
+
+  it('pas de bâtiment : bouclier à 0', () => {
+    expect(worldWith([{ planet: 0 }], [planetWith(0)]).ships[0].shield).toBe(0);
+  });
+
+  it('seule la capacité de SA faction compte : poser la faction 1 sur la base à générateur de la faction 0 donne 0', () => {
+    const world = worldWith([{ x: 1000, y: 1000 }, { planet: 0 }], [planetWith(3, 0)]);
+    expect(world.factions[0].hasShield).toBe(true);
+    expect(world.factions[1].hasShield).toBe(false);
+    expect(world.ships[1].shield).toBe(0);
+  });
+
+  it('spawn en vol libre : pas de bouclier, même si la faction a un générateur', () => {
+    const world = worldWith([{ x: 1000, y: 1000 }], [planetWith(3)]);
+    expect(world.factions[0].hasShield).toBe(true);
+    expect(world.ships[0].shield).toBe(0);
+  });
+
+  it('le bouclier est plein et les PV aussi, sans délai de recharge en cours', () => {
+    const ship = worldWith([{ planet: 0 }], [planetWith(3)]).ships[0];
+    expect(ship).toMatchObject({ shield: SHIELD_MAX, hp: SHIP_MAX_HP, shieldDelay: 0 });
   });
 });

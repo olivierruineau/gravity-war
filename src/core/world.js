@@ -1,6 +1,6 @@
 // Orchestrateur de la simulation : seul module qui connaît tous les autres (ADR 0002).
 // `world` est un objet de données pur (JSON-sérialisable), sans fonctions ni références croisées.
-import { BOUNDS_RESTITUTION, PROJECTILE_CAPACITY, SHIP_SIZE } from '../config.js';
+import { BOUNDS_RESTITUTION, FACTION_COUNT, PROJECTILE_CAPACITY, SHIP_SIZE } from '../config.js';
 import { updateBuildings } from './building.js';
 import { updateCapture } from './capture.js';
 import { collideProjectilesPlanets, collideProjectilesShips } from './collision.js';
@@ -9,7 +9,7 @@ import { createEvents } from './events.js';
 import { createFactions, OUTCOME, updateFactions } from './faction.js';
 import { applyGravity } from './gravity.js';
 import { collideShipPlanets, updateLanded } from './landing.js';
-import { updateRespawn } from './lifecycle.js';
+import { placeShipOnPlanet, updateRespawn } from './lifecycle.js';
 import { steerMissiles } from './missile.js';
 import { updateRearm } from './rearm.js';
 import { updateShield } from './shield.js';
@@ -18,15 +18,24 @@ import { createProjectiles, updateProjectiles } from './projectile.js';
 import { createRng } from './rng.js';
 import { updateTurrets } from './turret.js';
 import { updateWeapons } from './weapons.js';
-import { applyIntent, createShip, integrate, respawnShip } from './ship.js';
+import { applyIntent, createShip, integrate } from './ship.js';
 
 /**
  * @param {{ width: number, height: number, planets?: { x: number, y: number, radius: number, gravity?: number, owner?: number, built?: number }[], spawns?: { x?: number, y?: number, angle?: number, planet?: number }[] }} map
  *   carte injectée (permet des mini-cartes en test) ; `spawns[i]` = point de départ du vaisseau de la faction i
  * @param {number} seed                            graine de l'aléa de simulation
  * @param {{ eventCapacity: number }} options
+ * @returns le monde ; `world.inGame` (FACTION_COUNT booléens) = factions avec au moins une planète au départ
+ *   (les autres sont « hors jeu » : jamais éliminées, ni victoire ni défaite ne dépend d'elles).
+ * @throws {Error} si la carte a plus de spawns que de factions ou un `owner` de planète >= FACTION_COUNT
  */
 export function createWorld(map, seed, { eventCapacity }) {
+  const spawns = map.spawns ?? [];
+  if (spawns.length > FACTION_COUNT)
+    throw new Error(`Invalid map: ${spawns.length} spawns for ${FACTION_COUNT} factions`);
+  for (const def of map.planets ?? [])
+    if (def.owner !== undefined && def.owner >= FACTION_COUNT)
+      throw new Error(`Invalid map: planet owner ${def.owner} >= ${FACTION_COUNT} factions`);
   const planets = (map.planets ?? []).map(createPlanet);
   const world = {
     tick: 0,
@@ -39,17 +48,17 @@ export function createWorld(map, seed, { eventCapacity }) {
     events: createEvents(eventCapacity),
     factions: createFactions(planets),
     outcome: OUTCOME.PLAYING,
-    inGame: [], // factions en jeu au départ (celles sans planète sont « hors jeu » : hors victoire)
+    inGame: [],
   };
+  for (let f = 0; f < world.factions.length; f++) world.inGame.push(!world.factions[f].eliminated);
+  updateFactions(world); // avant les spawns : les capacités (bouclier) doivent être connues
   // spawns[i] = point de départ de la faction i : soit une position libre { x, y, angle? }, soit
   // { planet: index } pour démarrer posé sur sa planète de base (comme après un respawn).
-  (map.spawns ?? []).forEach((spawn, i) => {
+  spawns.forEach((spawn, i) => {
     const ship = createShip(i, spawn.x ?? 0, spawn.y ?? 0, spawn.angle);
-    if (spawn.planet !== undefined) respawnShip(ship, spawn.planet, planets[spawn.planet]);
+    if (spawn.planet !== undefined) placeShipOnPlanet(world, ship, spawn.planet);
     world.ships.push(ship);
   });
-  for (let f = 0; f < world.factions.length; f++) world.inGame.push(!world.factions[f].eliminated);
-  updateFactions(world);
   return world;
 }
 

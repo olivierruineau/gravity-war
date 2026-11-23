@@ -29,12 +29,22 @@ export function updateWeapons(world, shipIndex, dt) {
   }
 }
 
+/** Vrai si (x, y) est à l'intérieur d'une planète : un vaisseau posé qui vise le sol ne tire pas. */
+function insideAnyPlanet(planets, x, y) {
+  for (let i = 0; i < planets.length; i++) {
+    const p = planets[i];
+    if (Math.hypot(x - p.pos.x, y - p.pos.y) < p.radius) return true;
+  }
+  return false;
+}
+
 function fireBullet(world, ship, shipIndex) {
-  ship.fireCooldown = FIRE_COOLDOWN;
   const dirX = Math.cos(ship.angle);
   const dirY = Math.sin(ship.angle);
   const x = ship.pos.x + dirX * SHIP_SIZE; // part de la pointe du nez
   const y = ship.pos.y + dirY * SHIP_SIZE;
+  if (insideAnyPlanet(world.planets, x, y)) return;
+  ship.fireCooldown = FIRE_COOLDOWN;
   const index = spawnProjectile(
     world.projectiles,
     KIND.BULLET,
@@ -56,6 +66,7 @@ function fireMissile(world, ship, shipIndex) {
   const speed = MISSILE_SPEED + Math.max(0, ship.vel.x * dirX + ship.vel.y * dirY);
   const x = ship.pos.x + dirX * SHIP_SIZE;
   const y = ship.pos.y + dirY * SHIP_SIZE;
+  if (insideAnyPlanet(world.planets, x, y)) return;
   const index = spawnProjectile(
     world.projectiles,
     KIND.MISSILE,

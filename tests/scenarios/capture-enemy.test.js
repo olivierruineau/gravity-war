@@ -3,12 +3,16 @@ import { CAPTURE_TIME, FIXED_DT, SHIP_COLLISION_RADIUS } from '../../src/config.
 import { BUILDINGS } from '../../src/data/buildings.js';
 import { clearEvents, EVT } from '../../src/core/events.js';
 import { int } from '../../src/core/rng.js';
+import { respawnShip } from '../../src/core/ship.js';
 import { createWorld, step } from '../../src/core/world.js';
 
 // Item 4.6 : capture d'une planète ennemie défendue. Mini-carte 4000×4000 : une base de la faction 0
 // (index 0) et la planète ennemie (index 1, owner 1, r = 60, g0 = 70) à 600 px. La faction 0 a donc une
-// planète (elle n'est pas « hors jeu » et peut capturer). Le vaisseau 0 est posé sur la planète ennemie,
-// avec des PV énormes : les tirs de la tourelle ne peuvent pas le tuer, il isole la règle de capture.
+// planète (elle n'est pas « hors jeu » et peut capturer). Le vaisseau 0 a des PV énormes : les tirs de la
+// tourelle ne peuvent pas le tuer, il isole la règle de capture. Il est posé sur la planète ennemie
+// (`makeWorld()`), ou, pour détruire la tourelle, EN VOL à 100 px de la surface, nez vers elle
+// (`makeWorld({ flying: true })`) : un vaisseau posé ne peut pas tirer vers le sol, sa bouche serait dans la
+// planète. Après la destruction, `destroyTurret` le pose sur la planète (même état qu'un respawn) : c'est le capteur.
 //
 // Tolérances en pas : la capture a lieu 3 s = 180 pas après la destruction de la dernière tourelle (le pas
 // de la destruction compte : `updateCapture` passe après les collisions), mais 180 additions de 1/60 peuvent
@@ -26,22 +30,25 @@ const ENEMY = 1;
 const BASE = { x: 1000, y: 2000, radius: RADIUS, gravity: 70, owner: 0 };
 const ENEMY_POS = { x: 1600, y: 2000, radius: RADIUS, gravity: 70, owner: 1 };
 const DOWN = Math.PI / 2;
+// Attaquant en vol : 160 px du centre = 100 px de surface (dans la portée de 150 px de la tourelle). À cette
+// distance g ≈ 70·(60/160)² ≈ 10 px/s² : il dérive d'environ 25 px pendant les ~2,5 s d'attaque et ne touche pas la planète.
+const FLYING_START = { x: ENEMY_POS.x, y: ENEMY_POS.y - 160, angle: DOWN };
 
-function makeWorld({ built = 3, seed = 1, buildProgress = 0 } = {}) {
+function makeWorld({ built = 3, seed = 1, buildProgress = 0, flying = false } = {}) {
   const world = createWorld(
     {
       width: SIZE,
       height: SIZE,
       planets: [BASE, { ...ENEMY_POS, built }],
       // Posé au sommet de la planète ennemie dès le pas 0 (spawn { planet }), comme après un respawn.
-      spawns: [{ planet: ENEMY }],
+      spawns: [flying ? FLYING_START : { planet: ENEMY }],
     },
     seed,
     { eventCapacity: 64 },
   );
   const ship = world.ships[0];
   ship.hp = HUGE_HP;
-  expect(ship.pos.y).toBe(ENEMY_POS.y - CONTACT);
+  if (!flying) expect(ship.pos.y).toBe(ENEMY_POS.y - CONTACT);
   world.planets[ENEMY].buildProgress = buildProgress;
   return world;
 }
@@ -72,16 +79,29 @@ function createRecorder(world) {
   };
 }
 
-/** L'intrus tourne le nez vers la planète et tire jusqu'à la destruction de la tourelle. */
+/** Pose le capteur sur la planète ennemie (état de respawn), PV énormes : la capture démarre au pas suivant. */
+function landCapturer(world) {
+  const ship = world.ships[0];
+  respawnShip(ship, ENEMY, world.planets[ENEMY]);
+  ship.hp = HUGE_HP;
+}
+
+/**
+ * L'attaquant (en vol, nez vers la planète) tire jusqu'à la destruction de la tourelle, puis le capteur est posé.
+ * Renvoie le numéro de pas de la pose : le compteur de capture démarre au pas suivant.
+ */
 function destroyTurret(world, rec) {
   const ship = world.ships[0];
-  ship.angle = DOWN; // les balles naissent à 8 px du vaisseau : dans la planète, absorbées au pas du tir
   ship.intent.fire = true;
   while (rec.log.destroyed.length === 0) {
     rec.step();
     expect(world.tick).toBeLessThan(1200); // garde-fou : 20 s
+    expect(world.planets[ENEMY].captureTime).toBe(0); // en vol : aucune capture possible
   }
   ship.intent.fire = false;
+  expect(ship.landedOn).toBe(-1); // il a attaqué en vol, sans jamais se poser
+  landCapturer(world);
+  return world.tick;
 }
 
 describe('capture ennemie : une tourelle construite bloque tout', () => {
@@ -123,30 +143,32 @@ describe('capture ennemie : une tourelle construite bloque tout', () => {
   });
 });
 
-describe('capture ennemie : tourelle détruite puis posé 3 s', () => {
-  /** Joue jusqu'à la capture, en vérifiant que le compteur ne démarre qu'après la destruction. */
+describe('capture ennemie : tourelle détruite puis capteur posé 3 s', () => {
+  /** Joue jusqu'à la capture, en vérifiant que le compteur ne démarre qu'après la destruction et la pose. */
   function playUntilCaptured() {
-    const world = makeWorld();
+    const world = makeWorld({ flying: true });
     const rec = createRecorder(world);
     rec.run(60); // la tourelle défend 1 s, rien ne se capture
     expect(world.planets[ENEMY].captureTime).toBe(0);
-    destroyTurret(world, rec);
-    const destroyedAt = rec.log.destroyed[0].tick;
-    // Dès le pas de la destruction, plus de défense : le compteur a déjà démarré (un pas).
+    const landedAt = destroyTurret(world, rec);
+    // La pose se fait entre deux pas : le compteur démarre au pas suivant (une seule addition de dt).
+    expect(world.planets[ENEMY].captureTime).toBe(0);
+    rec.step();
     expect(world.planets[ENEMY].captureBy).toBe(0);
     expect(world.planets[ENEMY].captureTime).toBeCloseTo(FIXED_DT, 12); // une seule addition de dt
     while (rec.log.captured.length === 0) {
       rec.step();
-      expect(world.tick).toBeLessThan(destroyedAt + CAPTURE_STEPS + 60);
+      expect(world.tick).toBeLessThan(landedAt + CAPTURE_STEPS + 60);
     }
-    return { world, rec, destroyedAt };
+    return { world, rec, landedAt };
   }
 
-  it('CAPTURED 3 s (±2 pas) après la destruction ; propriétaire = faction 0 ; compteur remis à 0', () => {
-    const { world, rec, destroyedAt } = playUntilCaptured();
+  it('CAPTURED 3 s (±2 pas) après la pose du capteur ; propriétaire = faction 0 ; compteur remis à 0', () => {
+    const { world, rec, landedAt } = playUntilCaptured();
     expect(rec.log.captured).toHaveLength(1);
     const c = rec.log.captured[0];
-    expect(Math.abs(c.tick - destroyedAt + 1 - CAPTURE_STEPS)).toBeLessThanOrEqual(TOL);
+    // Le compteur démarre au pas qui suit la pose : CAPTURED tombe CAPTURE_STEPS pas après `landedAt`.
+    expect(Math.abs(c.tick - landedAt - CAPTURE_STEPS)).toBeLessThanOrEqual(TOL);
     expect(c).toMatchObject({ a: ENEMY, b: 0, x: ENEMY_POS.x, y: ENEMY_POS.y });
     expect(world.planets[ENEMY].owner).toBe(0);
     expect(world.planets[ENEMY].captureBy).toBe(-1);
@@ -154,7 +176,7 @@ describe('capture ennemie : tourelle détruite puis posé 3 s', () => {
   });
 
   it('pas de capture avant l’échéance : le compteur reste sous 3 s jusqu’à 2 pas avant la fin', () => {
-    const world = makeWorld();
+    const world = makeWorld({ flying: true });
     const rec = createRecorder(world);
     destroyTurret(world, rec);
     rec.run(CAPTURE_STEPS - TOL - 2);
@@ -172,7 +194,7 @@ describe('capture ennemie : tourelle détruite puis posé 3 s', () => {
   });
 
   it('la faction perdante voit planetCount baisser et ses capacités (missiles, bouclier) disparaître', () => {
-    const world = makeWorld();
+    const world = makeWorld({ flying: true });
     const rec = createRecorder(world);
     rec.run(1);
     // Avant : la faction 1 a une usine et un générateur (built: 3) sur sa seule planète.
@@ -270,16 +292,21 @@ describe('capture ennemie : déterminisme', () => {
   const STEPS = 3000;
 
   /**
-   * Partie scriptée : l'intrus tire sur la planète par rafales tirées dans world.rng (une rafale = une
-   * fenêtre de 30 pas) pendant les 600 premiers pas, puis reste posé (capture, redéveloppement).
+   * Partie scriptée : l'attaquant en vol tire sur la planète par rafales tirées dans world.rng (un tirage par
+   * pas, 2 chances sur 3 de tenir la gâchette) jusqu'à la destruction de la tourelle ; le capteur est alors posé
+   * et reste là (capture, redéveloppement).
    */
   function run(seed) {
-    const world = makeWorld({ seed });
+    const world = makeWorld({ seed, flying: true });
     const ship = world.ships[0];
-    ship.angle = DOWN;
     const rec = createRecorder(world);
+    let landed = false;
     for (let i = 0; i < STEPS; i++) {
-      ship.intent.fire = i < 600 && int(world.rng, 0, 3) !== 0;
+      if (!landed && rec.log.destroyed.length > 0) {
+        landCapturer(world);
+        landed = true;
+      }
+      ship.intent.fire = !landed && int(world.rng, 0, 3) !== 0;
       rec.step();
     }
     return { world, rec };

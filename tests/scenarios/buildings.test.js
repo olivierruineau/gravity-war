@@ -134,8 +134,18 @@ describe('bâtiments : planète neutre', () => {
     );
   });
 
-  it('une neutre avec des slots déjà construits n’en construit pas d’autres', () => {
+  it('une neutre n’a aucun slot construit, même si la carte demande built: 2, et n’en construit pas', () => {
     const world = makeWorld([{ ...OWNED, owner: undefined, built: 2 }]);
+    expect(world.planets[0].buildings.map((s) => s.built)).toEqual([false, false, false, false]);
+    expect(run(world, 300 * 60)).toHaveLength(0);
+    expect(world.planets[0].buildings.map((s) => s.built)).toEqual([false, false, false, false]);
+    expect(world.planets[0].buildProgress).toBe(0);
+  });
+
+  it('une neutre dont deux slots sont forcés à la main n’en construit pas d’autres (300 s)', () => {
+    const world = makeWorld([{ ...OWNED, owner: undefined }]);
+    world.planets[0].buildings[TURRET].built = true;
+    world.planets[0].buildings[FACTORY].built = true;
     expect(run(world, 300 * 60)).toHaveLength(0);
     expect(world.planets[0].buildings.map((s) => s.built)).toEqual([true, true, false, false]);
   });

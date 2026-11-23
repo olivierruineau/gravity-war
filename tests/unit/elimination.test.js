@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { EVENT_CAPACITY, FIXED_DT, SHIP_MAX_HP } from '../../src/config.js';
+import { EVENT_CAPACITY, FACTION_COUNT, FIXED_DT, SHIP_MAX_HP } from '../../src/config.js';
 import { clearEvents, EVT } from '../../src/core/events.js';
 import { OUTCOME, updateFactions } from '../../src/core/faction.js';
 import { damageShip } from '../../src/core/lifecycle.js';
@@ -331,18 +331,35 @@ describe('updateFactions : issue de la partie', () => {
   });
 });
 
-describe('updateFactions : monde sans `inGame`', () => {
-  it('toutes les factions comptent en jeu (`?? true`) : la rivale 2 retarde la victoire', () => {
-    const world = makeWorld();
-    delete world.inGame; // monde assemblé à la main, sans la liste de départ
-    kill(world, 1);
-    loseAllPlanets(world, 1, 0);
-    updateFactions(world);
-    expect(world.outcome).toBe(OUTCOME.PLAYING);
+describe('inGame : contrat de `createWorld` (donnée officielle, jamais absente)', () => {
+  it('tableau de FACTION_COUNT booléens, présent dès la création', () => {
+    const { inGame } = makeWorld();
+    expect(inGame).toHaveLength(FACTION_COUNT);
+    expect(inGame.every((v) => typeof v === 'boolean')).toBe(true);
+  });
 
-    loseAllPlanets(world, 2, 0);
-    updateFactions(world);
-    expect(world.outcome).toBe(OUTCOME.VICTORY);
+  it('carte sans aucune planète : personne en jeu', () => {
+    expect(makeWorld({ planets: [], spawns: [] }).inGame).toEqual([false, false, false]);
+  });
+
+  it('calculé depuis les propriétaires de départ, indépendamment des vaisseaux (ici : aucun vaisseau)', () => {
+    const world = makeWorld({ planets: [BASES[0], BASES[2]], spawns: [] });
+    expect(world.inGame).toEqual([true, false, true]);
+  });
+
+  it('une planète neutre ne met aucune faction en jeu', () => {
+    expect(makeWorld({ planets: [NEUTRAL_PLANET], spawns: [] }).inGame).toEqual([
+      false,
+      false,
+      false,
+    ]);
+  });
+
+  it('figé au départ : perdre toutes ses planètes ne le modifie pas', () => {
+    const world = makeWorld();
+    loseAllPlanets(world, 1, 0);
+    run(world, 5);
+    expect(world.inGame).toEqual([true, true, true]);
   });
 
   it('contre-épreuve : avec inGame[2] = false, la faction 2 (qui a pourtant une planète) est ignorée', () => {
@@ -355,12 +372,91 @@ describe('updateFactions : monde sans `inGame`', () => {
     expect(world.factions[2].eliminated).toBe(false);
   });
 
-  it('sans inGame, une faction sans planète au départ ne bloque pas la victoire (elle est déjà éliminée)', () => {
+  it('une faction sans planète au départ ne bloque pas la victoire (hors jeu par construction)', () => {
     const world = makeWorld({ planets: BASES.slice(0, 2) });
-    delete world.inGame;
     kill(world, 1);
     loseAllPlanets(world, 1, 0);
     updateFactions(world);
     expect(world.outcome).toBe(OUTCOME.VICTORY);
+  });
+});
+
+describe('updateFactions : faction 0 hors jeu (bot contre bot)', () => {
+  // Les factions 1 et 2 ont chacune une base ; la faction 0 n'a aucune planète au départ (donc « éliminée »,
+  // sans événement). Son vaisseau vole loin de tout. Le vaisseau 1 est posé sur la base de la faction 2 (planète 1).
+  const BOT_BASES = [
+    { x: 900, y: 300, radius: 40, owner: 1 },
+    { x: 1500, y: 300, radius: 40, owner: 2 },
+  ];
+  const BOT_SPAWNS = [{ x: 300, y: 900 }, { planet: 1 }];
+  const CAPTURE_STEPS_MAX = 200; // CAPTURE_TIME = 3 s = 180 pas (±1 d'arrondi) : marge confortable
+
+  it('au départ : faction 0 hors jeu, issue PLAYING, aucun événement', () => {
+    const world = makeWorld({ planets: BOT_BASES, spawns: BOT_SPAWNS });
+    expect(world.inGame).toEqual([false, true, true]);
+    expect(world.factions[0].eliminated).toBe(true);
+    expect(world.outcome).toBe(OUTCOME.PLAYING);
+    expect(world.events.count).toBe(0);
+  });
+
+  it('la faction 1 capture la base de la faction 2 : ELIMINATED(2), mais l’issue reste PLAYING et aucun GAME_OVER', () => {
+    const world = makeWorld({ planets: BOT_BASES, spawns: BOT_SPAWNS });
+    const events = run(world, CAPTURE_STEPS_MAX);
+    expect(ofType(events, EVT.CAPTURED)).toMatchObject([{ a: 1, b: 1 }]);
+    expect(ofType(events, EVT.ELIMINATED).map((e) => e.a)).toEqual([2]); // jamais 0 : déjà hors jeu
+    expect(ofType(events, EVT.GAME_OVER)).toHaveLength(0);
+    expect(world.factions[2].eliminated).toBe(true);
+    expect(world.factions[1]).toMatchObject({ planetCount: 2, eliminated: false });
+    // Sans cette règle, factions[0].eliminated (vrai dès le départ) donnerait DEFEAT à la première élimination.
+    expect(world.outcome).toBe(OUTCOME.PLAYING);
+  });
+
+  it('l’issue reste PLAYING sur la durée (600 pas de plus), toujours sans GAME_OVER', () => {
+    const world = makeWorld({ planets: BOT_BASES, spawns: BOT_SPAWNS });
+    const events = run(world, CAPTURE_STEPS_MAX + 600);
+    expect(ofType(events, EVT.GAME_OVER)).toHaveLength(0);
+    expect(world.outcome).toBe(OUTCOME.PLAYING);
+  });
+
+  it('appel direct : éliminer la seule autre faction en jeu ne donne ni VICTORY ni DEFEAT', () => {
+    const world = makeWorld({ planets: BOT_BASES, spawns: BOT_SPAWNS });
+    world.planets[1].owner = 1; // la faction 1 prend la base de la faction 2 ; la faction 2 n'a pas de vaisseau
+    updateFactions(world);
+    expect(world.factions[2].eliminated).toBe(true);
+    expect(world.outcome).toBe(OUTCOME.PLAYING);
+    expect(eventsOf(world, EVT.GAME_OVER)).toHaveLength(0);
+  });
+});
+
+describe('issue de la partie : inchangée quand la faction 0 est en jeu (via `step`)', () => {
+  // Deux bases seulement (faction 2 hors jeu), bases sans bâtiment : pas de tourelle, la capture est possible.
+  const TWO = [
+    { x: 900, y: 300, radius: 40, owner: 1 },
+    { x: 300, y: 300, radius: 40, owner: 0 },
+  ];
+
+  it('VICTORY : la faction 0, posée sur la dernière base rivale, la capture ; GAME_OVER(VICTORY) une seule fois', () => {
+    // Spawn { planet: 0 } : le vaisseau 0 démarre posé sur la planète 0, base de la faction 1.
+    const world = makeWorld({ planets: TWO, spawns: [{ planet: 0 }] });
+    expect(world.inGame).toEqual([true, true, false]);
+    const events = run(world, 400);
+    expect(ofType(events, EVT.CAPTURED)).toMatchObject([{ a: 0, b: 0 }]);
+    expect(ofType(events, EVT.ELIMINATED).map((e) => e.a)).toEqual([1]);
+    expect(ofType(events, EVT.GAME_OVER)).toMatchObject([{ a: OUTCOME.VICTORY }]);
+    expect(world.outcome).toBe(OUTCOME.VICTORY);
+  });
+
+  it('DEFEAT : la faction 1 capture la dernière base de la faction 0 alors que le vaisseau 0 est mort', () => {
+    const world = makeWorld({
+      planets: TWO,
+      spawns: [{ x: 1500, y: 900 }, { planet: 1 }], // vaisseau 1 posé sur la base de la faction 0 (planète 1)
+    });
+    kill(world, 0);
+    world.ships[0].respawnTimer = 1e9; // reste mort pendant toute la capture (pas de respawn qui la conteste)
+    const events = run(world, 400);
+    expect(ofType(events, EVT.CAPTURED)).toMatchObject([{ a: 1, b: 1 }]);
+    expect(ofType(events, EVT.ELIMINATED).map((e) => e.a)).toEqual([0]);
+    expect(ofType(events, EVT.GAME_OVER)).toMatchObject([{ a: OUTCOME.DEFEAT }]);
+    expect(world.outcome).toBe(OUTCOME.DEFEAT);
   });
 });

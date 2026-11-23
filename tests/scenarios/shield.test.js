@@ -207,6 +207,9 @@ describe('recharge du bouclier', () => {
     );
     const ship = world.ships[0];
     expect(ship.landedOn).toBe(0);
+    // Le spawn { planet } donne un bouclier plein (générateur construit) : on le vide d'abord, sinon il n'y a rien à recharger.
+    expect(ship.shield).toBe(SHIELD_MAX);
+    ship.shield = 0;
     damageShip(world, 0, 1, HIT_X, HIT_Y);
     const n = stepsUntilFull(world);
     // Dégât de 1 sur un bouclier à 0 : le délai part de SHIELD_RECHARGE_DELAY, même tolérance que ci-dessus.

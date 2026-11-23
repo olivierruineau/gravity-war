@@ -33,6 +33,12 @@ export function damageShip(world, shipIndex, amount, x, y) {
   return true;
 }
 
+/** Pose le vaisseau sur sa planète (respawn ou départ) : vie pleine, et bouclier plein si sa faction l'a débloqué. */
+export function placeShipOnPlanet(world, ship, planetIndex) {
+  respawnShip(ship, planetIndex, world.planets[planetIndex]);
+  if (world.factions[ship.faction].hasShield) ship.shield = SHIELD_MAX;
+}
+
 /**
  * Décompte le délai de respawn d'un vaisseau mort ; à échéance il réapparaît sur la planète que sa faction
  * possède la plus proche. Sans planète possédée il reste mort (élimination, item 4.10).
@@ -46,8 +52,6 @@ export function updateRespawn(world, shipIndex, dt) {
     ship.respawnTimer = 0;
     return;
   }
-  const planet = world.planets[planetIndex];
-  respawnShip(ship, planetIndex, planet);
-  if (world.factions[ship.faction].hasShield) ship.shield = SHIELD_MAX;
+  placeShipOnPlanet(world, ship, planetIndex);
   pushEvent(world.events, EVT.RESPAWN, ship.pos.x, ship.pos.y, shipIndex, planetIndex);
 }

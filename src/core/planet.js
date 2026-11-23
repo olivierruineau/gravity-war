@@ -7,7 +7,7 @@ export const NEUTRAL = -1;
 /**
  * @param {{ x: number, y: number, radius: number, gravity?: number, owner?: number, built?: number }} def
  *   `gravity` = gravité de surface g0 en px/s² (défaut PLANET_GRAVITY) ; `owner` = faction de départ (défaut neutre) ;
- *   `built` = nombre de slots déjà construits, dans l'ordre du catalogue (défaut 0).
+ *   `built` = nombre de slots déjà construits, dans l'ordre du catalogue (défaut 0, ignoré pour une planète neutre).
  * `mu` est calibré pour que la gravité vaille exactement g0 à la surface malgré le décalage de coupure.
  */
 export function createPlanet({
@@ -19,9 +19,10 @@ export function createPlanet({
   built = 0,
 }) {
   const k = GRAVITY_RANGE_FACTOR;
+  const builtCount = owner === NEUTRAL ? 0 : built; // une neutre n'a jamais de bâtiment
   const buildings = BUILDINGS.map((b, i) => ({
-    built: i < built,
-    hp: i < built && b.turret ? b.turret.hp : 0,
+    built: i < builtCount,
+    hp: i < builtCount && b.turret ? b.turret.hp : 0,
     cooldown: 0,
   }));
   return {

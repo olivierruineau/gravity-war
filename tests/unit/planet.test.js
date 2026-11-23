@@ -270,39 +270,55 @@ describe('createPlanet : bâtiments par défaut', () => {
 
 describe('createPlanet : bâtiments déjà construits (built)', () => {
   it('built: 1 : seul le slot 0 (tourelle) est construit, à pleins PV', () => {
-    const planet = createPlanet({ x: CX, y: CY, radius: 60, built: 1 });
+    const planet = createPlanet({ x: CX, y: CY, radius: 60, owner: 0, built: 1 });
     expect(planet.buildings[0]).toEqual({ built: true, hp: BUILDINGS[0].turret.hp, cooldown: 0 });
   });
 
   it('built: 1 : les autres slots restent non construits', () => {
-    const planet = createPlanet({ x: CX, y: CY, radius: 60, built: 1 });
+    const planet = createPlanet({ x: CX, y: CY, radius: 60, owner: 0, built: 1 });
     expect(planet.buildings.slice(1)).toEqual(BUILDINGS.slice(1).map(() => EMPTY_SLOT));
   });
 
   it('built: 2 : les deux premiers slots sont construits', () => {
-    const planet = createPlanet({ x: CX, y: CY, radius: 60, built: 2 });
+    const planet = createPlanet({ x: CX, y: CY, radius: 60, owner: 0, built: 2 });
     expect(planet.buildings.slice(0, 2).map((b) => b.built)).toEqual([true, true]);
   });
 
   it('built: 2 : la tourelle a ses PV max, l’usine de missiles n’a pas de PV', () => {
-    const planet = createPlanet({ x: CX, y: CY, radius: 60, built: 2 });
+    const planet = createPlanet({ x: CX, y: CY, radius: 60, owner: 0, built: 2 });
     expect(planet.buildings[1]).toEqual({ built: true, hp: 0, cooldown: 0 });
   });
 
   it('built: 2 : les slots suivants restent non construits', () => {
-    const planet = createPlanet({ x: CX, y: CY, radius: 60, built: 2 });
+    const planet = createPlanet({ x: CX, y: CY, radius: 60, owner: 0, built: 2 });
     expect(planet.buildings.slice(2)).toEqual(BUILDINGS.slice(2).map(() => EMPTY_SLOT));
   });
 
   it('built supérieur au nombre de slots : borné, tous construits, aucun slot en trop', () => {
-    const planet = createPlanet({ x: CX, y: CY, radius: 60, built: 99 });
+    const planet = createPlanet({ x: CX, y: CY, radius: 60, owner: 0, built: 99 });
     expect(planet.buildings).toHaveLength(BUILDINGS.length);
     expect(planet.buildings.every((b) => b.built)).toBe(true);
   });
 
   it('built supérieur au nombre de slots : la tourelle lourde reçoit ses PV max', () => {
-    const planet = createPlanet({ x: CX, y: CY, radius: 60, built: 99 });
+    const planet = createPlanet({ x: CX, y: CY, radius: 60, owner: 0, built: 99 });
     expect(planet.buildings[3].hp).toBe(BUILDINGS[3].turret.hp);
+  });
+
+  it('une neutre ignore built : aucun slot construit, aucun PV', () => {
+    const planet = createPlanet({ x: CX, y: CY, radius: 60, built: 3 });
+    expect(planet.owner).toBe(NEUTRAL);
+    expect(planet.buildings).toEqual(BUILDINGS.map(() => EMPTY_SLOT));
+  });
+
+  it('une neutre explicite (owner: -1) ignore aussi built, même supérieur au nombre de slots', () => {
+    const planet = createPlanet({ x: CX, y: CY, radius: 60, owner: NEUTRAL, built: 99 });
+    expect(planet.buildings).toEqual(BUILDINGS.map(() => EMPTY_SLOT));
+  });
+
+  it('la faction 0 (owner: 0, valeur falsy) honore bien built', () => {
+    const planet = createPlanet({ x: CX, y: CY, radius: 60, owner: 0, built: 1 });
+    expect(planet.buildings[0].built).toBe(true);
   });
 });
 

@@ -59,16 +59,21 @@ function hasLiveShip(ships, faction) {
   return false;
 }
 
-/** Défaite si la faction 0 est éliminée, victoire si tous les adversaires de départ le sont. */
+/**
+ * Défaite si la faction 0 (en jeu au départ) est éliminée, victoire si tous les adversaires en jeu au départ
+ * le sont. Sans faction 0 en jeu (bot contre bot), l'issue reste PLAYING.
+ */
 function updateOutcome(world) {
   const { factions } = world;
   let outcome = OUTCOME.PLAYING;
-  if (factions[0].eliminated) outcome = OUTCOME.DEFEAT;
-  else {
-    let rivalLeft = false;
-    for (let f = 1; f < factions.length; f++)
-      if ((world.inGame?.[f] ?? true) && !factions[f].eliminated) rivalLeft = true;
-    if (!rivalLeft) outcome = OUTCOME.VICTORY;
+  if (world.inGame[0]) {
+    if (factions[0].eliminated) outcome = OUTCOME.DEFEAT;
+    else {
+      let rivalLeft = false;
+      for (let f = 1; f < factions.length; f++)
+        if (world.inGame[f] && !factions[f].eliminated) rivalLeft = true;
+      if (!rivalLeft) outcome = OUTCOME.VICTORY;
+    }
   }
   if (world.outcome !== OUTCOME.PLAYING || outcome === OUTCOME.PLAYING) return;
   world.outcome = outcome;

@@ -3,6 +3,7 @@ import { FIXED_DT, SHIP_MAX_HP } from '../../src/config.js';
 import { BUILDINGS } from '../../src/data/buildings.js';
 import { clearEvents, EVT } from '../../src/core/events.js';
 import { int } from '../../src/core/rng.js';
+import { respawnShip } from '../../src/core/ship.js';
 import { createWorld, step } from '../../src/core/world.js';
 
 // Scénarios de tourelles sur mini-cartes 4000×4000 (aucune frontière en jeu). La planète défendue,
@@ -219,38 +220,45 @@ describe('tourelle : un vaisseau qui croise rapidement', () => {
 
 describe('tourelle : détruite à coups de balles', () => {
   // Planète défendue avec tourelle de base ET usine (built: 2) : le chantier en cours est le générateur (40 s).
-  // L'intrus, posé au sommet, tourne le nez vers le bas et tire : ses balles naissent à 8 px du centre du
-  // vaisseau, donc DANS la planète (centre à 66 px, bouche à 58 px < 60) et sont absorbées au pas du tir.
-  // Il encaisse les tirs de la tourelle (6 PV/s, ≈ 8 PV pendant les 1,3 s de l'attaque) et survit.
+  // Un vaisseau posé ne peut pas tirer vers le sol (le nez serait dans la planète) : l'attaquant est donc EN VOL,
+  // à 160 px du centre (100 px de surface, dans la portée de 150 px de la tourelle), nez vers la planète, à
+  // vitesse nulle. À cette distance g ≈ 70·(60/160)² ≈ 10 px/s² : il ne dérive que d'une trentaine de px
+  // pendant les ~2,5 s de l'attaque (≈ 1,1 s de tir + délai de vol), donc ne touche jamais la planète.
+  // Il encaisse les tirs de la tourelle (6 PV/s) et survit. Les balles mettent ~0,3 s à arriver : on compte les
+  // impacts (BULLET_HIT sur la planète), pas les tirs.
+  const START_Y = 2000 - 160;
+
   function attackedWorld(seed = 1) {
-    const world = createWorld(
+    return createWorld(
       {
         width: SIZE,
         height: SIZE,
         planets: [{ x: 1000, y: 2000, radius: RADIUS, gravity: 70, owner: 1, built: 2 }],
-        spawns: [{ planet: 0 }],
+        spawns: [{ x: 1000, y: START_Y, angle: Math.PI / 2 }],
       },
       seed,
       { eventCapacity: 64 },
     );
-    world.ships[0].angle = Math.PI / 2;
-    return world;
   }
 
-  /** Tire jusqu'au TURRET_DESTROYED ; renvoie le nombre de balles tirées par l'intrus (événements SHOT). */
+  /** Tire jusqu'au TURRET_DESTROYED ; renvoie le nombre de balles de l'intrus absorbées par la planète. */
   function fireUntilDestroyed(world, rec) {
     const ship = world.ships[0];
-    let bullets = 0;
+    let impacts = 0;
     ship.intent.fire = true;
-    while (rec.log.destroyed.length === 0 && world.tick < 600) {
-      clearEvents(world.events);
-      const before = rec.log.destroyed.length;
+    while (rec.log.destroyed.length === 0) {
       rec.step();
-      for (const e of eventsOf(world, EVT.SHOT)) bullets += e.a === 0 ? 1 : 0;
-      if (rec.log.destroyed.length > before) break;
+      impacts += eventsOf(world, EVT.BULLET_HIT).length;
+      expect(world.tick).toBeLessThan(600); // garde-fou : 10 s max
     }
     ship.intent.fire = false;
-    return bullets;
+    expect(ship.landedOn).toBe(-1); // il a attaqué en vol, sans jamais se poser
+    return impacts;
+  }
+
+  /** « L'intrus encore là » : posé sur la planète après l'attaque (même état qu'un respawn), pleins PV. */
+  function landIntruder(world) {
+    respawnShip(world.ships[0], 0, world.planets[0]);
   }
 
   it('7 balles de 12 (80 PV) : une seule TURRET_DESTROYED (a = planète, b = slot 0), 6 balles laissent 8 PV', () => {
@@ -262,18 +270,18 @@ describe('tourelle : détruite à coups de balles', () => {
     const progressBefore = world.planets[0].buildProgress;
     expect(progressBefore).toBeGreaterThan(0.9);
 
-    let bullets = 0;
+    let impacts = 0;
     let hpAfterSix = -1;
     world.ships[0].intent.fire = true;
     while (rec.log.destroyed.length === 0) {
       rec.step();
       expect(world.tick).toBeLessThan(600); // garde-fou : 10 s max
-      bullets += eventsOf(world, EVT.SHOT).length;
-      if (bullets === 6 && hpAfterSix < 0) hpAfterSix = turret.hp;
+      impacts += eventsOf(world, EVT.BULLET_HIT).length;
+      if (impacts === 6 && hpAfterSix < 0) hpAfterSix = turret.hp;
     }
     world.ships[0].intent.fire = false;
 
-    expect(bullets).toBe(7);
+    expect(impacts).toBe(7);
     expect(hpAfterSix).toBe(TURRET.hp - 6 * 12);
     expect(rec.log.destroyed).toHaveLength(1);
     expect(rec.log.destroyed[0]).toMatchObject({ a: 0, b: 0 });
@@ -286,6 +294,15 @@ describe('tourelle : détruite à coups de balles', () => {
     expect(world.planets[0].buildings[1].built).toBe(true);
   });
 
+  it('la tourelle défend la planète pendant l’attaque : elle tire sur l’attaquant en vol', () => {
+    const world = attackedWorld();
+    const rec = createRecorder(world);
+    rec.run(60);
+    fireUntilDestroyed(world, rec);
+    expect(rec.log.shots.length).toBeGreaterThan(0);
+    expect(rec.log.shots.every((e) => e.a === 0 && e.b === 0)).toBe(true);
+  });
+
   it('la tourelle détruite cesse de tirer, puis est reconstruite en priorité : BUILT slot 0 après 20 s (±2 pas)', () => {
     const world = attackedWorld();
     const rec = createRecorder(world);
@@ -296,6 +313,7 @@ describe('tourelle : détruite à coups de balles', () => {
     expect(shotsBefore).toBeGreaterThan(0); // elle s'est défendue
 
     // Pendant la reconstruction : aucun tir de tourelle, intrus indemne de nouveaux dégâts.
+    landIntruder(world);
     const hpAtDestruction = world.ships[0].hp;
     rec.run(TURRET_STEPS - TOL - 2);
     expect(rec.log.built).toHaveLength(0);
@@ -319,6 +337,7 @@ describe('tourelle : détruite à coups de balles', () => {
     const rec = createRecorder(world);
     rec.run(60);
     fireUntilDestroyed(world, rec);
+    landIntruder(world);
     const shotsBefore = rec.log.shots.length;
     rec.run(TURRET_STEPS + 120);
     expect(rec.log.built.some((e) => e.b === 0)).toBe(true);

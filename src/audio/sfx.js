@@ -50,9 +50,17 @@ const SOUNDS = {
   thrust: [0.12, 0.3, 60, 0, 0.05, 0.1, 4, 1, 0, 0, 0, 0, 0, 3],
 };
 
+// Pré-calculé au chargement : volume de base séparé du reste, pour ne rien allouer à chaque appel.
+const BASE_VOLUME = {};
+const REST = {};
+for (const name of Object.keys(SOUNDS)) {
+  BASE_VOLUME[name] = SOUNDS[name][0];
+  REST[name] = SOUNDS[name].slice(1);
+}
+
 /** `volume` ∈ [0, 1] multiplie le volume de base du son (atténuation par la distance, voir audioEvents). */
 export function playSfx(name, volume = 1) {
-  const params = SOUNDS[name];
-  if (!enabled || !params || volume <= 0) return;
-  zzfx(params[0] * volume, ...params.slice(1));
+  const rest = REST[name];
+  if (!enabled || !rest || volume <= 0) return;
+  zzfx(BASE_VOLUME[name] * volume, ...rest);
 }
