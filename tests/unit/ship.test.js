@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   FIXED_DT,
+  MISSILE_STOCK_MIN,
   SHIP_COLLISION_RADIUS,
   SHIP_MAX_HP,
   SHIP_ROTATION_SPEED,
@@ -290,5 +291,75 @@ describe('integrate', () => {
     ship.vel.x = 10;
     integrate(ship, 0.5);
     expect(ship.pos.x).toBeCloseTo(5, PRECISION);
+  });
+});
+
+describe('createShip : armes et bouclier au départ', () => {
+  const ship = createShip(0, 10, 20);
+
+  it('missiles vaut MISSILE_STOCK_MIN', () => {
+    expect(ship.missiles).toBe(MISSILE_STOCK_MIN);
+  });
+
+  it('missileCooldown vaut 0', () => {
+    expect(ship.missileCooldown).toBe(0);
+  });
+
+  it('rearmTime vaut 0', () => {
+    expect(ship.rearmTime).toBe(0);
+  });
+
+  it('shield vaut 0', () => {
+    expect(ship.shield).toBe(0);
+  });
+
+  it('shieldDelay vaut 0', () => {
+    expect(ship.shieldDelay).toBe(0);
+  });
+});
+
+describe('respawnShip : remise à zéro des armes et du bouclier', () => {
+  const planet = createPlanet({ x: 200, y: 150, radius: 60, owner: 0 });
+
+  /** Vaisseau dont les armes et le bouclier ont été consommés ou chargés. */
+  function usedShip() {
+    const ship = createShip(0, 900, 900);
+    ship.alive = false;
+    ship.missiles = 3;
+    ship.missileCooldown = 0.4;
+    ship.rearmTime = 1.5;
+    ship.shield = 27;
+    ship.shieldDelay = 2.2;
+    return ship;
+  }
+
+  it('missiles revient à MISSILE_STOCK_MIN', () => {
+    const ship = usedShip();
+    respawnShip(ship, 0, planet);
+    expect(ship.missiles).toBe(MISSILE_STOCK_MIN);
+  });
+
+  it('missileCooldown revient à 0', () => {
+    const ship = usedShip();
+    respawnShip(ship, 0, planet);
+    expect(ship.missileCooldown).toBe(0);
+  });
+
+  it('rearmTime revient à 0', () => {
+    const ship = usedShip();
+    respawnShip(ship, 0, planet);
+    expect(ship.rearmTime).toBe(0);
+  });
+
+  it('shield revient à 0', () => {
+    const ship = usedShip();
+    respawnShip(ship, 0, planet);
+    expect(ship.shield).toBe(0);
+  });
+
+  it('shieldDelay revient à 0', () => {
+    const ship = usedShip();
+    respawnShip(ship, 0, planet);
+    expect(ship.shieldDelay).toBe(0);
   });
 });

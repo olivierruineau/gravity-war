@@ -60,7 +60,7 @@ Spécification : [docs/SPEC.md](docs/SPEC.md). Architecture : [docs/ARCHITECTURE
 
 **Fin de phase :** on capture des planètes neutres, elles se développent seules ; la planète change de couleur.
 
-- [ ] **4.1** Modèle de faction + propriétaire de planète ; départ : une planète de base par faction ; couleurs (blanc/vert/autres) (code, test-s)
+- [x] **4.1** Modèle de faction + propriétaire de planète ; départ : une planète de base par faction ; couleurs (blanc/vert/autres) (code, test-s)
 - [ ] **4.2** Capture d'une planète neutre : 3 s posé, compteur remis à zéro si décollage/éjection, anneau de progression ; tests (code, test-c)
 - [ ] **4.3** Bâtiments en données (catalogue, ordre de développement, durées) + développement automatique dans le temps ; tests (code, test-c)
 - [ ] **4.4** Rendu des bâtiments (carrés/rectangles dans le cercle) (code)
@@ -77,7 +77,7 @@ Spécification : [docs/SPEC.md](docs/SPEC.md). Architecture : [docs/ARCHITECTURE
 **Fin de phase :** 2 bots pilotent, capturent, défendent et attaquent avec les mêmes règles que le joueur.
 **Revue Opus** en fin de phase.
 
-- [ ] **5.1** ADR 0004 : architecture de l'IA (machine à états / utilité), les bots produisent les mêmes intentions que le joueur, perception limitée au monde de `core/` (arch)
+- [ ] **5.1** ADR 0006 : architecture de l'IA (machine à états / utilité), les bots produisent les mêmes intentions que le joueur, perception limitée au monde de `core/` (arch)
 - [ ] **5.2** Navigation sensible à la gravité : s'orienter, rejoindre une cible, freiner par 180° + poussée ; tests de scénarios (code, test-c)
 - [ ] **5.3** Contrôleur d'atterrissage : approche, alignement, vitesse radiale sous le seuil ; tests (code, test-c)
 - [ ] **5.4** Comportement « capturer une planète neutre » (choix de cible, trajet, capture) (code, test-c)

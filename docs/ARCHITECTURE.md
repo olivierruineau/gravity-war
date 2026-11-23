@@ -40,6 +40,16 @@
 - Contact vaisseau/planète dans `core/landing.js` : `evaluateLanding` (vitesse d'approche, tangentielle, erreur d'angle) est la seule source des seuils (collision, aide visuelle, IA). Atterrissage → `landedOn`, vitesse nulle, `EVT.LANDED` ; sinon dégâts proportionnels à l'excès de vitesse, rebond garanti, `EVT.IMPACT`.
 - Ordre d'un pas, par vaisseau vivant : intentions → maintien/décollage si posé (un vaisseau posé saute la suite) → gravité + intégration → bornes → contact planètes.
 
+## Factions, capture, bâtiments, combat ([ADR 0005](adr/0005-factions-batiments-capture.md), phase 4 — en cours d'implémentation)
+
+- `world.factions[f]` = `{ planetCount, hasMissiles, hasShield, eliminated }`, résumé **recalculé à chaque pas** depuis les planètes par `updateFactions` (seul écrivain), sauf `eliminated`, qui est définitif. Une faction sans planète au départ est **hors jeu** : elle ne capture pas et n'est jamais éliminée (cibles d'entraînement, mini-cartes de test). `world.outcome` vaut PLAYING, VICTORY ou DEFEAT, du point de vue de la faction 0.
+- Planète : `captureBy`/`captureTime`. La capture avance si **exactement un** vaisseau vivant est posé, d'une autre faction non éliminée, et qu'aucune tourelle n'est construite. Elle a lieu après `CAPTURE_TIME`, puis les bâtiments sont réinitialisés.
+- Bâtiments : slots préalloués `buildings[k]` = `{ built, hp, cooldown }`. `k` est l'index du catalogue `src/data/buildings.js`, dont l'ordre est l'ordre de développement. Le chantier est le premier slot non construit, et seules les planètes possédées se développent.
+- Tourelles : tirent radialement dans le pool commun (owner = faction de la planète), sans anticipation et avec dispersion seedée. Leur zone touchable est le disque de la planète : un projectile ennemi absorbé par la planète abîme la première tourelle construite.
+- Missiles : stock par vaisseau, débloqués par l'usine. Ils ignorent la gravité, et leur cible est réacquise à chaque pas dans un cône (pas de champ `target`). Réarmement posé sur une planète de sa faction équipée d'une usine.
+- Bouclier : absorbé dans `damageShip` avant les PV. Recharge après un délai sans dégâts, en vol comme posé, si la faction a un générateur.
+- Ordre d'un pas : vaisseaux (respawn, ou intentions, armes, posé, gravité, bornes, contact) → tourelles → guidage et déplacement des projectiles → collisions des projectiles → bouclier et réarmement → bâtiments → capture → factions → `tick++`.
+
 ## Boucle de jeu
 
 `GameScene.update(time, delta)` :
@@ -58,9 +68,10 @@ Résolution interne 480×270, `pixelArt` + `roundPixels`, mise à l'échelle `FI
 
 ## Décisions
 
-| ADR                                         | Sujet                                      | Statut                                     |
-| ------------------------------------------- | ------------------------------------------ | ------------------------------------------ |
-| [0001](adr/0001-stack-technique.md)         | Stack technique                            | Accepté                                    |
-| [0002](adr/0002-architecture-core.md)       | Architecture de `core/` et pont rendu      | Accepté                                    |
-| [0003](adr/0003-gravite-et-atterrissage.md) | Gravité, collision et atterrissage         | Accepté (§2 « sommation » amendé par 0004) |
-| [0004](adr/0004-zone-gravite-dominante.md)  | Zone de gravité dominante (chevauchements) | Accepté                                    |
+| ADR                                            | Sujet                                                       | Statut                                     |
+| ---------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------ |
+| [0001](adr/0001-stack-technique.md)            | Stack technique                                             | Accepté                                    |
+| [0002](adr/0002-architecture-core.md)          | Architecture de `core/` et pont rendu                       | Accepté                                    |
+| [0003](adr/0003-gravite-et-atterrissage.md)    | Gravité, collision et atterrissage                          | Accepté (§2 « sommation » amendé par 0004) |
+| [0004](adr/0004-zone-gravite-dominante.md)     | Zone de gravité dominante (chevauchements)                  | Accepté                                    |
+| [0005](adr/0005-factions-batiments-capture.md) | Factions, capture, bâtiments, tourelles, missiles, bouclier | Proposé (précise 0002 §1, §4, §5)          |

@@ -3,6 +3,7 @@ import { GRAVITY_RANGE_FACTOR, PLANET_GRAVITY } from '../../src/config.js';
 import { gravityAt } from '../../src/core/gravity.js';
 import { createPlanet, NEUTRAL, nearestPlanet } from '../../src/core/planet.js';
 import { createWorld } from '../../src/core/world.js';
+import { BUILDINGS } from '../../src/data/buildings.js';
 import { arena } from '../../src/data/maps/arena.js';
 
 const CX = 200;
@@ -238,5 +239,90 @@ describe('nearestPlanet : carte arena', () => {
   it('au vaisseau 0 posé sur sa base, la planète la plus proche est la planète 0', () => {
     const { pos } = world.ships[0];
     expect(nearestPlanet(world.planets, pos)).toBe(0);
+  });
+});
+
+const EMPTY_SLOT = { built: false, hp: 0, cooldown: 0 };
+
+describe('createPlanet : bâtiments par défaut', () => {
+  const planet = createPlanet({ x: CX, y: CY, radius: 60 });
+
+  it('crée une entrée de bâtiment par entrée du catalogue', () => {
+    expect(planet.buildings).toHaveLength(BUILDINGS.length);
+  });
+
+  it('tous les slots sont non construits, sans PV ni recharge', () => {
+    expect(planet.buildings).toEqual(BUILDINGS.map(() => EMPTY_SLOT));
+  });
+
+  it('buildProgress vaut 0', () => {
+    expect(planet.buildProgress).toBe(0);
+  });
+
+  it('captureBy vaut -1 (personne ne capture)', () => {
+    expect(planet.captureBy).toBe(-1);
+  });
+
+  it('captureTime vaut 0', () => {
+    expect(planet.captureTime).toBe(0);
+  });
+});
+
+describe('createPlanet : bâtiments déjà construits (built)', () => {
+  it('built: 1 : seul le slot 0 (tourelle) est construit, à pleins PV', () => {
+    const planet = createPlanet({ x: CX, y: CY, radius: 60, built: 1 });
+    expect(planet.buildings[0]).toEqual({ built: true, hp: BUILDINGS[0].turret.hp, cooldown: 0 });
+  });
+
+  it('built: 1 : les autres slots restent non construits', () => {
+    const planet = createPlanet({ x: CX, y: CY, radius: 60, built: 1 });
+    expect(planet.buildings.slice(1)).toEqual(BUILDINGS.slice(1).map(() => EMPTY_SLOT));
+  });
+
+  it('built: 2 : les deux premiers slots sont construits', () => {
+    const planet = createPlanet({ x: CX, y: CY, radius: 60, built: 2 });
+    expect(planet.buildings.slice(0, 2).map((b) => b.built)).toEqual([true, true]);
+  });
+
+  it('built: 2 : la tourelle a ses PV max, l’usine de missiles n’a pas de PV', () => {
+    const planet = createPlanet({ x: CX, y: CY, radius: 60, built: 2 });
+    expect(planet.buildings[1]).toEqual({ built: true, hp: 0, cooldown: 0 });
+  });
+
+  it('built: 2 : les slots suivants restent non construits', () => {
+    const planet = createPlanet({ x: CX, y: CY, radius: 60, built: 2 });
+    expect(planet.buildings.slice(2)).toEqual(BUILDINGS.slice(2).map(() => EMPTY_SLOT));
+  });
+
+  it('built supérieur au nombre de slots : borné, tous construits, aucun slot en trop', () => {
+    const planet = createPlanet({ x: CX, y: CY, radius: 60, built: 99 });
+    expect(planet.buildings).toHaveLength(BUILDINGS.length);
+    expect(planet.buildings.every((b) => b.built)).toBe(true);
+  });
+
+  it('built supérieur au nombre de slots : la tourelle lourde reçoit ses PV max', () => {
+    const planet = createPlanet({ x: CX, y: CY, radius: 60, built: 99 });
+    expect(planet.buildings[3].hp).toBe(BUILDINGS[3].turret.hp);
+  });
+});
+
+describe('createPlanet : isolation des slots de bâtiments', () => {
+  it('deux planètes ne partagent pas le tableau buildings', () => {
+    const a = createPlanet({ x: 0, y: 0, radius: 10 });
+    const b = createPlanet({ x: 0, y: 0, radius: 10 });
+    expect(a.buildings).not.toBe(b.buildings);
+  });
+
+  it('deux planètes ne partagent pas les objets de slot', () => {
+    const a = createPlanet({ x: 0, y: 0, radius: 10 });
+    const b = createPlanet({ x: 0, y: 0, radius: 10 });
+    expect(a.buildings[0]).not.toBe(b.buildings[0]);
+  });
+
+  it('modifier un slot d’une planète ne modifie pas le slot de l’autre', () => {
+    const a = createPlanet({ x: 0, y: 0, radius: 10 });
+    const b = createPlanet({ x: 0, y: 0, radius: 10 });
+    a.buildings[0].built = true;
+    expect(b.buildings[0].built).toBe(false);
   });
 });

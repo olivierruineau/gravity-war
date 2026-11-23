@@ -11,6 +11,13 @@ export const EVT = {
   BULLET_HIT: 7, // projectile absorbé par une planète : a = planète
   SHIP_HIT: 8, // vaisseau touché par un projectile : a = vaisseau, b = dégâts
   RESPAWN: 6, // a = vaisseau, b = planète de réapparition
+  BUILT: 9, // bâtiment achevé : a = planète, b = slot
+  TURRET_SHOT: 10, // a = planète, b = slot
+  TURRET_DESTROYED: 11, // a = planète, b = slot
+  MISSILE_LAUNCH: 12, // a = vaisseau, b = projectile
+  REARM: 13, // a = vaisseau, b = stock
+  ELIMINATED: 14, // a = faction
+  GAME_OVER: 15, // a = issue (OUTCOME)
 };
 
 export function createEvents(capacity) {

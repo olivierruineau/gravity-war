@@ -4,6 +4,7 @@ import { BOUNDS_RESTITUTION, PROJECTILE_CAPACITY, SHIP_SIZE } from '../config.js
 import { collideProjectilesPlanets, collideProjectilesShips } from './collision.js';
 import { applyBounds } from './bounds.js';
 import { createEvents } from './events.js';
+import { createFactions, OUTCOME, updateFactions } from './faction.js';
 import { applyGravity } from './gravity.js';
 import { collideShipPlanets, updateLanded } from './landing.js';
 import { updateRespawn } from './lifecycle.js';
@@ -14,7 +15,7 @@ import { updateWeapons } from './weapons.js';
 import { applyIntent, createShip, integrate, respawnShip } from './ship.js';
 
 /**
- * @param {{ width: number, height: number, planets?: { x: number, y: number, radius: number, gravity?: number, owner?: number }[], spawns?: { x?: number, y?: number, angle?: number, planet?: number }[] }} map
+ * @param {{ width: number, height: number, planets?: { x: number, y: number, radius: number, gravity?: number, owner?: number, built?: number }[], spawns?: { x?: number, y?: number, angle?: number, planet?: number }[] }} map
  *   carte injectée (permet des mini-cartes en test) ; `spawns[i]` = point de départ du vaisseau de la faction i
  * @param {number} seed                            graine de l'aléa de simulation
  * @param {{ eventCapacity: number }} options
@@ -30,6 +31,8 @@ export function createWorld(map, seed, { eventCapacity }) {
     planets,
     projectiles: createProjectiles(PROJECTILE_CAPACITY),
     events: createEvents(eventCapacity),
+    factions: createFactions(planets),
+    outcome: OUTCOME.PLAYING,
   };
   // spawns[i] = point de départ de la faction i : soit une position libre { x, y, angle? }, soit
   // { planet: index } pour démarrer posé sur sa planète de base (comme après un respawn).
@@ -38,6 +41,7 @@ export function createWorld(map, seed, { eventCapacity }) {
     if (spawn.planet !== undefined) respawnShip(ship, spawn.planet, planets[spawn.planet]);
     world.ships.push(ship);
   });
+  updateFactions(world);
   return world;
 }
 
@@ -62,5 +66,6 @@ export function step(world, dt) {
   updateProjectiles(world, dt);
   collideProjectilesPlanets(world);
   collideProjectilesShips(world);
+  updateFactions(world);
   world.tick++;
 }

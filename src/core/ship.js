@@ -1,6 +1,12 @@
 // Vaisseau : rotation, poussée dans l'axe du nez, inertie. Aucun frein : pour ralentir,
 // le pilote fait demi-tour (180°) et pousse. Les interactions (gravité, collisions) vivent ailleurs.
-import { SHIP_COLLISION_RADIUS, SHIP_MAX_HP, SHIP_ROTATION_SPEED, SHIP_THRUST } from '../config.js';
+import {
+  MISSILE_STOCK_MIN,
+  SHIP_COLLISION_RADIUS,
+  SHIP_MAX_HP,
+  SHIP_ROTATION_SPEED,
+  SHIP_THRUST,
+} from '../config.js';
 import { createIntent, resetIntent } from './intent.js';
 import { wrapAngle } from './math.js';
 
@@ -16,6 +22,11 @@ export function createShip(faction, x, y, angle = -Math.PI / 2) {
     fireCooldown: 0, // secondes avant le prochain tir possible
     respawnTimer: 0, // secondes restantes avant de réapparaître (vaisseau mort)
     landedOn: -1, // index de la planète sur laquelle le vaisseau est posé, -1 en vol
+    missiles: MISSILE_STOCK_MIN,
+    missileCooldown: 0,
+    rearmTime: 0,
+    shield: 0,
+    shieldDelay: 0,
     intent: createIntent(),
   };
 }
@@ -51,5 +62,10 @@ export function respawnShip(ship, planetIndex, planet) {
   ship.landedOn = planetIndex;
   ship.respawnTimer = 0;
   ship.fireCooldown = 0;
+  ship.missiles = MISSILE_STOCK_MIN;
+  ship.missileCooldown = 0;
+  ship.rearmTime = 0;
+  ship.shield = 0;
+  ship.shieldDelay = 0;
   resetIntent(ship.intent);
 }

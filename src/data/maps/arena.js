@@ -5,9 +5,9 @@ export const arena = {
   width: 2400,
   height: 1350,
   planets: [
-    { x: 300, y: 250, radius: 60, gravity: 70, owner: 0 }, // 0 : base du joueur
-    { x: 2100, y: 250, radius: 60, gravity: 70, owner: 1 }, // 1 : base du bot 1
-    { x: 1200, y: 1150, radius: 60, gravity: 70, owner: 2 }, // 2 : base du bot 2
+    { x: 300, y: 250, radius: 60, gravity: 70, owner: 0, built: 1 }, // 0 : base du joueur
+    { x: 2100, y: 250, radius: 60, gravity: 70, owner: 1, built: 1 }, // 1 : base du bot 1
+    { x: 1200, y: 1150, radius: 60, gravity: 70, owner: 2, built: 1 }, // 2 : base du bot 2
     { x: 1200, y: 400, radius: 90, gravity: 65 }, // gros astre central haut
     { x: 700, y: 800, radius: 40, gravity: 55 },
     { x: 1700, y: 800, radius: 40, gravity: 55 },

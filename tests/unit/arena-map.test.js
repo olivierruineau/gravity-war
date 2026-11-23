@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { PLANET_MAX_GRAVITY, SHIP_COLLISION_RADIUS, SHIP_SIZE } from '../../src/config.js';
+import {
+  FACTION_COUNT,
+  PLANET_MAX_GRAVITY,
+  SHIP_COLLISION_RADIUS,
+  SHIP_SIZE,
+} from '../../src/config.js';
 import { gravityAt } from '../../src/core/gravity.js';
 import { createWorld } from '../../src/core/world.js';
 import { arena } from '../../src/data/maps/arena.js';
@@ -155,4 +160,35 @@ describe('carte arena : composition', () => {
       ).toBe(true);
     });
   });
+});
+
+describe('carte arena : chaque spawn pointe une planète possédée par sa faction', () => {
+  arena.spawns.forEach((s, i) => {
+    if (s.planet === undefined) return;
+    it(`spawn de la faction ${i} : la planète ${s.planet} appartient à la faction ${i}`, () => {
+      expect(planets[s.planet].owner).toBe(i);
+    });
+  });
+});
+
+describe('carte arena : chaque faction possède au moins une planète', () => {
+  for (let f = 0; f < FACTION_COUNT; f++) {
+    it(`faction ${f} possède au moins une planète`, () => {
+      expect(planets.some((p) => p.owner === f)).toBe(true);
+    });
+  }
+});
+
+describe('carte arena : bases construites au départ', () => {
+  const BASES = [0, 1, 2];
+
+  for (const i of BASES) {
+    it(`base ${i} : le slot 0 (tourelle) est construit`, () => {
+      expect(world.planets[i].buildings[0].built).toBe(true);
+    });
+
+    it(`base ${i} : au moins un slot est construit`, () => {
+      expect(world.planets[i].buildings.some((b) => b.built)).toBe(true);
+    });
+  }
 });

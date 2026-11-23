@@ -51,6 +51,28 @@ export const LANDING_AID_ALTITUDE = 120; // altitude sous laquelle l'aide à l'a
 /** Mur de carte : rebond amorti, sans dégâts (SPEC §5.6). 0 = collé au mur, 1 = rebond parfait. */
 export const BOUNDS_RESTITUTION = 0.5;
 
+/** Factions (ADR 0005) : 0 = joueur, 1 et 2 = bots. */
+export const FACTION_COUNT = 3;
+export const CAPTURE_TIME = 3; // secondes posé seul sur une planète pour la capturer
+export const TURRET_MUZZLE_OFFSET = 2; // px au-delà de la surface où apparaît la balle d'une tourelle
+
+/** Missiles : guidés, insensibles à la gravité, verrouillés par l'usine de missiles. */
+export const MISSILE_SPEED = 200; // px/s minimum (+ vitesse du vaisseau vers l'avant)
+export const MISSILE_LIFETIME = 4; // secondes
+export const MISSILE_DAMAGE = 40;
+export const MISSILE_COOLDOWN = 0.5; // secondes entre deux tirs
+export const MISSILE_TURN_RATE = 2.0; // rad/s, inférieur à SHIP_ROTATION_SPEED : on peut les esquiver
+export const MISSILE_SEEK_ANGLE = (30 * Math.PI) / 180; // demi-angle du cône de recherche, en rad
+export const MISSILE_SEEK_RANGE = 350; // px
+export const MISSILE_STOCK_MAX = 4;
+export const MISSILE_STOCK_MIN = 1; // stock initial et au respawn
+export const MISSILE_REARM_TIME = 2; // secondes par missile rechargé
+
+/** Bouclier passif, débloqué par le générateur de bouclier. */
+export const SHIELD_MAX = 50;
+export const SHIELD_RECHARGE_DELAY = 4; // secondes sans dégâts avant la recharge
+export const SHIELD_RECHARGE_RATE = 10; // points/s
+
 /** Effets visuels (cosmétiques, hors simulation) : taille du pool d'effets simultanés. */
 export const EFFECT_CAPACITY = 64;
 
