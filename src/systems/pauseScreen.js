@@ -5,6 +5,7 @@ import { watchAway } from './platform.js';
 import { createNavigation, watchSource } from './navigation.js';
 import { createButton } from './uiButton.js';
 import { createOptionsPanel } from './optionsPanel.js';
+import { MAP_LABELS } from './matchSettings.js';
 import { TOP_BUTTONS } from './hudLayout.js';
 import { controlsLines } from '../data/controls.js';
 import { GAME_HEIGHT, GAME_WIDTH, PALETTE, SCENES } from '../config.js';
@@ -79,7 +80,10 @@ export function createPauseScreen(scene, canPause, onToggleSound, spectator = fa
   let touch = false;
   const render = () => {
     const hint = touch ? [] : ['', 'P : reprendre   O : options   ECHAP : menu'];
-    help.setText([...controlsLines(touch, spectator), ...hint]);
+    const map = scene.plan
+      ? ['', `CARTE ${MAP_LABELS[scene.plan.mapMode]} #${scene.plan.seed}`]
+      : [];
+    help.setText([...controlsLines(touch, spectator), ...hint, ...map]);
     help.setY(GAME_HEIGHT * (touch ? 0.42 : 0.5)).setVisible(state.paused);
     resumeButton.setVisible(state.paused && touch);
     menuButton.setVisible(state.paused && touch);

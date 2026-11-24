@@ -6,16 +6,20 @@ import { controlsLines } from '../data/controls.js';
 import { isMuted, toggleMute } from '../audio/mute.js';
 import { ASSIST_LABELS, cycleAssistMode, getAssistMode } from './assistSetting.js';
 import { toCss } from './color.js';
+import { optionsLayout } from './optionsLayout.js';
 import { isDebugOn, toggleDebug } from './debugSetting.js';
 import { DIFFICULTY_LABELS, cycleDifficultyMode, getDifficultyMode } from './difficultySetting.js';
+import {
+  MAP_LABELS,
+  cycleBotCount,
+  cycleMapMode,
+  getBotCount,
+  getMapMode,
+} from './matchSettings.js';
 import { createNavigation, watchSource } from './navigation.js';
 import { createOptionsModel } from './optionsModel.js';
 import { canFullscreen, enterFullscreen } from './platform.js';
 import { QUALITY_LABELS, cycleQualityMode, getQualityMode } from './quality.js';
-
-const ROW_H = 24;
-const ROW_W = 300;
-const FIRST_Y = 54;
 
 /** Lignes de l'écran d'options, dans l'ordre d'affichage. `scene` sert au plein écran. */
 export function buildOptionRows(scene, { onControls }) {
@@ -24,6 +28,16 @@ export function buildOptionRows(scene, { onControls }) {
       id: 'difficulty',
       label: () => `DIFFICULTE : ${DIFFICULTY_LABELS[getDifficultyMode()]}`,
       change: cycleDifficultyMode,
+    },
+    {
+      id: 'bots',
+      label: () => `BOTS : ${getBotCount()}`,
+      change: cycleBotCount,
+    },
+    {
+      id: 'map',
+      label: () => `CARTE : ${MAP_LABELS[getMapMode()]}`,
+      change: cycleMapMode,
     },
     {
       id: 'assist',
@@ -93,9 +107,10 @@ export function createOptionsPanel(scene, { depth = 1200, onToggleSound } = {}) 
   );
   const boxes = [];
   const texts = [];
+  const layout = optionsLayout(model.rows.length);
   model.rows.forEach((_row, i) => {
-    const y = FIRST_Y + i * ROW_H;
-    const box = add(scene.add.rectangle(cx, y, ROW_W, ROW_H - 4, PALETTE.bg, 1));
+    const { x, y, w, h } = layout.rows[i];
+    const box = add(scene.add.rectangle(x, y, w, h, PALETTE.bg, 1));
     box.setInteractive({ useHandCursor: true });
     box.on('pointerdown', () => {
       if (!opened) return;
@@ -105,11 +120,11 @@ export function createOptionsPanel(scene, { depth = 1200, onToggleSound } = {}) 
     });
     boxes.push(box);
     texts.push(
-      add(scene.add.text(cx, y, '', { fontFamily: 'monospace', fontSize: '10px' }).setOrigin(0.5)),
+      add(scene.add.text(x, y, '', { fontFamily: 'monospace', fontSize: '10px' }).setOrigin(0.5)),
     );
   });
-  const backY = FIRST_Y + model.rows.length * ROW_H + 8;
-  const back = add(scene.add.rectangle(cx, backY, 120, ROW_H - 4, PALETTE.bg, 1));
+  const backY = layout.back.y;
+  const back = add(scene.add.rectangle(cx, backY, 120, 26, PALETTE.bg, 1));
   back.setInteractive({ useHandCursor: true });
   back.on('pointerdown', () => opened && close());
   const backText = add(

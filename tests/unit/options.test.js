@@ -11,6 +11,7 @@ import {
 } from '../../src/systems/difficultySetting.js';
 import { SOURCE, resetInputSource, setSource } from '../../src/systems/inputSource.js';
 import { isDebugOn, resetDebug, toggleDebug } from '../../src/systems/debugSetting.js';
+import { getBotCount, getMapMode, resetMatchSettings } from '../../src/systems/matchSettings.js';
 import { createOptionsModel } from '../../src/systems/optionsModel.js';
 import { buildOptionRows } from '../../src/systems/optionsPanel.js';
 import {
@@ -103,12 +104,22 @@ describe('lignes réelles des options', () => {
     resetAssistMode();
     resetQuality();
     resetMute();
+    resetMatchSettings();
   });
   const scene = { scale: { fullscreen: { available: false } } };
 
   it('contient les réglages attendus, sans plein écran quand il est indisponible', () => {
     const ids = buildOptionRows(scene, { onControls() {} }).map((r) => r.id);
-    expect(ids).toEqual(['difficulty', 'assist', 'quality', 'sound', 'debug', 'controls']);
+    expect(ids).toEqual([
+      'difficulty',
+      'bots',
+      'map',
+      'assist',
+      'quality',
+      'sound',
+      'debug',
+      'controls',
+    ]);
     const withFs = { scale: { fullscreen: { available: true } } };
     expect(buildOptionRows(withFs, { onControls() {} }).map((r) => r.id)).toContain('fullscreen');
   });
@@ -119,6 +130,12 @@ describe('lignes réelles des options', () => {
     expect(getDifficultyMode()).toBe('easy');
     model.move(1);
     model.change(1);
+    expect(getBotCount()).toBe(1);
+    model.move(1);
+    model.change(1);
+    expect(getMapMode()).toBe('triad');
+    model.move(1);
+    model.change(1);
     expect(getAssistMode()).not.toBe('auto');
     model.move(1);
     model.change(1);
@@ -126,9 +143,10 @@ describe('lignes réelles des options', () => {
     model.move(1);
     model.change(1);
     expect(isMuted()).toBe(true);
-    expect(model.labels()[3]).toContain('COUPE');
+    expect(model.labels()[5]).toContain('COUPE');
     cycleAssistMode(-1);
     cycleQualityMode(-1);
+    resetMatchSettings();
   });
 });
 

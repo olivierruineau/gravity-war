@@ -88,6 +88,7 @@ export function createDebugOverlay(scene) {
       text.setText(
         [
           `FPS ${Math.round(scene.game.loop.actualFps)}  tick ${world.tick}`,
+          `carte ${scene.plan.mapMode} #${scene.plan.seed}`,
           `calcul ${tickAvg.average(now).toFixed(2)} ms/tick  affichage ${drawAvg.average(now).toFixed(2)} ms`,
           `pos ${ship.pos.x.toFixed(0)}, ${ship.pos.y.toFixed(0)}`,
           `vitesse ${speed.toFixed(1)}  angle ${((ship.angle * 180) / Math.PI).toFixed(0)}°`,

@@ -11,7 +11,6 @@ import { clearEvents } from '../core/events.js';
 import { consumeSteps, createClock } from '../core/clock.js';
 import { OUTCOME } from '../core/faction.js';
 import { createWorld, step } from '../core/world.js';
-import { triad } from '../data/maps/triad.js';
 import { drawPlanet } from '../entities/planetView.js';
 import { drawProjectiles } from '../entities/projectileView.js';
 import { drawShip } from '../entities/shipView.js';
@@ -32,14 +31,13 @@ import { resolveDifficulty } from '../systems/difficultySetting.js';
 import { applyRenderScale, placeCamera } from '../systems/renderScale.js';
 import { createSpectatorControls } from '../systems/spectatorControls.js';
 import { nextFollowed } from '../systems/spectator.js';
+import { createMatchStats, recordEvents, summaryLines } from '../systems/matchStats.js';
+import { planMatch } from '../systems/matchPlan.js';
+import { MAP_LABELS, getBotCount, getMapMode, seedFromSearch } from '../systems/matchSettings.js';
 import { createStarfield } from '../systems/starfield.js';
 
 /** Délai (s) entre la fin de partie et l'écran de fin. */
 const END_SCREEN_DELAY = 1.5;
-
-/** Factions pilotées par l'IA (ADR 0006) ; la faction 0 est le joueur, sauf en observation (9.8). */
-const BOT_FACTIONS = [1, 2];
-const ALL_FACTIONS = [0, 1, 2];
 
 /**
  * Scène de jeu. Rester MINCE : elle orchestre la boucle à pas fixe, l'entrée et le rendu ;
@@ -56,14 +54,22 @@ export class GameScene extends Phaser.Scene {
 
   create() {
     applyRenderScale(this);
-    // Graine tirée ici (couche Phaser) : le core, lui, reste déterministe pour une graine donnée.
-    const seed = Math.floor(Math.random() * 2 ** 32);
-    this.world = createWorld(triad, seed, {
+    // Graine tirée ici (couche Phaser) : le core, lui, reste déterministe pour une graine donnée. Elle fixe aussi la carte
+    // générée ; `?seed=` dans l'adresse rejoue une carte.
+    this.plan = planMatch({
+      mapMode: getMapMode(),
+      botCount: getBotCount(),
+      spectator: this.spectator,
+      seedParam: seedFromSearch(window.location.search),
+      randomSeed: Math.floor(Math.random() * 2 ** 32),
+    });
+    this.world = createWorld(this.plan.map, this.plan.seed, {
       eventCapacity: EVENT_CAPACITY,
-      bots: this.spectator ? ALL_FACTIONS : BOT_FACTIONS,
+      bots: this.plan.bots,
       spectator: this.spectator,
       difficulty: resolveDifficulty(),
     });
+    this.stats = createMatchStats();
     this.clock = createClock({
       dt: FIXED_DT,
       maxFrameDt: MAX_FRAME_DT,
@@ -98,6 +104,16 @@ export class GameScene extends Phaser.Scene {
     this.gravityArrow = createGravityArrow(this);
   }
 
+  /** Lignes du résumé de fin de partie. */
+  summary() {
+    const mapLabel = MAP_LABELS[this.plan.mapMode];
+    return summaryLines(this.stats, this.world, {
+      mapLabel,
+      seed: this.plan.seed,
+      spectator: this.spectator,
+    });
+  }
+
   update(_time, delta) {
     if (this.pause.paused) return; // tout est figé : ni simulation, ni entrées, ni effets
     this.frameMonitor.sample(delta / 1000);
@@ -111,7 +127,7 @@ export class GameScene extends Phaser.Scene {
     const over = this.world.outcome !== OUTCOME.PLAYING;
     if (over) {
       this.endDelay -= delta / 1000;
-      if (this.endDelay <= 0) this.endScreen.show(this.world.outcome);
+      if (this.endDelay <= 0) this.endScreen.show(this.world.outcome, this.summary());
     }
     const simStart = performance.now();
     if (!over || this.endDelay > 0) for (let i = 0; i < steps; i++) step(this.world, FIXED_DT);
@@ -141,6 +157,7 @@ export class GameScene extends Phaser.Scene {
 
     this.audio.handle(this.world.events, player.pos);
     this.audio.updateThrust(player, delta / 1000);
+    recordEvents(this.stats, this.world.events);
     this.effects.handle(this.world.events);
     this.effects.update(delta / 1000);
 

@@ -18,13 +18,25 @@ export function createEndScreen(scene) {
     .setDepth(DEPTH)
     .setVisible(false);
   const title = scene.add
-    .text(cx, GAME_HEIGHT * 0.4, '', { fontFamily: 'monospace', fontSize: '24px' })
+    .text(cx, GAME_HEIGHT * 0.26, '', { fontFamily: 'monospace', fontSize: '24px' })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(DEPTH + 1)
+    .setVisible(false);
+  const summary = scene.add
+    .text(cx, GAME_HEIGHT * 0.45, '', {
+      fontFamily: 'monospace',
+      fontSize: '10px',
+      color: toCss(PALETTE.text),
+      align: 'center',
+      lineSpacing: 3,
+    })
     .setOrigin(0.5)
     .setScrollFactor(0)
     .setDepth(DEPTH + 1)
     .setVisible(false);
   const hint = scene.add
-    .text(cx, GAME_HEIGHT * 0.6, '', {
+    .text(cx, GAME_HEIGHT * 0.66, '', {
       fontFamily: 'monospace',
       fontSize: '10px',
       color: toCss(PALETTE.text),
@@ -49,8 +61,8 @@ export function createEndScreen(scene) {
   nav.on('back', toMenu);
 
   return {
-    /** Affiche l'écran (une fois). */
-    show(outcome) {
+    /** Affiche l'écran (une fois) ; `lines` : résumé de la partie (`matchStats.summaryLines`). */
+    show(outcome, lines = []) {
       const touch = isTouch();
       const model = endScreenModel(outcome, touch);
       if (shown || model === null) return;
@@ -58,6 +70,7 @@ export function createEndScreen(scene) {
       armedAt = scene.time.now + ARM_DELAY_MS;
       veil.setVisible(true);
       title.setText(model.title).setColor(toCss(model.color)).setVisible(true);
+      summary.setText(lines).setVisible(lines.length > 0);
       hint.setText(model.hint).setVisible(true);
       if (touch) {
         createButton(scene, {

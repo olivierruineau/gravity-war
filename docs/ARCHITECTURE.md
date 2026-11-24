@@ -92,6 +92,7 @@ Clavier et tactile sont actifs **en même temps** ; seul l'affichage suit la der
 - **Navigation** : `data/inputBindings.js` associe les actions (`confirm`, `back`, `pause`, `mute`, `help`, `assist`, `quality`) à leurs touches ; `systems/navigation.js` expose `on(action, fn)` aux scènes, qui ne connaissent jamais les touches, et `watchSource(scene, fn)` pour adapter les vues. Une manette ajoutera une colonne à la table.
 - **Pilotage** : `keyboardInput.js` écrit les quatre champs de l'`Intent`, `touchControls.js` (overlay, disposition dans `data/touchLayout.js`) les complète par OU logique, `landingAssist.js` n'écrit que `rotate`. Le modèle tactile (`touchModel.js`) lit l'état des pointeurs à chaque frame : un doigt perdu ou annulé se relâche seul.
 - **Boutons d'interface** : `uiButton.js` (cibles de 40 px du jeu, soit ≥ 44 px CSS dès 297 px de hauteur), `optionsPanel.js` + `optionsModel.js` (écran d'options 9.3 : difficulté, aide à la pose, qualité, son, plein écran, commandes ; panneau superposé au menu et à la pause, modèle pur testé), réglages persistés dans `localStorage` (`difficultySetting.js`, `assistSetting.js`, `quality.js`, `audio/mute.js`).
+- **Parties (9.9, 9.10)** : `data/maps/generate.js` (carte seedée symétrique), `data/maps/index.js` (`limitFactions`, `buildMap`), `systems/matchPlan.js` (réglages + graine → carte et bots), `matchSettings.js` (bots, carte, `?seed=`), `matchStats.js` (résumé de fin) ; voir [ADR 0012](adr/0012-cartes-generees-et-nombre-de-bots.md).
 - **Observation (9.8)** : `createWorld(..., { spectator: true, bots: [0, 1, 2] })` (issue `OUTCOME.OVER` quand il ne reste qu'une faction), `systems/spectator.js` (choix du bot suivi, pur et testé) et `spectatorControls.js` (← → / ◄ ►, bannière) ; `GameScene` n'y crée pas d'entrée de pilotage.
 - **Plateforme** : `platform.js` (pointeur grossier, portrait, plein écran, `watchAway` → pause automatique), `audio/lifecycle.js` (déblocage au premier geste, suspension en arrière-plan), `build/pwaPlugin.js` + `build/sw.template.js` (hors ligne, [ADR 0009](adr/0009-pwa-hors-ligne.md)), `quality.js` (lueur coupée si la cadence passe sous 40 fps).
 
@@ -123,16 +124,17 @@ Le budget de 30 images par seconde tient donc jusqu'à ×6 grâce à la qualité
 
 ## Décisions
 
-| ADR                                                | Sujet                                                               | Statut                                      |
-| -------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------- |
-| [0001](adr/0001-stack-technique.md)                | Stack technique                                                     | Accepté                                     |
-| [0002](adr/0002-architecture-core.md)              | Architecture de `core/` et pont rendu                               | Accepté                                     |
-| [0003](adr/0003-gravite-et-atterrissage.md)        | Gravité, collision et atterrissage                                  | Accepté (§2 « sommation » amendé par 0004)  |
-| [0004](adr/0004-zone-gravite-dominante.md)         | Zone de gravité dominante (chevauchements)                          | Accepté                                     |
-| [0005](adr/0005-factions-batiments-capture.md)     | Factions, capture, bâtiments, tourelles, missiles, bouclier         | Accepté (précise 0002 ; amendé par 0007)    |
-| [0006](adr/0006-ia-des-bots.md)                    | IA des bots : décision par utilité, pilote, prédiction              | Accepté (précise 0002 §2, §5, §6 ; 0005 §8) |
-| [0007](adr/0007-degats-aux-batiments.md)           | Dégâts aux bâtiments : défenses, puis bâtiments                     | Accepté (amende 0005 §3, §4)                |
-| [0008](adr/0008-entree-multi-sources.md)           | Entrée multi-sources (clavier, tactile)                             | Accepté                                     |
-| [0009](adr/0009-pwa-hors-ligne.md)                 | PWA : installation et hors ligne sans dépendance                    | Accepté                                     |
-| [0010](adr/0010-niveaux-de-difficulte.md)          | Niveaux de difficulté des bots (surcharges de profil)               | Accepté                                     |
-| [0011](adr/0011-nettete-rendu-haute-resolution.md) | Netteté : canvas à la résolution de l'écran, monde en unités de jeu | Accepté                                     |
+| ADR                                                   | Sujet                                                               | Statut                                      |
+| ----------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------- |
+| [0001](adr/0001-stack-technique.md)                   | Stack technique                                                     | Accepté                                     |
+| [0002](adr/0002-architecture-core.md)                 | Architecture de `core/` et pont rendu                               | Accepté                                     |
+| [0003](adr/0003-gravite-et-atterrissage.md)           | Gravité, collision et atterrissage                                  | Accepté (§2 « sommation » amendé par 0004)  |
+| [0004](adr/0004-zone-gravite-dominante.md)            | Zone de gravité dominante (chevauchements)                          | Accepté                                     |
+| [0005](adr/0005-factions-batiments-capture.md)        | Factions, capture, bâtiments, tourelles, missiles, bouclier         | Accepté (précise 0002 ; amendé par 0007)    |
+| [0006](adr/0006-ia-des-bots.md)                       | IA des bots : décision par utilité, pilote, prédiction              | Accepté (précise 0002 §2, §5, §6 ; 0005 §8) |
+| [0007](adr/0007-degats-aux-batiments.md)              | Dégâts aux bâtiments : défenses, puis bâtiments                     | Accepté (amende 0005 §3, §4)                |
+| [0008](adr/0008-entree-multi-sources.md)              | Entrée multi-sources (clavier, tactile)                             | Accepté                                     |
+| [0009](adr/0009-pwa-hors-ligne.md)                    | PWA : installation et hors ligne sans dépendance                    | Accepté                                     |
+| [0010](adr/0010-niveaux-de-difficulte.md)             | Niveaux de difficulté des bots (surcharges de profil)               | Accepté                                     |
+| [0012](adr/0012-cartes-generees-et-nombre-de-bots.md) | Cartes générées depuis une graine, nombre de bots réglable          | Accepté                                     |
+| [0011](adr/0011-nettete-rendu-haute-resolution.md)    | Netteté : canvas à la résolution de l'écran, monde en unités de jeu | Accepté                                     |

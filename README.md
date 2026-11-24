@@ -55,4 +55,4 @@ Node 22 ou plus. Le code de jeu pur est dans `src/core/` (sans Phaser ni DOM, te
 
 ## Version actuelle (v1 + mobile)
 
-Une carte fixe (« Triade », 13 planètes, symétrique pour trois bases), deux bots, trois niveaux de difficulté (menu Options). Jouable au clavier et au doigt (paysage), installable hors ligne. Hors périmètre : nombre de bots réglable, génération de cartes, campagne, manette, musique.
+Une carte générée depuis une graine (symétrique pour trois bases, `?seed=123` pour la rejouer) ou la carte fixe « Triade », un ou deux bots, trois niveaux de difficulté (menu Options). Jouable au clavier et au doigt (paysage), installable hors ligne. Hors périmètre : campagne, manette, musique.
